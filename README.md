@@ -8,7 +8,7 @@
 
 ---
 
-## 📌 System Architecture Overview
+## System Architecture Overview
 
 SALBAR bridges the critical post-disaster communication gap using a multi-tier, infrastructure-independent architecture:
 
@@ -39,7 +39,7 @@ SALBAR bridges the critical post-disaster communication gap using a multi-tier, 
 
 ---
 
-## 📂 Proposed Monorepo Structure
+## Proposed Monorepo Structure
 
 ```text
 SALBAR/
@@ -69,7 +69,7 @@ SALBAR/
 
 ---
 
-## 🛠️ Key Subsystems
+## Key Subsystems
 
 1. **Firmware & Field Terminals (`/firmware`)**
    - **Hardware**: LilyGO TTGO T-Beam V1.2 (ESP32, LoRa 915 MHz, GNSS/GPS) + LilyGO TTGO LoRa32 V2.1.
@@ -92,7 +92,7 @@ SALBAR/
 
 ---
 
-## 🌿 Branching Strategy
+## Branching Strategy
 
 - `main` — Production-grade, peer-reviewed releases and final thesis defense deliverables.
 - `develop` — Active integration branch for all monorepo subsystems.
@@ -101,7 +101,7 @@ SALBAR/
 
 ---
 
-## 👥 Authors & Academic Affiliation
+## Authors & Academic Affiliation
 
 - **John Michael A. Nave**
 - **John Peter D. Pestaño**

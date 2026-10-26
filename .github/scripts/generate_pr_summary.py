@@ -3,7 +3,7 @@
 SALBAR Monorepo - Automated PR Summary Generator
 Generates a structured PR summary detecting affected monorepo subsystems,
 commit history, and file diffs. If GEMINI_API_KEY is configured in GitHub
-Secrets, it queries Google Gemini to provide an architectural impact summary.
+Secrets, it queries Google Gemini to provide a formal architectural impact summary.
 """
 
 import os
@@ -17,20 +17,20 @@ DELIMITER_START = "<!-- SALBAR_AUTOMATED_PR_SUMMARY_START -->"
 DELIMITER_END = "<!-- SALBAR_AUTOMATED_PR_SUMMARY_END -->"
 
 MONOREPO_SUBSYSTEMS = {
-    "apps/mobile": ("📱 Mobile App", "Resident-facing offline-first Android app & BLE/Cloud relay"),
-    "apps/web-dashboard": ("🖥️ Web Dashboard", "Incident Commander GIS map & HITL authorization"),
-    "apps/cloud-relay": ("☁️ Cloud Relay", "Direct internet ingestion endpoint"),
-    "services/backend": ("⚙️ Coordination Backend", "Central pipeline coordinator & database persistence"),
-    "services/dispatcher-engine": ("🧮 Dispatcher Engine", "Google OR-Tools solver (fatigue & road uncertainty)"),
-    "services/nlp-classifier": ("🧠 NLP Classifier", "Multilingual Transformer (EN / TL / CEB / code-switching)"),
-    "services/serial-bridge": ("🔌 Serial Bridge", "Host PC <-> Gateway LoRa serial interface"),
-    "firmware/field-terminal": ("📡 Field Terminal", "ESP32 TTGO T-Beam firmware (LoRa mesh, Kalman filter, BLE)"),
-    "firmware/gateway": ("🗼 LoRa Gateway", "LilyGO TTGO LoRa32 gateway firmware"),
-    "firmware/shared": ("💾 Firmware Shared", "Binary structs, message types & CRC utilities"),
-    "packages/protocol": ("📦 Protocol Package", "Shared cross-platform data schemas"),
-    "packages/config": ("🛠️ Config Package", "Shared linting, formatting & configs"),
-    "docs": ("📚 Thesis Docs", "Academic manuscripts, circuit diagrams & flowcharts"),
-    "tools": ("🧪 Tools & Simulators", "Mesh simulators, GPS jitter rigs & benchmarks"),
+    "apps/mobile": ("Mobile Application", "Resident-facing offline-first Android application and BLE/Cloud relay"),
+    "apps/web-dashboard": ("Web Dashboard", "Incident Commander GIS mapping and HITL dispatch authorization interface"),
+    "apps/cloud-relay": ("Cloud Relay", "Direct internet ingestion endpoint"),
+    "services/backend": ("Coordination Backend", "Central pipeline coordinator and database persistence"),
+    "services/dispatcher-engine": ("Dispatcher Engine", "Google OR-Tools solver (fatigue decay and road uncertainty constraints)"),
+    "services/nlp-classifier": ("NLP Classifier", "Multilingual Transformer (English, Tagalog, Cebuano, and code-switched text)"),
+    "services/serial-bridge": ("Serial Bridge", "Host PC to Gateway LoRa serial interface"),
+    "firmware/field-terminal": ("Field Terminal Firmware", "ESP32 TTGO T-Beam firmware (LoRa mesh, Kalman filter, BLE ingestion)"),
+    "firmware/gateway": ("Gateway Firmware", "LilyGO TTGO LoRa32 base station gateway firmware"),
+    "firmware/shared": ("Firmware Shared", "Binary message structs, packet definitions, and CRC utilities"),
+    "packages/protocol": ("Protocol Package", "Cross-platform data contracts and serialization schemas"),
+    "packages/config": ("Config Package", "Monorepo configuration, tooling, and linting"),
+    "docs": ("Documentation", "Academic manuscripts, circuit schematics, and system flowcharts"),
+    "tools": ("Tools and Simulators", "Mesh simulation harnesses, GPS jitter generation, and benchmarking suites"),
 }
 
 
@@ -79,21 +79,21 @@ def detect_subsystems(changed_files):
         if not matched:
             root_key = "root/misc"
             if root_key not in affected:
-                affected[root_key] = {"name": "🔧 Root / Tooling", "desc": "Repository configs, CI/CD, and root files", "count": 0}
+                affected[root_key] = {"name": "Root and Tooling", "desc": "Repository configuration, CI/CD pipelines, and root files", "count": 0}
             affected[root_key]["count"] += 1
             
     return affected
 
 
-def generate_gemini_summary(api_key, diff_stat, raw_diff, commits, affected_subsystems):
-    """Invokes Google Gemini API to produce an architectural summary."""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+def generate_gemini_summary(api_key, diff_stat, raw_diff, commits, affected_subsystems, model_name="gemini-3.8-flash"):
+    """Invokes Google Gemini API to produce a formal architectural summary."""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
     
     subsystems_str = ", ".join([v["name"] for v in affected_subsystems.values()])
     
-    prompt = f"""You are the automated CI/CD PR reviewer for SALBAR (System for Allocation and LoRa-Linked Barangay Assessment and Response).
+    prompt = f"""You are the automated CI/CD pull request reviewer for SALBAR (System for Allocation and LoRa-Linked Barangay Assessment and Response).
 SALBAR is an infrastructure-independent disaster response coordination platform combining:
-- ESP32 TTGO T-Beam LoRa mesh field terminals with GPS Kalman filtering & BLE offline report ingestion
+- ESP32 TTGO T-Beam LoRa mesh field terminals with GPS Kalman filtering and BLE offline report ingestion
 - LilyGO TTGO LoRa32 gateway with serial connection to host
 - Central coordination backend orchestrating multi-source ingestion
 - Fine-tuned Multilingual Transformer (English, Tagalog, Cebuano, code-switched text)
@@ -116,13 +116,22 @@ COMMITS:
 RAW DIFF PREVIEW:
 {raw_diff}
 
-Generate a concise, professional GitHub pull request summary formatted in Markdown with:
-1. ### 🚀 Executive Overview (1-3 sentences highlighting the core purpose of this PR)
-2. ### 🔍 Key Subsystem Updates (bullet points explaining what was changed and why)
-3. ### ⚠️ Operational & Integration Notes (highlight any hardware, schema, network, or breaking changes if applicable)
-4. ### 🧪 Recommended Verification (suggest 2-4 specific test drills or checks for reviewers)
+Generate a concise, formal, and professional pull request review formatted in Markdown.
+CRITICAL FORMATTING RULES:
+1. Maintain a strict, professional engineering tone.
+2. DO NOT use any emojis or decorative symbols anywhere in the response.
+3. Structure your response using these exact markdown headers:
+   ### Executive Overview
+   (1 to 3 clear, formal sentences summarizing the primary purpose and intent of the changes)
 
-Keep it direct, technical, and without fluff. Do not wrap in generic conversational greetings.
+   ### Key Subsystem Updates
+   (Structured bullet points describing specific modifications per subsystem)
+
+   ### Operational and Integration Notes
+   (Highlight any hardware, protocol, schema, dependency, or breaking changes; state "No breaking changes identified" if none)
+
+   ### Recommended Verification
+   (Suggest 2 to 4 concrete, actionable verification drills or test procedures for reviewers)
 """
 
     payload = {
@@ -155,7 +164,7 @@ Keep it direct, technical, and without fluff. Do not wrap in generic conversatio
                 if parts:
                     return parts[0].get("text", "").strip()
     except Exception as e:
-        print(f"Warning: Gemini API call failed: {e}. Falling back to deterministic summary.", file=sys.stderr)
+        print(f"Warning: Gemini API call failed with model {model_name}: {e}. Falling back to deterministic summary.", file=sys.stderr)
         return None
 
     return None
@@ -165,7 +174,7 @@ def build_markdown_summary(gemini_summary, affected_subsystems, commits, diff_st
     """Assembles the final markdown document."""
     lines = [
         DELIMITER_START,
-        "## 🤖 Automated PR Summary & Monorepo Changelog",
+        "## Automated PR Summary and Monorepo Changelog",
         ""
     ]
     
@@ -173,9 +182,9 @@ def build_markdown_summary(gemini_summary, affected_subsystems, commits, diff_st
         lines.append(gemini_summary)
         lines.append("")
         lines.append("---")
-        lines.append("### 🗺️ Monorepo Impact Matrix")
+        lines.append("### Monorepo Impact Matrix")
     else:
-        lines.append("### 🗺️ Monorepo Impact Matrix")
+        lines.append("### Monorepo Impact Matrix")
         
     lines.append("| Subsystem | Component | Files Modified |")
     lines.append("| :--- | :--- | :---: |")
@@ -183,7 +192,7 @@ def build_markdown_summary(gemini_summary, affected_subsystems, commits, diff_st
         lines.append(f"| **{v['name']}** | {v['desc']} | `{v['count']}` |")
         
     lines.append("")
-    lines.append("### 📝 Commits Included")
+    lines.append("### Commits Included")
     if commits:
         for c in commits[:15]:
             lines.append(c)
@@ -194,7 +203,7 @@ def build_markdown_summary(gemini_summary, affected_subsystems, commits, diff_st
         
     lines.append("")
     lines.append("<details>")
-    lines.append("<summary>📊 Click to expand File Diff Statistics</summary>")
+    lines.append("<summary>File Diff Statistics</summary>")
     lines.append("")
     lines.append("```text")
     lines.append(diff_stat if diff_stat else "No file changes detected.")
@@ -237,6 +246,7 @@ def main():
     base_ref = os.environ.get("BASE_REF", "develop")
     pr_number = os.environ.get("PR_NUMBER")
     gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    gemini_model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
     
     if not pr_number:
         print("Error: PR_NUMBER environment variable is required.", file=sys.stderr)
@@ -247,8 +257,8 @@ def main():
     
     gemini_summary = None
     if gemini_key:
-        print("Querying Google Gemini for AI PR analysis...")
-        gemini_summary = generate_gemini_summary(gemini_key, diff_stat, raw_diff, commits, affected_subsystems)
+        print(f"Querying Google Gemini ({gemini_model}) for AI PR analysis...")
+        gemini_summary = generate_gemini_summary(gemini_key, diff_stat, raw_diff, commits, affected_subsystems, model_name=gemini_model)
     else:
         print("GEMINI_API_KEY not found in environment. Generating deterministic monorepo matrix...")
         

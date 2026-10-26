@@ -1,0 +1,53 @@
+name: Web Dashboard CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+      - "chore/**"
+    paths:
+      - "apps/web-dashboard/**"
+      - ".github/workflows/web-dashboard-ci.yml"
+  pull_request:
+    paths:
+      - "apps/web-dashboard/**"
+      - ".github/workflows/web-dashboard-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    name: Lint, Test, and Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web-dashboard
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web-dashboard/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Typecheck
+        run: npm run typecheck
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Unit and Smoke Tests
+        run: npm test
+
+      - name: Build Production Bundle
+        run: npm run build

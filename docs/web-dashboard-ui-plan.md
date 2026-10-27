@@ -141,11 +141,21 @@ Strictly consistent across both dark and light modes to maintain universal recog
 
 ## Typography Standards
 
-- **Primary Font Family**: `Inter`, system font fallback (`-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`)
-- **Monospace Font Family**: `ui-monospace`, `Consolas`, `'Courier New'` (used for GPS coordinates, timestamps, packet counters, and terminal IDs)
-- **Scale**:
-  - Header: `20px` (semibold)
-  - Section Title: `16px` (semibold)
-  - Body Text: `14px` (regular)
-  - Metadata / Badges: `12px` (medium, uppercase tracking)
-  - Small Indicators: `11px` (regular)
+### Font Families
+- **Primary UI & Headings**: `Inter` (weights: 400, 500, 600, 700) with fallback `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`.
+  - Open apertures and clean geometry engineered for high-density dashboard interfaces.
+  - Enabled font features: `cv02`, `cv03`, `cv04`, `cv11` for high-clarity technical legibility.
+- **Telemetry & Numerical Data (Monospace)**: `JetBrains Mono` (weights: 400, 500, 600) with fallback `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`.
+  - Tabular numbers (`tnum`) ensure GPS coordinates, live counters, and timestamps do not shift layout on updates.
+
+### Typographical Hierarchy Scale
+
+| Role | Class / Token | Font Size | Weight | Tracking | Usage |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Display Header** | `.text-display` | `24px` (`1.5rem`) | Bold (`700`) | `-0.025em` | EOC identification, page titles |
+| **Section Heading** | `.text-heading` | `18px` (`1.125rem`) | Semibold (`600`) | `-0.015em` | Card headers, drawer titles, modal names |
+| **Subheading** | `.text-subheading` | `14px` (`0.875rem`) | Semibold (`600`) | `normal` | Incident summary titles, responder unit names |
+| **Body (Primary)** | `.text-body-primary` | `14px` (`0.875rem`) | Regular (`400`) | `normal` | Incident descriptions, AI briefings, instructions |
+| **Body (Secondary)** | `.text-body-secondary` | `13px` (`0.8125rem`)| Regular (`400`) | `normal` | Subtitle descriptors, supplementary notes |
+| **Telemetry / Data** | `.text-telemetry` | `12px` (`0.75rem`) | Medium (`500`) | `0.025em` | GPS coordinates, RSSI/SNR, battery volts, terminal IDs |
+| **Status Badge** | `.text-badge` | `11px` (`0.6875rem`)| Semibold (`600`) | `0.05em` | Priority tags (`CRITICAL`), language pills (`CEB`), status chips |

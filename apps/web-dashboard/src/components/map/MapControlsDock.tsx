@@ -34,7 +34,7 @@ export function MapControlsDock({
 
   return (
     <div
-      className={`pointer-events-auto flex items-center gap-1.5 sm:gap-2 rounded-full p-2 shadow-2xl select-none border transition-colors duration-300 ${
+      className={`pointer-events-auto h-13 sm:h-14 flex items-center gap-1.5 sm:gap-2 rounded-full px-2.5 sm:px-3 shadow-2xl select-none border transition-colors duration-300 ${
         isLight
           ? 'bg-white border-slate-300 shadow-slate-300/40 text-slate-900'
           : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] shadow-black/50 text-slate-100'

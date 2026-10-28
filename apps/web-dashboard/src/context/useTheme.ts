@@ -11,6 +11,9 @@ export function useTheme(): ThemeContextType {
       isMapDark: true,
       toggleMapDark: () => {},
       setMapDark: () => {},
+      isNavbarOpen: true,
+      setIsNavbarOpen: () => {},
+      toggleNavbar: () => {},
     }
   }
   return context

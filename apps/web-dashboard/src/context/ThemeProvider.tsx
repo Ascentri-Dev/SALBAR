@@ -19,6 +19,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return true
   })
 
+  const [isNavbarOpen, setIsNavbarOpen] = useState(true)
+
   useEffect(() => {
     const root = document.documentElement
     if (theme === 'light') {
@@ -59,6 +61,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setIsMapDark(dark)
   }
 
+  const toggleNavbar = () => {
+    setIsNavbarOpen((prev) => !prev)
+  }
+
   return (
     <ThemeContext.Provider
       value={{
@@ -67,6 +73,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         isMapDark,
         toggleMapDark,
         setMapDark,
+        isNavbarOpen,
+        setIsNavbarOpen,
+        toggleNavbar,
       }}
     >
       {children}

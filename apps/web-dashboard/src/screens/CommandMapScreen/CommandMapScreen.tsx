@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { ChevronRight, ChevronLeft, Minimize2, Sun, Moon } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Minimize2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import L from 'leaflet'
 import { TacticalMap, type MapTileType } from '../../components/map/TacticalMap'
@@ -23,7 +23,7 @@ const DEFAULT_CENTER: [number, number] = [10.3157, 123.8854]
 const DEFAULT_ZOOM = 14
 
 export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
-  const { theme, isMapDark, toggleMapDark } = useTheme()
+  const { theme, isMapDark, toggleMapDark, isNavbarOpen, setIsNavbarOpen } = useTheme()
   const isLight = theme === 'light'
 
   const [incidents, setIncidents] = useState<IncidentReport[]>(INITIAL_INCIDENTS)
@@ -84,16 +84,18 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   const toggleFocusMode = useCallback(() => {
     if (isFocusMode) {
       setIsFocusMode(false)
+      setIsNavbarOpen(true)
       setIsKpiOpen(true)
       setIsControlsOpen(true)
       setIsQueueOpen(true)
     } else {
       setIsFocusMode(true)
+      setIsNavbarOpen(false)
       setIsKpiOpen(false)
+      setIsControlsOpen(false)
       setIsQueueOpen(false)
-      setIsControlsOpen(true)
     }
-  }, [isFocusMode])
+  }, [isFocusMode, setIsNavbarOpen])
 
   // Approve dispatch action
   const handleApproveDispatch = (incidentId: string, unitId: string) => {
@@ -216,49 +218,74 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           )}
         </AnimatePresence>
 
-        {/* 2.b Bottom-Left: Circular Icon-Only Tactical Map Controls Dock */}
-        <div
-          className={`pointer-events-auto absolute bottom-4 left-3 sm:left-5 z-30 transition-all duration-500 ease-out ${
-            isControlsOpen
-              ? 'translate-x-0 opacity-100'
-              : '-translate-x-[calc(100%+2rem)] opacity-0 pointer-events-none'
-          }`}
-        >
-          <MapControlsDock
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onLocate={handleLocate}
-            mapTileType={mapTileType}
-            onToggleTileType={handleToggleTileType}
-            isMapDark={isMapDark}
-            onToggleMapDark={toggleMapDark}
-            isFocusMode={isFocusMode}
-            onToggleFocusMode={toggleFocusMode}
-            onClose={() => setIsControlsOpen(false)}
-          />
+        {/* 2.b Bottom-Left: Tactical Map Controls Dock or Minimized / Focus Action */}
+        <div className="pointer-events-auto absolute bottom-4 left-3 sm:left-5 z-30 h-13 sm:h-14 flex items-center">
+          <AnimatePresence mode="wait">
+            {isFocusMode ? (
+              <motion.button
+                key="focus-mode-toggle"
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                type="button"
+                onClick={toggleFocusMode}
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-[var(--accent-primary)] text-white shadow-2xl hover:bg-[var(--accent-hover)] transition-all cursor-pointer active:scale-95"
+                title="Exit Focus Mode (Return to Normal)"
+                aria-label="Exit Focus Mode"
+              >
+                <Minimize2 size={18} />
+              </motion.button>
+            ) : !isControlsOpen ? (
+              <motion.button
+                key="controls-reveal-toggle"
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                type="button"
+                onClick={() => setIsControlsOpen(true)}
+                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border shadow-2xl transition-all cursor-pointer active:scale-95 ${
+                  isLight
+                    ? 'bg-white border-slate-300 text-slate-800 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-200 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+                }`}
+                title="Show Map Controls"
+                aria-label="Show Map Controls"
+              >
+                <ChevronRight size={18} />
+              </motion.button>
+            ) : (
+              <motion.div
+                key="controls-dock-container"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <MapControlsDock
+                  onZoomIn={handleZoomIn}
+                  onZoomOut={handleZoomOut}
+                  onLocate={handleLocate}
+                  mapTileType={mapTileType}
+                  onToggleTileType={handleToggleTileType}
+                  isMapDark={isMapDark}
+                  onToggleMapDark={toggleMapDark}
+                  isFocusMode={isFocusMode}
+                  onToggleFocusMode={toggleFocusMode}
+                  onClose={() => setIsControlsOpen(false)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-
-        {/* Reveal Map Controls Button when Minimized: Circular Pill Icon Button */}
-        {!isControlsOpen && (
-          <button
-            type="button"
-            onClick={() => setIsControlsOpen(true)}
-            className={`pointer-events-auto absolute left-3 sm:left-5 bottom-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border shadow-2xl transition-all cursor-pointer ${
-              isLight
-                ? 'bg-white border-slate-300 text-slate-800 hover:text-[var(--accent-primary)]'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-200 hover:text-[var(--accent-primary)] shadow-black/40'
-            }`}
-            title="Show Map Controls"
-            aria-label="Show Map Controls"
-          >
-            <ChevronRight size={18} />
-          </button>
-        )}
 
         {/* 2.c Right Panel: Live CAD Dispatch Queue & HITL Authorization Drawer */}
         <div
           data-testid="incident-stream-panel"
-          className={`pointer-events-auto absolute right-3 sm:right-5 top-20 bottom-4 z-20 w-[340px] lg:w-[400px] flex flex-col transition-transform duration-500 ease-out ${
+          className={`pointer-events-auto absolute right-3 sm:right-5 ${
+            isNavbarOpen ? 'top-20' : 'top-3 sm:top-4'
+          } bottom-4 z-20 w-[340px] lg:w-[400px] flex flex-col transition-all duration-300 ease-out ${
             isQueueOpen && !isFocusMode
               ? 'translate-x-0 opacity-100'
               : 'translate-x-[calc(100%+2rem)] opacity-0 pointer-events-none'
@@ -308,7 +335,9 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               type="button"
               onClick={() => setIsQueueOpen(true)}
-              className={`pointer-events-auto absolute right-3 sm:right-5 top-20 z-30 flex h-11 items-center gap-2 px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none ${
+              className={`pointer-events-auto absolute right-3 sm:right-5 ${
+                isNavbarOpen ? 'top-20' : 'top-3 sm:top-4'
+              } z-30 flex h-11 items-center gap-2 px-4 rounded-full border shadow-2xl transition-all duration-300 cursor-pointer select-none ${
                 isLight
                   ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                   : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
@@ -323,40 +352,6 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
             </motion.button>
           )}
         </AnimatePresence>
-
-        {/* Bottom-Right Map Dark Mode Control */}
-        {(!isQueueOpen || isFocusMode) && (
-          <div className="pointer-events-auto absolute bottom-4 right-3 sm:right-5 z-30">
-            <button
-              type="button"
-              onClick={toggleMapDark}
-              className={`flex h-10 items-center gap-1.5 px-3 rounded-full border shadow-2xl backdrop-blur-md transition-all font-mono text-xs font-bold cursor-pointer ${
-                isMapDark
-                  ? 'bg-[var(--bg-surface)]/90 border-[var(--border-subtle)] text-amber-400 hover:text-white hover:bg-[var(--accent-primary)]'
-                  : 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-              }`}
-              title={isMapDark ? 'Map: Dark Mode (Click for Light Mode)' : 'Map: Light Mode (Click for Dark Mode)'}
-              aria-label="Toggle Map Dark Mode"
-            >
-              {isMapDark ? <Sun size={15} /> : <Moon size={15} />}
-              <span className="text-[10px] uppercase">{isMapDark ? 'Dark' : 'Light'}</span>
-            </button>
-          </div>
-        )}
-
-        {/* Exit Focus Mode Floating Pill */}
-        {isFocusMode && (
-          <div className="pointer-events-auto absolute top-20 left-1/2 -translate-x-1/2 z-30">
-            <button
-              type="button"
-              onClick={toggleFocusMode}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider shadow-2xl backdrop-blur-md hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
-            >
-              <Minimize2 size={14} />
-              <span>Exit Tactical Focus</span>
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )

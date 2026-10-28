@@ -6,4 +6,7 @@ export interface ThemeContextType {
   isMapDark: boolean
   toggleMapDark: () => void
   setMapDark: (dark: boolean) => void
+  isNavbarOpen: boolean
+  setIsNavbarOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  toggleNavbar: () => void
 }

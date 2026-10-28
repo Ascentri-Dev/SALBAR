@@ -128,9 +128,8 @@ export function AmbientStatusHeader({
   activeScreen,
   onSelectScreen,
 }: AmbientStatusHeaderProps) {
-  const [isNavbarOpen, setIsNavbarOpen] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { theme, toggleTheme, isMapDark } = useTheme()
+  const { theme, toggleTheme, isMapDark, isNavbarOpen, toggleNavbar } = useTheme()
 
   const isLight = theme === 'light'
 
@@ -139,8 +138,8 @@ export function AmbientStatusHeader({
     onSelectScreen(screenId)
   }
 
-  const toggleNavbar = () => {
-    setIsNavbarOpen((prev) => !prev)
+  const handleToggleNavbar = () => {
+    toggleNavbar()
     if (isMobileMenuOpen) setIsMobileMenuOpen(false)
   }
 
@@ -263,7 +262,7 @@ export function AmbientStatusHeader({
         <div className="absolute left-6 sm:left-10 top-0 bottom-0 z-50 pointer-events-auto flex items-center">
           <button
             type="button"
-            onClick={toggleNavbar}
+            onClick={handleToggleNavbar}
             className={`font-heading relative group cursor-pointer text-base sm:text-lg font-black tracking-wider uppercase block shrink-0 select-none transition-all duration-300 ${
               !isNavbarOpen
                 ? !isMapDark

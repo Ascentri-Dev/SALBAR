@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import type { Variants } from 'framer-motion'
 import {
   FileText,
   Download,
@@ -78,6 +80,29 @@ const DEFAULT_ARCHIVE_RECORDS: ArchivedIncidentRecord[] = [
   },
 ]
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.04,
+    },
+  },
+}
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.35,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+}
+
 export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenProps) {
   const { theme, isNavbarOpen } = useTheme()
   const isLight = theme === 'light'
@@ -118,9 +143,17 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
         isNavbarOpen ? 'pt-20 sm:pt-22' : 'pt-4 sm:pt-6'
       } ${className}`.trim()}
     >
-      <div className="max-w-7xl w-full mx-auto space-y-6">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-7xl w-full mx-auto space-y-6"
+      >
         {/* Screen Header & Export Action Pills */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <motion.header
+          variants={itemVariants}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        >
           <div>
             <h1 className="text-xl sm:text-2xl font-black font-heading tracking-wide uppercase text-[var(--text-primary)]">
               Incident Archive & Audit History
@@ -154,17 +187,28 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
               <span>Export PDF (RDANA)</span>
             </button>
           </div>
-        </header>
+        </motion.header>
 
         {/* Notice Banner when Export Triggered */}
-        {exportNotice && (
-          <div className="p-3 rounded-2xl border text-xs font-bold text-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-            {exportNotice}
-          </div>
-        )}
+        <AnimatePresence>
+          {exportNotice && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="p-3 rounded-2xl border text-xs font-bold text-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+            >
+              {exportNotice}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Archive Summary KPI Strip (4 Circular Cards with N/A) */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <motion.section
+          variants={itemVariants}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+        >
           {/* Total Archived */}
           <div
             className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
@@ -260,10 +304,11 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
               </span>
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* Circular Search and Filter Bar */}
-        <section
+        <motion.section
+          variants={itemVariants}
           data-testid="archive-filters-bar"
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
         >
@@ -341,10 +386,11 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
               }`}
             />
           </div>
-        </section>
+        </motion.section>
 
         {/* Incident Archive Table Container (with required test ID) */}
-        <section
+        <motion.section
+          variants={itemVariants}
           data-testid="archive-table-container"
           className={`rounded-3xl border shadow-xl overflow-hidden transition-all ${
             isLight
@@ -461,8 +507,8 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
               </button>
             </div>
           )}
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
 
       {/* Audit Trail Modal */}
       {selectedIncident && (

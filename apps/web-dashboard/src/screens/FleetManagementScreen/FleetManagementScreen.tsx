@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import type { Variants } from 'framer-motion'
 import {
   Shield,
   Activity,
@@ -82,6 +84,29 @@ const DEFAULT_FLEET_UNITS: FleetResponderUnit[] = [
     terminalType: null,
   },
 ]
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.04,
+    },
+  },
+}
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.35,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+}
 
 export function FleetManagementScreen({
   onSelectScreen,
@@ -200,9 +225,17 @@ export function FleetManagementScreen({
         isNavbarOpen ? 'pt-20 sm:pt-22' : 'pt-4 sm:pt-6'
       } ${className}`.trim()}
     >
-      <div className="max-w-7xl w-full mx-auto space-y-6">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-7xl w-full mx-auto space-y-6"
+      >
         {/* Screen Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.header
+          variants={itemVariants}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        >
           <div>
             <h1 className="text-xl sm:text-2xl font-black font-heading tracking-wide uppercase text-[var(--text-primary)]">
               Field Responder Fleet Management
@@ -218,12 +251,17 @@ export function FleetManagementScreen({
               Terminals: N/A
             </span>
           </div>
-        </header>
+        </motion.header>
 
         {/* Fleet KPI Summary Strip (4 Circular Cards with N/A) */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <motion.section
+          variants={itemVariants}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+        >
           {/* Active Units */}
-          <div
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
             className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
               isLight
                 ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
@@ -244,10 +282,12 @@ export function FleetManagementScreen({
                 Mesh Sync: N/A
               </span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Operational Readiness */}
-          <div
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
             className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
               isLight
                 ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
@@ -268,10 +308,12 @@ export function FleetManagementScreen({
                 Status: N/A
               </span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Average Fatigue */}
-          <div
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
             className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
               isLight
                 ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
@@ -292,10 +334,12 @@ export function FleetManagementScreen({
                 Telemetry: N/A
               </span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Relayed Reports */}
-          <div
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
             className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
               isLight
                 ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
@@ -316,11 +360,14 @@ export function FleetManagementScreen({
                 Ingestion: N/A
               </span>
             </div>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
         {/* Filter and Search Bar: Circular Pills */}
-        <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <motion.section
+          variants={itemVariants}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
           {/* Status Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -395,10 +442,11 @@ export function FleetManagementScreen({
               }`}
             />
           </div>
-        </section>
+        </motion.section>
 
         {/* 3 Unit Cards Grid */}
-        <section
+        <motion.section
+          variants={itemVariants}
           data-testid="responder-units-grid"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
@@ -407,8 +455,10 @@ export function FleetManagementScreen({
             const roleBadgeClass = getRoleBadge(unit.role)
 
             return (
-              <div
+              <motion.div
                 key={unit.id}
+                variants={itemVariants}
+                whileHover={{ y: -4, transition: { duration: 0.18 } }}
                 data-testid={`unit-card-${unit.id.toLowerCase()}`}
                 className={`flex flex-col rounded-3xl border shadow-xl p-5 sm:p-6 transition-all duration-300 hover:shadow-2xl ${
                   isLight
@@ -599,10 +649,10 @@ export function FleetManagementScreen({
                     </button>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )
           })}
-        </section>
+        </motion.section>
 
         {/* Empty State if filter yields no units */}
         {filteredResponders.length === 0 && (
@@ -626,7 +676,7 @@ export function FleetManagementScreen({
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Detailed Unit Telemetry Inspector Modal */}
       {inspectingUnit && (

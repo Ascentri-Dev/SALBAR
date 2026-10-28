@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { X, Shield, CheckCircle2, Radio, FileText, MapPin, Activity } from 'lucide-react'
 import { useTheme } from '../../context'
 
@@ -66,12 +67,20 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
   ]
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       data-testid="audit-trail-backdrop"
       className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md select-none"
       onClick={onClose}
     >
-      <div
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0, y: 15 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.94, opacity: 0, y: 15 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         data-testid="audit-trail-modal"
         className={`w-full max-w-2xl max-h-[85vh] my-auto flex flex-col rounded-3xl border shadow-2xl overflow-hidden transition-colors ${
           isLight
@@ -230,8 +239,8 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 

@@ -68,9 +68,6 @@ const AnimatedLink = ({ title, id, isActive, onClick }: AnimatedLinkProps) => {
 export function AmbientStatusHeader({
   activeScreen,
   onSelectScreen,
-  activeAlertCount = 4,
-  gatewayStatus = 'online',
-  operatingMode = 'lora-mesh-blackout',
 }: AmbientStatusHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
@@ -88,16 +85,15 @@ export function AmbientStatusHeader({
       <div className="w-full relative">
         {/* Main Skewed Navbar Container */}
         <div className="w-full flex items-center justify-between bg-[var(--bg-surface)]/90 backdrop-blur-2xl border border-[var(--border-subtle)] rounded-sm px-4 sm:px-8 py-2.5 transition-all duration-500 -skew-x-12 shadow-xl shadow-black/15">
-          {/* Left: Brand Logo & Station Badge (Skew inverted) */}
-          <div className="flex-1 flex justify-start items-center gap-3 skew-x-12">
+          {/* Left: Brand Logo (Skew inverted) */}
+          <div className="flex-1 flex justify-start items-center skew-x-12">
             <button
               type="button"
               onClick={() => handleSelectScreen('command-map')}
-              className="font-heading text-sm sm:text-base font-black tracking-tight uppercase group shrink-0 cursor-pointer flex items-center gap-2"
+              className="font-heading text-base sm:text-lg font-black tracking-wider uppercase group shrink-0 cursor-pointer"
             >
-              <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent-primary)] animate-pulse" />
               <span className="text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors">
-                SALBAR <span className="text-[var(--accent-primary)] font-bold text-xs">EOC</span>
+                SALBAR
               </span>
             </button>
           </div>
@@ -119,42 +115,8 @@ export function AmbientStatusHeader({
             ))}
           </nav>
 
-          {/* Right: Ambient Hardware Telemetry & Theme Toggle (Skew inverted) */}
-          <div className="hidden lg:flex flex-1 justify-end items-center gap-3.5 skew-x-12">
-            {/* LoRa Gateway Status */}
-            <span
-              data-testid="status-gateway"
-              className="px-2 py-0.5 rounded-sm bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-secondary)] flex items-center gap-1.5"
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  gatewayStatus === 'online'
-                    ? 'bg-[var(--color-emergency-success)]'
-                    : 'bg-[var(--color-emergency-critical)]'
-                }`}
-              />
-              COM3: {gatewayStatus === 'online' ? 'Online (915 MHz)' : 'Disconnected'}
-            </span>
-
-            {/* Operating Mode */}
-            <span
-              data-testid="status-mode"
-              className="px-2 py-0.5 rounded-sm bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-secondary)]"
-            >
-              {operatingMode === 'lora-mesh-blackout' ? 'LoRa Mesh Outage' : 'Cloud Sync'}
-            </span>
-
-            {/* Active Alerts Pill */}
-            <span
-              data-testid="status-alerts"
-              className="px-2 py-0.5 rounded-sm bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)] text-[11px] font-mono font-semibold"
-            >
-              Alerts: {activeAlertCount}
-            </span>
-
-            <div className="w-px h-4 bg-[var(--border-subtle)]" />
-
-            {/* Light / Dark Theme Toggle */}
+          {/* Right: Theme Toggle (Skew inverted) */}
+          <div className="hidden lg:flex flex-1 justify-end items-center gap-3 skew-x-12">
             <button
               type="button"
               onClick={toggleTheme}
@@ -174,7 +136,7 @@ export function AmbientStatusHeader({
               className="p-1.5 hover:bg-[var(--bg-surface-elevated)] rounded-sm transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               aria-label="Toggle Theme"
             >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
             <button
               type="button"
@@ -208,14 +170,6 @@ export function AmbientStatusHeader({
                     />
                   </div>
                 ))}
-
-                {/* Mobile Telemetry Summary */}
-                <div className="flex items-center justify-between pt-1 font-mono text-[11px] text-[var(--text-secondary)]">
-                  <span>COM3: {gatewayStatus}</span>
-                  <span className="text-[var(--accent-primary)] font-semibold">
-                    {activeAlertCount} Alerts
-                  </span>
-                </div>
               </div>
             </motion.div>
           )}

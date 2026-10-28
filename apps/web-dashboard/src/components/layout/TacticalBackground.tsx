@@ -15,78 +15,64 @@ export function TacticalBackground({ className = '' }: TacticalBackgroundProps) 
       data-testid="tactical-background"
       className={`fixed inset-0 pointer-events-none overflow-hidden select-none z-0 ${className}`.trim()}
     >
-      {/* 1. Tactical Ambient Drift Glow - Warm Accent / Radar Hue */}
+      {/* 1. Ambient Drift Glow - Warm Accent (Smooth ~75px Blur, Visible but Gentle) */}
       <motion.div
         animate={{
-          x: [0, 50, -40, 0],
-          y: [0, -40, 30, 0],
-          scale: [1, 1.15, 0.92, 1],
-          opacity: isLight ? [0.22, 0.35, 0.25, 0.22] : [0.32, 0.48, 0.36, 0.32],
+          x: [0, 45, -35, 0],
+          y: [0, -35, 25, 0],
+          scale: [1, 1.12, 0.94, 1],
+          opacity: isLight ? [0.14, 0.22, 0.16, 0.14] : [0.18, 0.28, 0.20, 0.18],
         }}
         transition={{
           duration: 22,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
-        className="absolute -top-32 -left-32 w-[650px] h-[650px] rounded-full blur-3xl pointer-events-none bg-[radial-gradient(circle,var(--accent-primary)_0%,transparent_70%)]"
+        className="absolute -top-32 -left-32 w-[650px] h-[650px] rounded-full blur-[75px] pointer-events-none bg-[radial-gradient(circle,var(--accent-primary)_0%,transparent_70%)]"
       />
 
-      {/* 2. Tactical Ambient Drift Glow - Cool Navy / Telemetry Hue */}
+      {/* 2. Ambient Drift Glow - Cool Navy / Telemetry (Smooth ~75px Blur, Visible but Gentle) */}
       <motion.div
         animate={{
-          x: [0, -60, 40, 0],
-          y: [0, 45, -35, 0],
-          scale: [1, 0.88, 1.12, 1],
-          opacity: isLight ? [0.18, 0.3, 0.2, 0.18] : [0.35, 0.52, 0.4, 0.35],
+          x: [0, -50, 35, 0],
+          y: [0, 40, -30, 0],
+          scale: [1, 0.9, 1.1, 1],
+          opacity: isLight ? [0.12, 0.20, 0.14, 0.12] : [0.20, 0.32, 0.24, 0.20],
         }}
         transition={{
           duration: 26,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
-        className="absolute -bottom-44 -right-44 w-[750px] h-[750px] rounded-full blur-3xl pointer-events-none bg-[radial-gradient(circle,#0284c7_0%,transparent_70%)]"
+        className="absolute -bottom-40 -right-40 w-[720px] h-[720px] rounded-full blur-[80px] pointer-events-none bg-[radial-gradient(circle,#0284c7_0%,transparent_70%)]"
       />
 
-      {/* 3. Center Subtle Ambient Breather - Indigo / Cyan Wash */}
-      <motion.div
-        animate={{
-          opacity: isLight ? [0.08, 0.15, 0.08] : [0.1, 0.2, 0.1],
-          scale: [0.95, 1.06, 0.95],
-        }}
-        transition={{
-          duration: 18,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[550px] rounded-full blur-3xl pointer-events-none bg-[radial-gradient(ellipse,rgba(99,102,241,0.25)_0%,transparent_70%)]"
-      />
-
-      {/* 4. Soft Vignette Overlay */}
+      {/* 3. Soft Atmospheric Vignette (smoothly frames edges without hiding texture) */}
       <div
         className="absolute inset-0 pointer-events-none transition-colors duration-500"
         style={{
           background: isLight
-            ? 'radial-gradient(ellipse at center, transparent 35%, rgba(241, 245, 249, 0.4) 100%)'
-            : 'radial-gradient(ellipse at center, transparent 35%, rgba(10, 15, 29, 0.4) 100%)',
+            ? 'radial-gradient(ellipse at center, transparent 40%, rgba(241, 245, 249, 0.45) 100%)'
+            : 'radial-gradient(ellipse at center, transparent 40%, rgba(10, 15, 29, 0.5) 100%)',
         }}
       />
 
-      {/* 5. Crisp Tactical Engineering Blueprint Grid with Intersection Points */}
+      {/* 4. Balanced Tactical Blueprint Grid (Crisp 1px Lines + Muted Intersection Pins) */}
       <div
-        className="absolute inset-0 transition-opacity duration-500 pointer-events-none"
+        className="absolute inset-0 pointer-events-none transition-opacity duration-500"
         style={{
           backgroundImage: isLight
             ? `
-              radial-gradient(circle, rgba(234, 88, 12, 0.6) 1.5px, transparent 1.5px),
-              linear-gradient(to right, rgba(100, 116, 139, 0.22) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(100, 116, 139, 0.22) 1px, transparent 1px)
+              radial-gradient(circle, rgba(234, 88, 12, 0.38) 1.2px, transparent 1.2px),
+              linear-gradient(to right, rgba(100, 116, 139, 0.12) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(100, 116, 139, 0.12) 1px, transparent 1px)
             `
             : `
-              radial-gradient(circle, rgba(255, 107, 0, 0.85) 1.5px, transparent 1.5px),
-              linear-gradient(to right, rgba(148, 163, 184, 0.22) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(148, 163, 184, 0.22) 1px, transparent 1px)
+              radial-gradient(circle, rgba(255, 107, 0, 0.48) 1.2px, transparent 1.2px),
+              linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px)
             `,
-          backgroundSize: '36px 36px, 36px 36px, 36px 36px',
+          backgroundSize: '32px 32px, 32px 32px, 32px 32px',
         }}
       />
     </div>

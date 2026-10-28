@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Menu, X, Sun, Moon, ChevronDown } from 'lucide-react'
+import { Menu, X, Sun, Moon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ScreenId, ScreenNavigationItem } from '../../types/navigation'
 import { useTheme } from '../../context'
@@ -86,26 +86,26 @@ export function AmbientStatusHeader({
   return (
     <header
       data-testid="ambient-status-header"
-      className="fixed top-3 sm:top-4 left-0 right-0 z-40 pointer-events-none flex justify-center px-4 md:px-6 select-none"
+      className="fixed top-3 sm:top-4 left-0 right-0 z-40 pointer-events-none flex justify-center px-3 sm:px-6 select-none"
     >
-      <div className="w-full max-w-5xl relative pointer-events-none h-12">
-        {/* Main Floating Rounded Navbar Container */}
+      <div className="w-full max-w-[96%] xl:max-w-7xl relative pointer-events-none h-13 sm:h-14 flex items-center">
+        {/* Full-width Semi-Circular Rounded Navbar Bar */}
         <motion.div
           initial={false}
           animate={{
-            y: isNavbarOpen ? 0 : -80,
+            y: isNavbarOpen ? 0 : -90,
             opacity: isNavbarOpen ? 1 : 0,
           }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full h-full flex items-center justify-between bg-[var(--bg-surface)]/90 backdrop-blur-2xl border border-[var(--border-subtle)] rounded-2xl shadow-2xl shadow-black/25 px-4 sm:px-6 pointer-events-auto"
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full h-full flex items-center justify-between bg-[var(--bg-surface)]/90 backdrop-blur-2xl border border-[var(--border-subtle)] rounded-full shadow-2xl shadow-black/25 px-6 sm:px-10 pointer-events-auto"
         >
-          {/* Left spacer so center links align properly leaving room for the pinned SALBAR logo */}
+          {/* Left spacer so center links align properly leaving room for SALBAR text */}
           <div className="w-28 sm:w-32 shrink-0 pointer-events-none" />
 
           {/* Center: Navigation Links with Animated Roll Effect */}
           <nav
             data-testid="screen-navigation-tabs"
-            className="hidden lg:flex items-center gap-8 xl:gap-12"
+            className="hidden lg:flex items-center gap-8 xl:gap-14"
             aria-label="Operations Screen Switcher"
           >
             {NAV_ITEMS.map((item) => (
@@ -124,52 +124,62 @@ export function AmbientStatusHeader({
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 hover:bg-[var(--bg-surface-elevated)] rounded-xl transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+              className="p-2 hover:bg-[var(--bg-surface-elevated)] rounded-full transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               aria-label="Toggle Theme"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
             </button>
           </div>
 
-          {/* Mobile Toggle Buttons */}
+          {/* Mobile Buttons */}
           <div className="flex items-center gap-2 lg:hidden">
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 hover:bg-[var(--bg-surface-elevated)] rounded-xl transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+              className="p-2 hover:bg-[var(--bg-surface-elevated)] rounded-full transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               aria-label="Toggle Theme"
             >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
             </button>
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] rounded-xl border border-[var(--border-subtle)] cursor-pointer"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] rounded-full border border-[var(--border-subtle)] cursor-pointer"
               aria-label="Toggle Navigation Menu"
             >
-              {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+              {isMobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
             </button>
           </div>
         </motion.div>
 
-        {/* Pinned SALBAR Brand Trigger: Stays at the Exact Same X & Y Position */}
-        <div className="absolute left-0 top-0 h-full z-50 pointer-events-auto flex items-center">
+        {/* Pinned "SALBAR" Text Trigger: Pure Text with Rolling Animation */}
+        <div className="absolute left-6 sm:left-10 top-0 bottom-0 z-50 pointer-events-auto flex items-center">
           <button
             type="button"
             onClick={toggleNavbar}
-            className={`h-full flex items-center gap-2 px-4 sm:px-5 rounded-2xl transition-all duration-300 cursor-pointer font-heading font-black text-base sm:text-lg tracking-wider uppercase select-none ${
-              isNavbarOpen
-                ? 'text-[var(--text-primary)] hover:text-[var(--accent-primary)]'
-                : 'bg-[var(--bg-surface)]/95 backdrop-blur-2xl border border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] shadow-2xl ring-1 ring-[var(--border-subtle)]'
-            }`}
+            className="font-heading relative overflow-hidden group cursor-pointer text-base sm:text-lg font-black tracking-wider uppercase block shrink-0 select-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
             title={isNavbarOpen ? 'Click "SALBAR" to hide navbar' : 'Click "SALBAR" to reveal navbar'}
             aria-label={isNavbarOpen ? 'Hide navbar' : 'Reveal navbar'}
           >
-            <span>SALBAR</span>
-            {!isNavbarOpen && (
-              <ChevronDown size={14} className="text-[var(--accent-primary)] animate-bounce" />
-            )}
+            <span
+              className={`block transition-transform duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+                !isNavbarOpen
+                  ? '-translate-y-full text-[var(--accent-primary)]'
+                  : 'group-hover:-translate-y-full text-[var(--text-primary)]'
+              }`}
+            >
+              SALBAR
+            </span>
+            <span
+              className={`absolute inset-0 block transition-transform duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] text-[var(--accent-primary)] ${
+                !isNavbarOpen
+                  ? 'translate-y-0'
+                  : 'translate-y-full group-hover:translate-y-0'
+              }`}
+            >
+              SALBAR
+            </span>
           </button>
         </div>
 

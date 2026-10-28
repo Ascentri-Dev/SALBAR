@@ -139,24 +139,47 @@ export function KPIStrip({
 
   return (
     <div className={`pointer-events-auto flex flex-col select-none w-60 sm:w-64 ${className}`.trim()}>
-      {/* Header: Orange "METRICS" Title & Circular Close Button */}
+      {/* Header: Orange "METRICS" Title & Circular Close Button (swapped position based on align) */}
       <div className="flex items-center justify-between px-2 mb-2.5">
-        <span className="font-heading font-black text-xs sm:text-sm tracking-widest uppercase text-[var(--accent-primary)]">
-          METRICS
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
-            isLight
-              ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-              : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-          }`}
-          title="Hide Metrics"
-          aria-label="Hide Metrics"
-        >
-          {align === 'right' ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+        {align === 'right' ? (
+          <>
+            <button
+              type="button"
+              onClick={onClose}
+              className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
+                isLight
+                  ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+              }`}
+              title="Hide Metrics"
+              aria-label="Hide Metrics"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <span className="font-heading font-black text-xs sm:text-sm tracking-widest uppercase text-[var(--accent-primary)]">
+              METRICS
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="font-heading font-black text-xs sm:text-sm tracking-widest uppercase text-[var(--accent-primary)]">
+              METRICS
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
+                isLight
+                  ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+              }`}
+              title="Hide Metrics"
+              aria-label="Hide Metrics"
+            >
+              <ChevronLeft size={16} />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Staggered Animated Circular Pill Cards */}
@@ -189,73 +212,38 @@ export function KPIStrip({
               }`}
               title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}
             >
-              {/* High-Visibility Proportional Occupancy Meter Fill Bar */}
+              {/* High-Visibility Proportional Occupancy Meter Fill Bar: Always starts from the left */}
               <div
-                className={`absolute inset-y-0 ${
-                  align === 'right' ? 'right-0' : 'left-0'
-                } rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
+                className={`absolute inset-y-0 left-0 rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
                 style={{ width: `${stat.pct}%` }}
               />
 
-              {align === 'right' ? (
-                <>
-                  {/* Big, Bold Numeric Count on the Left when aligned right */}
-                  <span
-                    className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
-                      stat.tone
-                    } ${stat.pulse ? 'animate-pulse' : ''}`}
-                  >
-                    {stat.value}
-                  </span>
+              {/* Header & Percentage-Only Subheader */}
+              <div className="flex flex-col z-10 min-w-0 text-left">
+                <span
+                  className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
+                    isSelected
+                      ? 'text-[var(--accent-primary)]'
+                      : isLight
+                        ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
+                        : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
+                  }`}
+                >
+                  {stat.label}
+                </span>
+                <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
+                  {stat.pctText}
+                </span>
+              </div>
 
-                  {/* Header & Percentage-Only Subheader on the Right when aligned right */}
-                  <div className="flex flex-col z-10 min-w-0 text-right">
-                    <span
-                      className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
-                        isSelected
-                          ? 'text-[var(--accent-primary)]'
-                          : isLight
-                            ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
-                            : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
-                      }`}
-                    >
-                      {stat.label}
-                    </span>
-                    <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
-                      {stat.pctText}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Header & Percentage-Only Subheader */}
-                  <div className="flex flex-col z-10 min-w-0 text-left">
-                    <span
-                      className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
-                        isSelected
-                          ? 'text-[var(--accent-primary)]'
-                          : isLight
-                            ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
-                            : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
-                      }`}
-                    >
-                      {stat.label}
-                    </span>
-                    <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
-                      {stat.pctText}
-                    </span>
-                  </div>
-
-                  {/* Big, Bold Numeric Count */}
-                  <span
-                    className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
-                      stat.tone
-                    } ${stat.pulse ? 'animate-pulse' : ''}`}
-                  >
-                    {stat.value}
-                  </span>
-                </>
-              )}
+              {/* Big, Bold Numeric Count */}
+              <span
+                className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
+                  stat.tone
+                } ${stat.pulse ? 'animate-pulse' : ''}`}
+              >
+                {stat.value}
+              </span>
             </motion.button>
           )
         })}

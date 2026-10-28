@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Radio, Search, Filter, AlertCircle, CheckCircle2, Clock, MapPin, ChevronRight } from 'lucide-react'
+import { Search, Filter, AlertCircle, CheckCircle2, Clock, MapPin, ChevronRight } from 'lucide-react'
 import type { IncidentReport } from '../../types/cad'
 import { useTheme } from '../../context'
 
@@ -50,16 +50,13 @@ export function IncidentStreamPanel({
           isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/60 border-[var(--border-subtle)]'
         }`}
       >
-        <div className="flex items-center gap-2">
-          <Radio size={15} className="text-[var(--accent-primary)] animate-pulse" />
-          <h2
-            className={`text-xs font-black uppercase tracking-wider font-heading ${
-              isLight ? 'text-slate-900' : 'text-slate-100'
-            }`}
-          >
-            Live Dispatch Queue
-          </h2>
-        </div>
+        <h2
+          className={`text-xs font-black uppercase tracking-wider font-heading ${
+            isLight ? 'text-slate-900' : 'text-slate-100'
+          }`}
+        >
+          Live Dispatch Queue
+        </h2>
         <div className="flex items-center gap-2 font-mono text-[11px]">
           <span className="font-bold px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] font-mono text-[11px]">
             {filteredIncidents.length} / {incidents.length}
@@ -110,7 +107,7 @@ export function IncidentStreamPanel({
       </div>
 
       {/* Incident List Stream */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+      <div className="flex-1 overflow-y-auto salbar-scrollbar p-3 space-y-2.5">
         {filteredIncidents.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center text-xs text-[var(--text-muted)] font-sans">
             <Filter size={22} className="mb-2 opacity-50 text-[var(--accent-primary)]" />

@@ -209,7 +209,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 type="button"
                 onClick={() => setIsKpiOpen(true)}
-                className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-11 w-40 sm:w-44 items-center justify-between px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-9.5 px-3.5 items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
                   isLight
                     ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
@@ -217,10 +217,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 title="Show Metrics"
                 aria-label="Show Metrics"
               >
-                <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)] truncate">
+                <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
                   METRICS
                 </span>
-                <ChevronRight size={16} className="text-[var(--accent-primary)] shrink-0" />
+                <ChevronRight size={14} className="text-[var(--accent-primary)] shrink-0" />
               </motion.button>
             )}
           </AnimatePresence>
@@ -345,11 +345,11 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 isNavbarOpen ? 'top-20' : 'top-3 sm:top-4'
               } z-30 flex flex-col gap-2.5 items-end transition-all duration-300`}
             >
-              {/* Queue Reveal Button: Uniform Pill */}
+              {/* Queue Reveal Button: Compact Pill */}
               <button
                 type="button"
                 onClick={() => setIsQueueOpen(true)}
-                className={`pointer-events-auto flex h-11 w-40 sm:w-44 items-center justify-between px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                className={`pointer-events-auto flex h-9.5 px-3.5 items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
                   isLight
                     ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
@@ -357,13 +357,13 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 title="Show Live Dispatch Queue"
                 aria-label="Show Live Dispatch Queue"
               >
-                <ChevronLeft size={16} className="text-[var(--accent-primary)] shrink-0" />
-                <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)] truncate">
+                <ChevronLeft size={14} className="text-[var(--accent-primary)] shrink-0" />
+                <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
                   QUEUE ({filteredIncidents.length})
                 </span>
               </button>
 
-              {/* Metrics on the Right (Untoggled Uniform Pill or Expanded Right Strip) */}
+              {/* Metrics on the Right (Untoggled Compact Pill or Expanded Right Strip) */}
               <AnimatePresence mode="wait">
                 {!isKpiOpen ? (
                   <motion.button
@@ -374,7 +374,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                     type="button"
                     onClick={() => setIsKpiOpen(true)}
-                    className={`pointer-events-auto flex h-11 w-40 sm:w-44 items-center justify-between px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                    className={`pointer-events-auto flex h-9.5 px-3.5 items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
                       isLight
                         ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                         : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
@@ -382,8 +382,8 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                     title="Show Metrics"
                     aria-label="Show Metrics"
                   >
-                    <ChevronLeft size={16} className="text-[var(--accent-primary)] shrink-0" />
-                    <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)] truncate">
+                    <ChevronLeft size={14} className="text-[var(--accent-primary)] shrink-0" />
+                    <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
                       METRICS
                     </span>
                   </motion.button>

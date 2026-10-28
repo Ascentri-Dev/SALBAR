@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, X, Bot, Cpu, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Send, X, Cpu, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { IncidentReport, FieldResponder } from '../../types/cad'
 import { useTheme } from '../../context'
 
@@ -69,24 +69,21 @@ export function HITLDispatchDrawer({
             : 'bg-[var(--bg-surface-elevated)]/60 border-[var(--border-subtle)]'
         }`}
       >
-        <div className="flex items-center gap-2">
-          <Bot size={16} className="text-[var(--accent-primary)]" />
-          <div>
-            <h3
-              className={`text-xs font-black uppercase tracking-wider font-heading ${
-                isLight ? 'text-slate-900' : 'text-slate-100'
-              }`}
-            >
-              Dispatch Authorization
-            </h3>
-            <span
-              className={`font-mono text-[10px] ${
-                isLight ? 'text-slate-500' : 'text-slate-400'
-              }`}
-            >
-              {incident.id} &bull; {incident.location.name}
-            </span>
-          </div>
+        <div>
+          <h3
+            className={`text-xs font-black uppercase tracking-wider font-heading ${
+              isLight ? 'text-slate-900' : 'text-slate-100'
+            }`}
+          >
+            Dispatch Authorization
+          </h3>
+          <span
+            className={`font-mono text-[10px] ${
+              isLight ? 'text-slate-500' : 'text-slate-400'
+            }`}
+          >
+            {incident.id} &bull; {incident.location.name}
+          </span>
         </div>
         <button
           type="button"
@@ -102,7 +99,7 @@ export function HITLDispatchDrawer({
         </button>
       </div>
 
-      <div className="p-3.5 space-y-3 overflow-y-auto flex-1 font-sans">
+      <div className="p-3.5 space-y-3 overflow-y-auto salbar-scrollbar flex-1 font-sans">
         {/* Civilian Input */}
         <div
           className={`p-3 rounded-2xl border space-y-1 ${

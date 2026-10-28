@@ -79,7 +79,7 @@ const DEFAULT_ARCHIVE_RECORDS: ArchivedIncidentRecord[] = [
 ]
 
 export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenProps) {
-  const { theme } = useTheme()
+  const { theme, isNavbarOpen } = useTheme()
   const isLight = theme === 'light'
 
   const [records] = useState<ArchivedIncidentRecord[]>(DEFAULT_ARCHIVE_RECORDS)
@@ -114,7 +114,9 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
   return (
     <div
       data-testid="screen-incident-archive"
-      className={`screen-incident-archive flex-1 flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto salbar-scrollbar select-none font-sans ${className}`.trim()}
+      className={`screen-incident-archive flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pb-8 overflow-y-auto salbar-scrollbar select-none font-sans transition-[padding] duration-300 ${
+        isNavbarOpen ? 'pt-20 sm:pt-22' : 'pt-4 sm:pt-6'
+      } ${className}`.trim()}
     >
       <div className="max-w-7xl w-full mx-auto space-y-6">
         {/* Screen Header & Export Action Pills */}

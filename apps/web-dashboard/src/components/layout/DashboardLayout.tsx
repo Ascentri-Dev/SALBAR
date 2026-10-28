@@ -29,11 +29,7 @@ export function DashboardLayout({
         activeScreen={activeScreen}
         onSelectScreen={onSelectScreen}
       />
-      <main
-        className={`flex-1 flex flex-col min-h-0 overflow-hidden relative z-10 ${
-          activeScreen === 'command-map' ? 'h-full' : 'pt-20 h-full'
-        }`}
-      >
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative h-full w-full">
         {children}
       </main>
     </div>

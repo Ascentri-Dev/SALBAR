@@ -68,12 +68,12 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
   return (
     <div
       data-testid="audit-trail-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm select-none"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md select-none"
       onClick={onClose}
     >
       <div
         data-testid="audit-trail-modal"
-        className={`w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border shadow-2xl overflow-hidden transition-colors ${
+        className={`w-full max-w-2xl max-h-[85vh] my-auto flex flex-col rounded-3xl border shadow-2xl overflow-hidden transition-colors ${
           isLight
             ? 'bg-white border-slate-300 text-slate-900 shadow-slate-400/40'
             : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/80'
@@ -229,21 +229,6 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
               })}
             </div>
           </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div
-          className={`px-6 py-3.5 border-t flex items-center justify-end shrink-0 ${
-            isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/60 border-[var(--border-subtle)]'
-          }`}
-        >
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
-          >
-            Close Audit Log
-          </button>
         </div>
       </div>
     </div>

@@ -87,7 +87,7 @@ export function FleetManagementScreen({
   onSelectScreen,
   className = '',
 }: FleetManagementScreenProps) {
-  const { theme } = useTheme()
+  const { theme, isNavbarOpen } = useTheme()
   const isLight = theme === 'light'
 
   const [responders, setResponders] = useState<FleetResponderUnit[]>(DEFAULT_FLEET_UNITS)
@@ -196,7 +196,9 @@ export function FleetManagementScreen({
   return (
     <div
       data-testid="screen-fleet-management"
-      className={`screen-fleet-management flex-1 flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto salbar-scrollbar select-none font-sans ${className}`.trim()}
+      className={`screen-fleet-management flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pb-8 overflow-y-auto salbar-scrollbar select-none font-sans transition-[padding] duration-300 ${
+        isNavbarOpen ? 'pt-20 sm:pt-22' : 'pt-4 sm:pt-6'
+      } ${className}`.trim()}
     >
       <div className="max-w-7xl w-full mx-auto space-y-6">
         {/* Screen Header */}

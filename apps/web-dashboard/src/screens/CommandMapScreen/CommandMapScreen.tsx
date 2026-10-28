@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from 'react'
-import { ChevronRight, ChevronLeft, Minimize2 } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Minimize2, Sun, Moon } from 'lucide-react'
 import L from 'leaflet'
 import { TacticalMap, type MapTileType } from '../../components/map/TacticalMap'
 import { KPIStrip, type KpiFilter } from '../../components/kpi/KPIStrip'
 import { IncidentStreamPanel } from '../../components/stream/IncidentStreamPanel'
 import { HITLDispatchDrawer } from '../../components/dispatch/HITLDispatchDrawer'
 import { MapControlsDock } from '../../components/map/MapControlsDock'
+import { useTheme } from '../../context'
 import {
   INITIAL_INCIDENTS,
   INITIAL_RESPONDERS,
@@ -21,6 +22,8 @@ const DEFAULT_CENTER: [number, number] = [10.3157, 123.8854]
 const DEFAULT_ZOOM = 14
 
 export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
+  const { isMapDark, toggleMapDark } = useTheme()
+
   const [incidents, setIncidents] = useState<IncidentReport[]>(INITIAL_INCIDENTS)
   const [responders, setResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
   const [selectedIncident, setSelectedIncident] = useState<IncidentReport | null>(null)
@@ -86,7 +89,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
       setIsFocusMode(true)
       setIsKpiOpen(false)
       setIsQueueOpen(false)
-      setIsControlsOpen(true) // Keep controls dock available to exit focus mode
+      setIsControlsOpen(true)
     }
   }, [isFocusMode])
 
@@ -164,13 +167,14 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           }}
           onApproveDispatch={handleApproveDispatch}
           mapTileType={mapTileType}
+          isMapDark={isMapDark}
           mapRef={mapRef}
         />
       </div>
 
       {/* 2. Floating Overlays (Z-20) */}
       <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-        {/* 2.a Left Panel: Vertically Stacked KPI Priority Filter (10-15% width) */}
+        {/* 2.a Left Panel: Vertically Stacked KPI Priority Filter */}
         <div
           className={`pointer-events-auto absolute left-4 top-20 z-20 transition-all duration-500 ease-out ${
             isKpiOpen && !isFocusMode
@@ -214,6 +218,8 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
             onLocate={handleLocate}
             mapTileType={mapTileType}
             onToggleTileType={handleToggleTileType}
+            isMapDark={isMapDark}
+            onToggleMapDark={toggleMapDark}
             isFocusMode={isFocusMode}
             onToggleFocusMode={toggleFocusMode}
             onClose={() => setIsControlsOpen(false)}
@@ -292,16 +298,36 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           </button>
         )}
 
-        {/* Exit Focus Mode Floating Pill (When in Focus Mode) */}
+        {/* Bottom-Right Map Dark Mode Control (Dedicated Floating Button when Queue is minimized or in focus) */}
+        {(!isQueueOpen || isFocusMode) && (
+          <div className="pointer-events-auto absolute bottom-4 right-4 z-30">
+            <button
+              type="button"
+              onClick={toggleMapDark}
+              className={`flex h-10 items-center gap-1.5 px-3 rounded-full border shadow-2xl backdrop-blur-md transition-all font-mono text-xs font-bold cursor-pointer ${
+                isMapDark
+                  ? 'bg-[var(--bg-surface)]/90 border-[var(--border-subtle)] text-amber-400 hover:text-white hover:bg-[var(--accent-primary)]'
+                  : 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
+              }`}
+              title={isMapDark ? 'Map: Dark Mode (Click for Light Mode)' : 'Map: Light Mode (Click for Dark Mode)'}
+              aria-label="Toggle Map Dark Mode"
+            >
+              {isMapDark ? <Sun size={15} /> : <Moon size={15} />}
+              <span className="text-[10px] uppercase">{isMapDark ? 'Dark' : 'Light'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Exit Focus Mode Floating Pill */}
         {isFocusMode && (
           <div className="pointer-events-auto absolute top-20 left-1/2 -translate-x-1/2 z-30">
             <button
               type="button"
               onClick={toggleFocusMode}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-sm bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider shadow-2xl backdrop-blur-md hover:bg-[var(--accent-hover)] transition-colors cursor-pointer -skew-x-6"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider shadow-2xl backdrop-blur-md hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
             >
-              <Minimize2 size={14} className="skew-x-6" />
-              <span className="skew-x-6">Exit Tactical Focus</span>
+              <Minimize2 size={14} />
+              <span>Exit Tactical Focus</span>
             </button>
           </div>
         )}

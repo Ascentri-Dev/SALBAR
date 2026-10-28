@@ -183,3 +183,8 @@ body {
 .leaflet-control-zoom {
   display: none !important;
 }
+
+/* Tactical Dark Map Filter */
+.dark-map .leaflet-tile-pane {
+  filter: brightness(0.65) invert(1) contrast(2.8) hue-rotate(200deg) saturate(0.3) brightness(0.75);
+}

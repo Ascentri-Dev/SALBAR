@@ -11,6 +11,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return 'dark'
   })
 
+  const [isMapDark, setIsMapDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('salbar-map-dark')
+      if (saved !== null) return saved === 'true'
+    }
+    return true
+  })
+
   useEffect(() => {
     const root = document.documentElement
     if (theme === 'light') {
@@ -23,12 +31,32 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('salbar-theme', theme)
   }, [theme])
 
+  useEffect(() => {
+    localStorage.setItem('salbar-map-dark', String(isMapDark))
+  }, [isMapDark])
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
   }
 
+  const toggleMapDark = () => {
+    setIsMapDark((prev) => !prev)
+  }
+
+  const setMapDark = (dark: boolean) => {
+    setIsMapDark(dark)
+  }
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        toggleTheme,
+        isMapDark,
+        toggleMapDark,
+        setMapDark,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   )

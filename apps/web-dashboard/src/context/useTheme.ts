@@ -8,6 +8,9 @@ export function useTheme(): ThemeContextType {
     return {
       theme: 'dark',
       toggleTheme: () => {},
+      isMapDark: true,
+      toggleMapDark: () => {},
+      setMapDark: () => {},
     }
   }
   return context

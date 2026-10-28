@@ -22,6 +22,7 @@ export interface TacticalMapProps {
   onSelectIncident: (incidentId: string) => void
   onApproveDispatch: (incidentId: string, unitId: string) => void
   mapTileType?: MapTileType
+  isMapDark?: boolean
   className?: string
   mapRef?: React.RefObject<L.Map | null>
 }
@@ -116,6 +117,7 @@ export function TacticalMap({
   onSelectIncident,
   onApproveDispatch,
   mapTileType = 'standard',
+  isMapDark = true,
   className = '',
   mapRef,
 }: TacticalMapProps) {
@@ -143,7 +145,11 @@ export function TacticalMap({
   }, [selectedIncidentId])
 
   return (
-    <div className={`relative w-full h-full min-h-[300px] overflow-hidden ${className}`}>
+    <div
+      className={`relative w-full h-full min-h-[300px] overflow-hidden transition-colors duration-500 ${
+        isMapDark ? 'dark-map' : ''
+      } ${className}`.trim()}
+    >
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}

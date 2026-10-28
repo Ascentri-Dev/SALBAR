@@ -1,4 +1,4 @@
-import { Plus, Minus, Crosshair, Layers, Maximize2, Minimize2, ChevronLeft } from 'lucide-react'
+import { Plus, Minus, Crosshair, Layers, Maximize2, Minimize2, ChevronLeft, Sun, Moon } from 'lucide-react'
 import type { MapTileType } from './TacticalMap'
 
 export interface MapControlsDockProps {
@@ -7,6 +7,8 @@ export interface MapControlsDockProps {
   onLocate: () => void
   mapTileType: MapTileType
   onToggleTileType: () => void
+  isMapDark: boolean
+  onToggleMapDark: () => void
   isFocusMode: boolean
   onToggleFocusMode: () => void
   onClose: () => void
@@ -19,6 +21,8 @@ export function MapControlsDock({
   onLocate,
   mapTileType,
   onToggleTileType,
+  isMapDark,
+  onToggleMapDark,
   isFocusMode,
   onToggleFocusMode,
   onClose,
@@ -84,7 +88,7 @@ export function MapControlsDock({
 
       <div className="w-px h-6 bg-[var(--border-subtle)] my-auto mx-0.5" />
 
-      {/* Map Style Cycle: 1 vs 2 */}
+      {/* Map Tile Style Toggle (Standard vs Humanitarian OSM) */}
       <button
         type="button"
         onClick={onToggleTileType}
@@ -104,6 +108,27 @@ export function MapControlsDock({
         <span className="font-mono text-[10px] font-bold skew-x-6">
           {mapTileType === 'humanitarian' ? '2' : '1'}
         </span>
+      </button>
+
+      <div className="w-px h-6 bg-[var(--border-subtle)] my-auto mx-0.5" />
+
+      {/* Map Dark / Light Mode Toggle */}
+      <button
+        type="button"
+        onClick={onToggleMapDark}
+        title={isMapDark ? 'Map: Dark Mode (Click for Light Mode)' : 'Map: Light Mode (Click for Dark Mode)'}
+        aria-label="Toggle Map Dark Mode"
+        className={`p-2 sm:p-2.5 backdrop-blur-md border rounded-sm transition-all shadow-md active:scale-95 -skew-x-6 cursor-pointer flex items-center justify-center ${
+          isMapDark
+            ? 'bg-[var(--bg-surface)]/90 border-[var(--border-subtle)] text-amber-400 hover:bg-[var(--accent-primary)] hover:text-white'
+            : 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
+        }`}
+      >
+        {isMapDark ? (
+          <Sun className="w-4 h-4 skew-x-6" />
+        ) : (
+          <Moon className="w-4 h-4 skew-x-6" />
+        )}
       </button>
 
       <div className="w-px h-6 bg-[var(--border-subtle)] my-auto mx-0.5" />

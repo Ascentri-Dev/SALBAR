@@ -32,11 +32,12 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('ALL')
 
   const [mapTileType, setMapTileType] = useState<MapTileType>('standard')
-  const [isKpiOpen, setIsKpiOpen] = useState(true)
+  const [isKpiOpen, setIsKpiOpen] = useState(false)
   const [isControlsOpen, setIsControlsOpen] = useState(true)
-  const [isQueueOpen, setIsQueueOpen] = useState(true)
+  const [isQueueOpen, setIsQueueOpen] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
 
+  const prevPanelStateRef = useRef({ kpi: false, queue: false })
   const mapRef = useRef<L.Map | null>(null)
 
   // Filter incidents based on active KPI filter
@@ -85,17 +86,18 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
     if (isFocusMode) {
       setIsFocusMode(false)
       setIsNavbarOpen(true)
-      setIsKpiOpen(true)
+      setIsKpiOpen(prevPanelStateRef.current.kpi)
       setIsControlsOpen(true)
-      setIsQueueOpen(true)
+      setIsQueueOpen(prevPanelStateRef.current.queue)
     } else {
+      prevPanelStateRef.current = { kpi: isKpiOpen, queue: isQueueOpen }
       setIsFocusMode(true)
       setIsNavbarOpen(false)
       setIsKpiOpen(false)
       setIsControlsOpen(false)
       setIsQueueOpen(false)
     }
-  }, [isFocusMode, setIsNavbarOpen])
+  }, [isFocusMode, isKpiOpen, isQueueOpen, setIsNavbarOpen])
 
   // Approve dispatch action
   const handleApproveDispatch = (incidentId: string, unitId: string) => {
@@ -178,45 +180,51 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
 
       {/* 2. Floating Overlays (Z-20) */}
       <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-        {/* 2.a Left Panel: Staggered Animated Vertically Stacked Circular Pill KPI Filter */}
-        <AnimatePresence>
-          {isKpiOpen && !isFocusMode && (
-            <div className="pointer-events-auto absolute left-3 sm:left-5 top-20 z-20">
-              <KPIStrip
-                incidents={incidents}
-                activeFilter={kpiFilter}
-                onFilterChange={setKpiFilter}
-                onClose={() => setIsKpiOpen(false)}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Reveal KPI Filter Button when Minimized: Circular Pill Enclosing the word "METRICS" */}
-        <AnimatePresence>
-          {!isKpiOpen && !isFocusMode && (
-            <motion.button
-              initial={{ x: -20, opacity: 0, scale: 0.92 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{ x: -20, opacity: 0, scale: 0.92 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              type="button"
-              onClick={() => setIsKpiOpen(true)}
-              className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-11 items-center gap-2 px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none ${
-                isLight
-                  ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
-              }`}
-              title="Show Metrics"
-              aria-label="Show Metrics"
-            >
-              <ChevronRight size={16} className="text-[var(--accent-primary)]" />
-              <span className="font-heading font-black text-xs tracking-wider uppercase text-[var(--accent-primary)]">
-                METRICS
-              </span>
-            </motion.button>
-          )}
-        </AnimatePresence>
+        {/* 2.a Left Panel: KPI Filter / Trigger (Active only when Queue is open on the right) */}
+        {isQueueOpen && !isFocusMode && (
+          <AnimatePresence mode="wait">
+            {isKpiOpen ? (
+              <motion.div
+                key="left-kpi-strip"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="pointer-events-auto absolute left-3 sm:left-5 top-20 z-20"
+              >
+                <KPIStrip
+                  incidents={incidents}
+                  activeFilter={kpiFilter}
+                  onFilterChange={setKpiFilter}
+                  onClose={() => setIsKpiOpen(false)}
+                  align="left"
+                />
+              </motion.div>
+            ) : (
+              <motion.button
+                key="left-kpi-pill"
+                initial={{ x: -20, opacity: 0, scale: 0.92 }}
+                animate={{ x: 0, opacity: 1, scale: 1 }}
+                exit={{ x: -20, opacity: 0, scale: 0.92 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                type="button"
+                onClick={() => setIsKpiOpen(true)}
+                className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-11 w-40 sm:w-44 items-center justify-between px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                  isLight
+                    ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+                }`}
+                title="Show Metrics"
+                aria-label="Show Metrics"
+              >
+                <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)] truncate">
+                  METRICS
+                </span>
+                <ChevronRight size={16} className="text-[var(--accent-primary)] shrink-0" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        )}
 
         {/* 2.b Bottom-Left: Tactical Map Controls Dock or Minimized / Focus Action */}
         <div className="pointer-events-auto absolute bottom-4 left-3 sm:left-5 z-30 h-13 sm:h-14 flex items-center">
@@ -325,31 +333,80 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           </div>
         </div>
 
-        {/* Reveal Queue Button when Minimized: Circular Pill */}
+        {/* Right Stack: Uniform Pills (Queue + Metrics) or Expanded Right KPI Strip when Queue is Untoggled */}
         <AnimatePresence>
           {!isQueueOpen && !isFocusMode && (
-            <motion.button
-              initial={{ x: 20, opacity: 0, scale: 0.92 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{ x: 20, opacity: 0, scale: 0.92 }}
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 20, opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              type="button"
-              onClick={() => setIsQueueOpen(true)}
-              className={`pointer-events-auto absolute right-3 sm:right-5 ${
+              className={`pointer-events-none absolute right-3 sm:right-5 ${
                 isNavbarOpen ? 'top-20' : 'top-3 sm:top-4'
-              } z-30 flex h-11 items-center gap-2 px-4 rounded-full border shadow-2xl transition-all duration-300 cursor-pointer select-none ${
-                isLight
-                  ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
-              }`}
-              title="Show Live Dispatch Queue"
-              aria-label="Show Live Dispatch Queue"
+              } z-30 flex flex-col gap-2.5 items-end transition-all duration-300`}
             >
-              <ChevronLeft size={16} className="text-[var(--accent-primary)]" />
-              <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
-                QUEUE ({filteredIncidents.length})
-              </span>
-            </motion.button>
+              {/* Queue Reveal Button: Uniform Pill */}
+              <button
+                type="button"
+                onClick={() => setIsQueueOpen(true)}
+                className={`pointer-events-auto flex h-11 w-40 sm:w-44 items-center justify-between px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                  isLight
+                    ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+                }`}
+                title="Show Live Dispatch Queue"
+                aria-label="Show Live Dispatch Queue"
+              >
+                <ChevronLeft size={16} className="text-[var(--accent-primary)] shrink-0" />
+                <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)] truncate">
+                  QUEUE ({filteredIncidents.length})
+                </span>
+              </button>
+
+              {/* Metrics on the Right (Untoggled Uniform Pill or Expanded Right Strip) */}
+              <AnimatePresence mode="wait">
+                {!isKpiOpen ? (
+                  <motion.button
+                    key="right-kpi-pill"
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    type="button"
+                    onClick={() => setIsKpiOpen(true)}
+                    className={`pointer-events-auto flex h-11 w-40 sm:w-44 items-center justify-between px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                      isLight
+                        ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+                    }`}
+                    title="Show Metrics"
+                    aria-label="Show Metrics"
+                  >
+                    <ChevronLeft size={16} className="text-[var(--accent-primary)] shrink-0" />
+                    <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)] truncate">
+                      METRICS
+                    </span>
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="right-kpi-strip"
+                    initial={{ x: 35, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: 35, opacity: 0 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="pointer-events-auto"
+                  >
+                    <KPIStrip
+                      incidents={incidents}
+                      activeFilter={kpiFilter}
+                      onFilterChange={setKpiFilter}
+                      onClose={() => setIsKpiOpen(false)}
+                      align="right"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

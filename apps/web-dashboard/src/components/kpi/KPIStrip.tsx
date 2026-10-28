@@ -1,5 +1,5 @@
-import { ChevronDown } from 'lucide-react'
-import { motion, AnimatePresence, type Variants } from 'framer-motion'
+import { ChevronLeft } from 'lucide-react'
+import { motion, type Variants } from 'framer-motion'
 import type { IncidentReport } from '../../types/cad'
 import { useTheme } from '../../context'
 
@@ -9,8 +9,7 @@ export interface KPIStripProps {
   incidents: IncidentReport[]
   activeFilter: KpiFilter
   onFilterChange: (filter: KpiFilter) => void
-  isOpen: boolean
-  onToggleOpen: () => void
+  onClose: () => void
   className?: string
 }
 
@@ -52,8 +51,7 @@ export function KPIStrip({
   incidents,
   activeFilter,
   onFilterChange,
-  isOpen,
-  onToggleOpen,
+  onClose,
   className = '',
 }: KPIStripProps) {
   const { theme } = useTheme()
@@ -138,100 +136,92 @@ export function KPIStrip({
 
   return (
     <div className={`pointer-events-auto flex flex-col select-none w-60 sm:w-64 ${className}`.trim()}>
-      {/* Unified "METRICS" Toggle Button in Safety Orange */}
-      <button
-        type="button"
-        onClick={onToggleOpen}
-        className={`h-11 flex items-center justify-between gap-2.5 px-5 rounded-full border shadow-xl backdrop-blur-md transition-all cursor-pointer select-none group ${
-          isLight
-            ? 'bg-white border-slate-300 hover:border-[var(--accent-primary)]'
-            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] hover:border-[var(--accent-primary)] shadow-black/40'
-        }`}
-        title={isOpen ? 'Click "METRICS" to collapse' : 'Click "METRICS" to expand'}
-        aria-label={isOpen ? 'Collapse Metrics' : 'Expand Metrics'}
-      >
-        <span className="font-heading font-black text-xs sm:text-sm tracking-widest uppercase text-[var(--accent-primary)] group-hover:text-[var(--accent-hover)] transition-colors">
+      {/* Header: Orange "METRICS" Title & Circular Back Button */}
+      <div className="flex items-center justify-between px-2 mb-2.5">
+        <span className="font-heading font-black text-xs sm:text-sm tracking-widest uppercase text-[var(--accent-primary)]">
           METRICS
         </span>
-        <motion.span
-          animate={{ rotate: isOpen ? 0 : -90 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[var(--accent-primary)] group-hover:text-[var(--accent-hover)] transition-colors"
+        <button
+          type="button"
+          onClick={onClose}
+          className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
+            isLight
+              ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+              : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+          }`}
+          title="Hide Metrics"
+          aria-label="Hide Metrics"
         >
-          <ChevronDown size={16} />
-        </motion.span>
-      </button>
+          <ChevronLeft size={16} />
+        </button>
+      </div>
 
       {/* Slower Staggered Animated Circular Pill Cards */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            exit="exit"
-            className="flex flex-col gap-2.5 mt-2.5"
-          >
-            {kpiStats.map((stat) => {
-              const isSelected = activeFilter === stat.id
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        exit="exit"
+        className="flex flex-col gap-2.5"
+      >
+        {kpiStats.map((stat) => {
+          const isSelected = activeFilter === stat.id
 
-              return (
-                <motion.button
-                  key={stat.id}
-                  variants={cardVariants}
-                  type="button"
-                  onClick={() => onFilterChange(stat.id)}
-                  className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full border px-5 sm:px-6 shadow-xl transition-all duration-300 cursor-pointer text-left ${
-                    stat.border
-                  } ${
-                    isLight
-                      ? isSelected
-                        ? 'ring-2 ring-[var(--accent-primary)] bg-white border-[var(--accent-primary)] shadow-md'
-                        : 'bg-white hover:border-[var(--accent-primary)]'
-                      : isSelected
-                        ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] border-[var(--accent-primary)] shadow-md shadow-[var(--accent-primary)]/20'
-                        : 'bg-[var(--bg-surface)] hover:border-[var(--accent-primary)]'
+          return (
+            <motion.button
+              key={stat.id}
+              variants={cardVariants}
+              type="button"
+              onClick={() => onFilterChange(stat.id)}
+              className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full border px-5 sm:px-6 shadow-xl transition-all duration-300 cursor-pointer text-left ${
+                stat.border
+              } ${
+                isLight
+                  ? isSelected
+                    ? 'ring-2 ring-[var(--accent-primary)] bg-white border-[var(--accent-primary)] shadow-md'
+                    : 'bg-white hover:border-[var(--accent-primary)]'
+                  : isSelected
+                    ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] border-[var(--accent-primary)] shadow-md shadow-[var(--accent-primary)]/20'
+                    : 'bg-[var(--bg-surface)] hover:border-[var(--accent-primary)]'
+              }`}
+              title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}
+            >
+              {/* High-Visibility Proportional Occupancy Meter Fill Bar */}
+              <div
+                className={`absolute inset-y-0 left-0 rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
+                style={{ width: `${stat.pct}%` }}
+              />
+
+              {/* Header & Percentage-Only Subheader */}
+              <div className="flex flex-col z-10 min-w-0">
+                <span
+                  className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
+                    isSelected
+                      ? 'text-[var(--accent-primary)]'
+                      : isLight
+                        ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
+                        : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
                   }`}
-                  title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}
                 >
-                  {/* High-Visibility Proportional Occupancy Meter Fill Bar */}
-                  <div
-                    className={`absolute inset-y-0 left-0 rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
-                    style={{ width: `${stat.pct}%` }}
-                  />
+                  {stat.label}
+                </span>
+                <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
+                  {stat.pctText}
+                </span>
+              </div>
 
-                  {/* Header & Percentage-Only Subheader */}
-                  <div className="flex flex-col z-10 min-w-0">
-                    <span
-                      className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
-                        isSelected
-                          ? 'text-[var(--accent-primary)]'
-                          : isLight
-                            ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
-                            : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
-                      }`}
-                    >
-                      {stat.label}
-                    </span>
-                    <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
-                      {stat.pctText}
-                    </span>
-                  </div>
-
-                  {/* Big, Bold Numeric Count */}
-                  <span
-                    className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
-                      stat.tone
-                    } ${stat.pulse ? 'animate-pulse' : ''}`}
-                  >
-                    {stat.value}
-                  </span>
-                </motion.button>
-              )
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {/* Big, Bold Numeric Count */}
+              <span
+                className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
+                  stat.tone
+                } ${stat.pulse ? 'animate-pulse' : ''}`}
+              >
+                {stat.value}
+              </span>
+            </motion.button>
+          )
+        })}
+      </motion.div>
     </div>
   )
 }

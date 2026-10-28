@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
-import { ChevronLeft, Minimize2, Sun, Moon } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Minimize2, Sun, Moon } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import L from 'leaflet'
 import { TacticalMap, type MapTileType } from '../../components/map/TacticalMap'
 import { KPIStrip, type KpiFilter } from '../../components/kpi/KPIStrip'
@@ -22,7 +23,8 @@ const DEFAULT_CENTER: [number, number] = [10.3157, 123.8854]
 const DEFAULT_ZOOM = 14
 
 export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
-  const { isMapDark, toggleMapDark } = useTheme()
+  const { theme, isMapDark, toggleMapDark } = useTheme()
+  const isLight = theme === 'light'
 
   const [incidents, setIncidents] = useState<IncidentReport[]>(INITIAL_INCIDENTS)
   const [responders, setResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
@@ -174,24 +176,49 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
 
       {/* 2. Floating Overlays (Z-20) */}
       <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-        {/* 2.a Left Panel: Unified METRICS Pill & Staggered Circular KPI Filter */}
-        <div
-          className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-20 transition-all duration-300 ${
-            isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          }`}
-        >
-          <KPIStrip
-            incidents={incidents}
-            activeFilter={kpiFilter}
-            onFilterChange={setKpiFilter}
-            isOpen={isKpiOpen}
-            onToggleOpen={() => setIsKpiOpen((prev) => !prev)}
-          />
-        </div>
+        {/* 2.a Left Panel: Staggered Animated Vertically Stacked Circular Pill KPI Filter */}
+        <AnimatePresence>
+          {isKpiOpen && !isFocusMode && (
+            <div className="pointer-events-auto absolute left-3 sm:left-5 top-20 z-20">
+              <KPIStrip
+                incidents={incidents}
+                activeFilter={kpiFilter}
+                onFilterChange={setKpiFilter}
+                onClose={() => setIsKpiOpen(false)}
+              />
+            </div>
+          )}
+        </AnimatePresence>
 
-        {/* 2.b Bottom-Left: Compact Icon-Only Tactical Map Controls Dock */}
+        {/* Reveal KPI Filter Button when Minimized: Circular Pill Enclosing the word "METRICS" */}
+        <AnimatePresence>
+          {!isKpiOpen && !isFocusMode && (
+            <motion.button
+              initial={{ x: -20, opacity: 0, scale: 0.92 }}
+              animate={{ x: 0, opacity: 1, scale: 1 }}
+              exit={{ x: -20, opacity: 0, scale: 0.92 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              type="button"
+              onClick={() => setIsKpiOpen(true)}
+              className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-11 items-center gap-2 px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none ${
+                isLight
+                  ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+              }`}
+              title="Show Metrics"
+              aria-label="Show Metrics"
+            >
+              <ChevronRight size={16} className="text-[var(--accent-primary)]" />
+              <span className="font-heading font-black text-xs tracking-wider uppercase text-[var(--accent-primary)]">
+                METRICS
+              </span>
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* 2.b Bottom-Left: Circular Icon-Only Tactical Map Controls Dock */}
         <div
-          className={`pointer-events-auto absolute bottom-4 left-4 z-30 transition-all duration-500 ease-out ${
+          className={`pointer-events-auto absolute bottom-4 left-3 sm:left-5 z-30 transition-all duration-500 ease-out ${
             isControlsOpen
               ? 'translate-x-0 opacity-100'
               : '-translate-x-[calc(100%+2rem)] opacity-0 pointer-events-none'
@@ -211,30 +238,34 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           />
         </div>
 
-        {/* Reveal Map Controls Button when Minimized */}
+        {/* Reveal Map Controls Button when Minimized: Circular Pill Icon Button */}
         {!isControlsOpen && (
           <button
             type="button"
             onClick={() => setIsControlsOpen(true)}
-            className="pointer-events-auto absolute left-0 bottom-4 z-30 flex h-10 w-10 items-center justify-center border border-l-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] shadow-lg backdrop-blur-md transition-colors rounded-r-sm cursor-pointer"
+            className={`pointer-events-auto absolute left-3 sm:left-5 bottom-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border shadow-2xl transition-all cursor-pointer ${
+              isLight
+                ? 'bg-white border-slate-300 text-slate-800 hover:text-[var(--accent-primary)]'
+                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-200 hover:text-[var(--accent-primary)] shadow-black/40'
+            }`}
             title="Show Map Controls"
             aria-label="Show Map Controls"
           >
-            <span className="text-sm font-bold">&gt;</span>
+            <ChevronRight size={18} />
           </button>
         )}
 
         {/* 2.c Right Panel: Live CAD Dispatch Queue & HITL Authorization Drawer */}
         <div
           data-testid="incident-stream-panel"
-          className={`pointer-events-auto absolute right-4 top-20 bottom-4 z-20 w-[340px] lg:w-[400px] flex flex-col transition-transform duration-500 ease-out ${
+          className={`pointer-events-auto absolute right-3 sm:right-5 top-20 bottom-4 z-20 w-[340px] lg:w-[400px] flex flex-col transition-transform duration-500 ease-out ${
             isQueueOpen && !isFocusMode
               ? 'translate-x-0 opacity-100'
               : 'translate-x-[calc(100%+2rem)] opacity-0 pointer-events-none'
           }`}
         >
-          <div className="relative h-full flex flex-col min-h-0 gap-2">
-            {/* Top segment: Live Queue Feed */}
+          <div className="relative h-full flex flex-col min-h-0 gap-2.5">
+            {/* Top segment: Live Queue Feed with Circular Pill Styling */}
             <div
               className={`transition-all duration-300 overflow-hidden ${
                 selectedIncident ? 'h-1/2 min-h-[220px]' : 'h-full'
@@ -267,25 +298,35 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           </div>
         </div>
 
-        {/* Reveal Queue Button when Minimized */}
-        {!isQueueOpen && !isFocusMode && (
-          <button
-            type="button"
-            onClick={() => setIsQueueOpen(true)}
-            className="pointer-events-auto absolute right-0 top-20 z-30 flex h-10 px-2.5 items-center gap-1.5 border border-r-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 text-xs font-mono font-bold text-[var(--accent-primary)] shadow-lg backdrop-blur-md transition-colors hover:text-white hover:bg-[var(--accent-primary)] rounded-l-sm cursor-pointer"
-            title="Show Live Dispatch Queue"
-            aria-label="Show Live Dispatch Queue"
-          >
-            <ChevronLeft size={16} />
-            <span className="text-[10px] uppercase tracking-wider">
-              Queue ({filteredIncidents.length})
-            </span>
-          </button>
-        )}
+        {/* Reveal Queue Button when Minimized: Circular Pill */}
+        <AnimatePresence>
+          {!isQueueOpen && !isFocusMode && (
+            <motion.button
+              initial={{ x: 20, opacity: 0, scale: 0.92 }}
+              animate={{ x: 0, opacity: 1, scale: 1 }}
+              exit={{ x: 20, opacity: 0, scale: 0.92 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              type="button"
+              onClick={() => setIsQueueOpen(true)}
+              className={`pointer-events-auto absolute right-3 sm:right-5 top-20 z-30 flex h-11 items-center gap-2 px-4 rounded-full border shadow-2xl transition-all cursor-pointer select-none ${
+                isLight
+                  ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+              }`}
+              title="Show Live Dispatch Queue"
+              aria-label="Show Live Dispatch Queue"
+            >
+              <ChevronLeft size={16} className="text-[var(--accent-primary)]" />
+              <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
+                QUEUE ({filteredIncidents.length})
+              </span>
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         {/* Bottom-Right Map Dark Mode Control */}
         {(!isQueueOpen || isFocusMode) && (
-          <div className="pointer-events-auto absolute bottom-4 right-4 z-30">
+          <div className="pointer-events-auto absolute bottom-4 right-3 sm:right-5 z-30">
             <button
               type="button"
               onClick={toggleMapDark}

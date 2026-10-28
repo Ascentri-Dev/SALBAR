@@ -1,5 +1,6 @@
 import { Plus, Minus, Crosshair, Layers, Maximize2, Minimize2, ChevronLeft, Sun, Moon } from 'lucide-react'
 import type { MapTileType } from './TacticalMap'
+import { useTheme } from '../../context'
 
 export interface MapControlsDockProps {
   onZoomIn: () => void
@@ -28,9 +29,16 @@ export function MapControlsDock({
   onClose,
   className = '',
 }: MapControlsDockProps) {
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
+
   return (
     <div
-      className={`pointer-events-auto flex items-center gap-1 sm:gap-1.5 bg-[var(--bg-surface)]/95 backdrop-blur-xl border border-[var(--border-subtle)] rounded-sm p-1.5 shadow-2xl text-[var(--text-primary)] select-none ${className}`.trim()}
+      className={`pointer-events-auto flex items-center gap-1.5 sm:gap-2 rounded-full p-2 shadow-2xl select-none border transition-colors duration-300 ${
+        isLight
+          ? 'bg-white border-slate-300 shadow-slate-300/40 text-slate-900'
+          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] shadow-black/50 text-slate-100'
+      } ${className}`.trim()}
     >
       {/* Zoom In */}
       <button
@@ -38,9 +46,13 @@ export function MapControlsDock({
         onClick={onZoomIn}
         title="Zoom In"
         aria-label="Zoom In"
-        className="p-2 sm:p-2.5 bg-[var(--bg-surface)]/90 backdrop-blur-md border border-[var(--border-subtle)] rounded-sm text-[var(--text-primary)] hover:bg-[var(--accent-primary)] hover:text-white transition-all shadow-md active:scale-95 -skew-x-6 cursor-pointer flex items-center justify-center"
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer ${
+          isLight
+            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
+            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
+        }`}
       >
-        <Plus className="w-4 h-4 skew-x-6" />
+        <Plus size={16} />
       </button>
 
       {/* Zoom Out */}
@@ -49,12 +61,16 @@ export function MapControlsDock({
         onClick={onZoomOut}
         title="Zoom Out"
         aria-label="Zoom Out"
-        className="p-2 sm:p-2.5 bg-[var(--bg-surface)]/90 backdrop-blur-md border border-[var(--border-subtle)] rounded-sm text-[var(--text-primary)] hover:bg-[var(--accent-primary)] hover:text-white transition-all shadow-md active:scale-95 -skew-x-6 cursor-pointer flex items-center justify-center"
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer ${
+          isLight
+            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
+            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
+        }`}
       >
-        <Minus className="w-4 h-4 skew-x-6" />
+        <Minus size={16} />
       </button>
 
-      <div className="w-px h-6 bg-[var(--border-subtle)] my-auto mx-0.5" />
+      <div className={`w-px h-5 my-auto ${isLight ? 'bg-slate-200' : 'bg-[var(--border-subtle)]'}`} />
 
       {/* Locate Me (GPS) */}
       <button
@@ -62,9 +78,13 @@ export function MapControlsDock({
         onClick={onLocate}
         title="Locate Me (GPS)"
         aria-label="Locate Me"
-        className="p-2 sm:p-2.5 bg-[var(--bg-surface)]/90 backdrop-blur-md border border-[var(--border-subtle)] rounded-sm text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white transition-all shadow-md active:scale-95 -skew-x-6 cursor-pointer flex items-center justify-center"
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer ${
+          isLight
+            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-[var(--accent-primary)]'
+            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-[var(--accent-primary)]'
+        }`}
       >
-        <Crosshair className="w-4 h-4 skew-x-6" />
+        <Crosshair size={16} />
       </button>
 
       {/* Focus Mode Toggle */}
@@ -73,22 +93,20 @@ export function MapControlsDock({
         onClick={onToggleFocusMode}
         title={isFocusMode ? 'Exit Focus Mode' : 'Focus Tactical Map'}
         aria-label="Toggle Focus Mode"
-        className={`p-2 sm:p-2.5 backdrop-blur-md border rounded-sm transition-all shadow-md active:scale-95 -skew-x-6 cursor-pointer flex items-center justify-center ${
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer ${
           isFocusMode
-            ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-            : 'bg-[var(--bg-surface)]/90 border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--accent-primary)] hover:text-white'
+            ? 'bg-[var(--accent-primary)] text-white'
+            : isLight
+              ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
+              : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
         }`}
       >
-        {isFocusMode ? (
-          <Minimize2 className="w-4 h-4 skew-x-6" />
-        ) : (
-          <Maximize2 className="w-4 h-4 skew-x-6" />
-        )}
+        {isFocusMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      <div className="w-px h-6 bg-[var(--border-subtle)] my-auto mx-0.5" />
+      <div className={`w-px h-5 my-auto ${isLight ? 'bg-slate-200' : 'bg-[var(--border-subtle)]'}`} />
 
-      {/* Map Tile Style Toggle (Standard vs Humanitarian OSM) */}
+      {/* Map Tile Style Toggle */}
       <button
         type="button"
         onClick={onToggleTileType}
@@ -98,19 +116,19 @@ export function MapControlsDock({
             : 'Map Style: Standard OSM (Click for Humanitarian)'
         }
         aria-label="Toggle Map Tile Style"
-        className={`p-2 sm:p-2.5 backdrop-blur-md border rounded-sm transition-all shadow-md active:scale-95 -skew-x-6 cursor-pointer flex items-center justify-center gap-1 ${
+        className={`h-9 sm:h-10 px-3 rounded-full flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer text-xs font-bold ${
           mapTileType === 'humanitarian'
-            ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-            : 'bg-[var(--bg-surface)]/90 border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--accent-primary)] hover:text-white'
+            ? 'bg-[var(--accent-primary)] text-white'
+            : isLight
+              ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
+              : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
         }`}
       >
-        <Layers className="w-3.5 h-3.5 skew-x-6" />
-        <span className="font-mono text-[10px] font-bold skew-x-6">
-          {mapTileType === 'humanitarian' ? '2' : '1'}
-        </span>
+        <Layers size={14} />
+        <span className="font-mono text-[10px]">{mapTileType === 'humanitarian' ? '2' : '1'}</span>
       </button>
 
-      <div className="w-px h-6 bg-[var(--border-subtle)] my-auto mx-0.5" />
+      <div className={`w-px h-5 my-auto ${isLight ? 'bg-slate-200' : 'bg-[var(--border-subtle)]'}`} />
 
       {/* Map Dark / Light Mode Toggle */}
       <button
@@ -118,20 +136,18 @@ export function MapControlsDock({
         onClick={onToggleMapDark}
         title={isMapDark ? 'Map: Dark Mode (Click for Light Mode)' : 'Map: Light Mode (Click for Dark Mode)'}
         aria-label="Toggle Map Dark Mode"
-        className={`p-2 sm:p-2.5 backdrop-blur-md border rounded-sm transition-all shadow-md active:scale-95 -skew-x-6 cursor-pointer flex items-center justify-center ${
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer ${
           isMapDark
-            ? 'bg-[var(--bg-surface)]/90 border-[var(--border-subtle)] text-amber-400 hover:bg-[var(--accent-primary)] hover:text-white'
-            : 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
+            ? isLight
+              ? 'bg-slate-100 text-amber-500 hover:bg-[var(--accent-primary)] hover:text-white'
+              : 'bg-[var(--bg-surface-elevated)] text-amber-400 hover:bg-[var(--accent-primary)] hover:text-white'
+            : 'bg-[var(--accent-primary)] text-white'
         }`}
       >
-        {isMapDark ? (
-          <Sun className="w-4 h-4 skew-x-6" />
-        ) : (
-          <Moon className="w-4 h-4 skew-x-6" />
-        )}
+        {isMapDark ? <Sun size={16} /> : <Moon size={16} />}
       </button>
 
-      <div className="w-px h-6 bg-[var(--border-subtle)] my-auto mx-0.5" />
+      <div className={`w-px h-5 my-auto ${isLight ? 'bg-slate-200' : 'bg-[var(--border-subtle)]'}`} />
 
       {/* Hide Controls Dock Button (Collapses Left) */}
       <button
@@ -139,9 +155,13 @@ export function MapControlsDock({
         onClick={onClose}
         title="Hide Map Controls"
         aria-label="Hide Map Controls"
-        className="p-2 sm:p-2.5 bg-[var(--bg-surface)]/90 backdrop-blur-md border border-[var(--border-subtle)] rounded-sm text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] transition-all shadow-md active:scale-95 -skew-x-6 cursor-pointer flex items-center justify-center"
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer ${
+          isLight
+            ? 'bg-slate-100 text-slate-600 hover:text-[var(--accent-primary)] hover:bg-slate-200'
+            : 'bg-[var(--bg-surface-elevated)] text-slate-400 hover:text-[var(--accent-primary)] hover:bg-[var(--border-subtle)]'
+        }`}
       >
-        <ChevronLeft className="w-4 h-4 skew-x-6" />
+        <ChevronLeft size={16} />
       </button>
     </div>
   )

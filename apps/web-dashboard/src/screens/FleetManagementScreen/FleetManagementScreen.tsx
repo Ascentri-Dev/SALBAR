@@ -13,16 +13,75 @@ import {
   Coffee,
   SlidersHorizontal,
 } from 'lucide-react'
-import { INITIAL_RESPONDERS, INITIAL_INCIDENTS } from '../../data/mockCadData'
-import type { FieldResponder, ResponderStatus } from '../../types/cad'
+import type { ResponderStatus } from '../../types/cad'
 import type { ScreenId } from '../../types/navigation'
 import { useTheme } from '../../context'
-import { UnitInspectorModal } from './UnitInspectorModal'
+import { UnitInspectorModal, type FleetResponderUnit } from './UnitInspectorModal'
 
 export interface FleetManagementScreenProps {
   onSelectScreen?: (screenId: ScreenId) => void
   className?: string
 }
+
+const DEFAULT_FLEET_UNITS: FleetResponderUnit[] = [
+  {
+    id: 'SAR-01',
+    name: 'SAR Unit Alpha',
+    role: 'Search and Rescue',
+    status: 'N/A',
+    batteryPercent: null,
+    batteryVoltage: null,
+    fatigueScore: null,
+    location: {
+      lat: null,
+      lng: null,
+      accuracyMeters: null,
+      kalmanFiltered: false,
+    },
+    assignedIncidentId: null,
+    lastSeen: null,
+    relayedReportsCount: null,
+    terminalType: null,
+  },
+  {
+    id: 'DA-02',
+    name: 'Damage Assessment Bravo',
+    role: 'Damage Assessment',
+    status: 'N/A',
+    batteryPercent: null,
+    batteryVoltage: null,
+    fatigueScore: null,
+    location: {
+      lat: null,
+      lng: null,
+      accuracyMeters: null,
+      kalmanFiltered: false,
+    },
+    assignedIncidentId: null,
+    lastSeen: null,
+    relayedReportsCount: null,
+    terminalType: null,
+  },
+  {
+    id: 'RELIEF-03',
+    name: 'Relief Logistics Charlie',
+    role: 'Relief Operations',
+    status: 'N/A',
+    batteryPercent: null,
+    batteryVoltage: null,
+    fatigueScore: null,
+    location: {
+      lat: null,
+      lng: null,
+      accuracyMeters: null,
+      kalmanFiltered: false,
+    },
+    assignedIncidentId: null,
+    lastSeen: null,
+    relayedReportsCount: null,
+    terminalType: null,
+  },
+]
 
 export function FleetManagementScreen({
   onSelectScreen,
@@ -31,20 +90,10 @@ export function FleetManagementScreen({
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
-  const [responders, setResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
-  const [statusFilter, setStatusFilter] = useState<'ALL' | ResponderStatus>('ALL')
+  const [responders, setResponders] = useState<FleetResponderUnit[]>(DEFAULT_FLEET_UNITS)
+  const [statusFilter, setStatusFilter] = useState<'ALL' | ResponderStatus | 'N/A'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
-  const [inspectingUnit, setInspectingUnit] = useState<FieldResponder | null>(null)
-
-  // Status Counts
-  const availableCount = responders.filter((r) => r.status === 'AVAILABLE').length
-  const enRouteCount = responders.filter((r) => r.status === 'EN_ROUTE').length
-  const onSceneCount = responders.filter((r) => r.status === 'ON_SCENE').length
-  const restingCount = responders.filter((r) => r.status === 'RESTING').length
-  const totalReportsRelayed = responders.reduce((acc, r) => acc + r.relayedReportsCount, 0)
-  const averageFatigue = Math.round(
-    responders.reduce((acc, r) => acc + r.fatigueScore, 0) / (responders.length || 1)
-  )
+  const [inspectingUnit, setInspectingUnit] = useState<FleetResponderUnit | null>(null)
 
   // Filtered Responders
   const filteredResponders = useMemo(() => {
@@ -61,7 +110,7 @@ export function FleetManagementScreen({
   }, [responders, statusFilter, searchQuery])
 
   // Status Handlers
-  const handleUpdateStatus = (unitId: string, newStatus: ResponderStatus) => {
+  const handleUpdateStatus = (unitId: string, newStatus: ResponderStatus | 'N/A') => {
     setResponders((prev) =>
       prev.map((r) => (r.id === unitId ? { ...r, status: newStatus } : r))
     )
@@ -83,7 +132,7 @@ export function FleetManagementScreen({
     )
   }
 
-  const handleUpdateFatigue = (unitId: string, newFatigueScore: number) => {
+  const handleUpdateFatigue = (unitId: string, newFatigueScore: number | null) => {
     setResponders((prev) =>
       prev.map((r) => (r.id === unitId ? { ...r, fatigueScore: newFatigueScore } : r))
     )
@@ -92,7 +141,7 @@ export function FleetManagementScreen({
     }
   }
 
-  const getStatusBadge = (status: ResponderStatus) => {
+  const getStatusBadge = (status: ResponderStatus | 'N/A') => {
     switch (status) {
       case 'AVAILABLE':
         return {
@@ -118,16 +167,22 @@ export function FleetManagementScreen({
           style: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
           dot: 'bg-purple-500',
         }
-      default:
+      case 'OFFLINE':
         return {
           label: 'OFFLINE',
           style: 'bg-slate-500/15 text-slate-500 border-slate-500/30',
           dot: 'bg-slate-500',
         }
+      default:
+        return {
+          label: 'N/A',
+          style: 'bg-slate-500/10 text-[var(--text-secondary)] border-slate-300 dark:border-slate-700',
+          dot: 'bg-slate-400',
+        }
     }
   }
 
-  const getRoleBadge = (role: FieldResponder['role']) => {
+  const getRoleBadge = (role: FleetResponderUnit['role']) => {
     switch (role) {
       case 'Search and Rescue':
         return 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30'
@@ -136,12 +191,6 @@ export function FleetManagementScreen({
       case 'Relief Operations':
         return 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30'
     }
-  }
-
-  const getFatigueColor = (score: number) => {
-    if (score < 35) return { bar: 'bg-emerald-500', text: 'text-emerald-500', label: 'OPTIMAL CONDITION' }
-    if (score < 65) return { bar: 'bg-amber-500', text: 'text-amber-500', label: 'MODERATE LOAD' }
-    return { bar: 'bg-red-500', text: 'text-red-500', label: 'HIGH FATIGUE' }
   }
 
   return (
@@ -163,13 +212,13 @@ export function FleetManagementScreen({
 
           {/* Quick Fleet Health Badges */}
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-full border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-              3/3 Terminals Mesh Online
+            <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-full border bg-slate-500/10 text-[var(--text-secondary)] border-slate-300 dark:border-slate-700">
+              Terminals: N/A
             </span>
           </div>
         </header>
 
-        {/* Fleet KPI Summary Strip (4 Circular Cards) */}
+        {/* Fleet KPI Summary Strip (4 Circular Cards with N/A) */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Active Units */}
           <div
@@ -187,10 +236,10 @@ export function FleetManagementScreen({
                 Deployed Terminals
               </span>
               <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                {responders.length} Units
+                N/A
               </span>
-              <span className="text-[10px] text-emerald-500 font-bold block truncate">
-                100% LoRa Connected
+              <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
+                Mesh Sync: N/A
               </span>
             </div>
           </div>
@@ -211,10 +260,10 @@ export function FleetManagementScreen({
                 Readiness State
               </span>
               <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                {availableCount} Available
+                N/A
               </span>
-              <span className="text-[10px] text-[var(--accent-primary)] font-bold block truncate">
-                {enRouteCount + onSceneCount} Deployed to Tasks
+              <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
+                Status: N/A
               </span>
             </div>
           </div>
@@ -235,10 +284,10 @@ export function FleetManagementScreen({
                 Fleet Avg Fatigue
               </span>
               <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                {averageFatigue}%
+                N/A
               </span>
-              <span className="text-[10px] text-emerald-500 font-bold block truncate">
-                {averageFatigue < 50 ? 'Optimal Readiness' : 'Rest Advised'}
+              <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
+                Telemetry: N/A
               </span>
             </div>
           </div>
@@ -259,10 +308,10 @@ export function FleetManagementScreen({
                 BLE Mesh Packets
               </span>
               <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                {totalReportsRelayed} Relayed
+                N/A
               </span>
-              <span className="text-[10px] text-blue-400 font-bold block truncate">
-                Resident BLE Ingestion
+              <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
+                Ingestion: N/A
               </span>
             </div>
           </div>
@@ -296,7 +345,7 @@ export function FleetManagementScreen({
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-emerald-500'
               }`}
             >
-              AVAILABLE ({availableCount})
+              AVAILABLE
             </button>
             <button
               type="button"
@@ -309,7 +358,7 @@ export function FleetManagementScreen({
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-[var(--accent-primary)]'
               }`}
             >
-              EN ROUTE ({enRouteCount})
+              EN ROUTE
             </button>
             <button
               type="button"
@@ -322,7 +371,7 @@ export function FleetManagementScreen({
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-purple-500'
               }`}
             >
-              RESTING ({restingCount})
+              RESTING
             </button>
           </div>
 
@@ -346,7 +395,7 @@ export function FleetManagementScreen({
           </div>
         </section>
 
-        {/* 3 Unit Cards Grid (Section with required data-testid) */}
+        {/* 3 Unit Cards Grid */}
         <section
           data-testid="responder-units-grid"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -354,10 +403,6 @@ export function FleetManagementScreen({
           {filteredResponders.map((unit) => {
             const statusBadge = getStatusBadge(unit.status)
             const roleBadgeClass = getRoleBadge(unit.role)
-            const fatigueInfo = getFatigueColor(unit.fatigueScore)
-            const assignedIncident = INITIAL_INCIDENTS.find(
-              (i) => i.id === unit.assignedIncidentId
-            )
 
             return (
               <div
@@ -404,16 +449,16 @@ export function FleetManagementScreen({
                     <span className="font-heading font-black text-[11px] tracking-wider uppercase text-[var(--text-secondary)]">
                       Fatigue Score
                     </span>
-                    <span className={`font-mono font-black text-xs ${fatigueInfo.text}`}>
-                      {unit.fatigueScore}% &bull; {fatigueInfo.label}
+                    <span className="font-mono font-black text-xs text-[var(--text-secondary)]">
+                      {unit.fatigueScore !== null ? `${unit.fatigueScore}%` : 'N/A'}
                     </span>
                   </div>
 
                   {/* Horizontal Fatigue Bar */}
                   <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${fatigueInfo.bar}`}
-                      style={{ width: `${Math.min(100, unit.fatigueScore)}%` }}
+                      className="h-full rounded-full transition-all duration-500 bg-slate-400 dark:bg-slate-600"
+                      style={{ width: unit.fatigueScore !== null ? `${unit.fatigueScore}%` : '0%' }}
                     />
                   </div>
                 </div>
@@ -433,7 +478,7 @@ export function FleetManagementScreen({
                       </span>
                     </div>
                     <span className="font-mono text-xs font-black block">
-                      {unit.batteryPercent}% ({unit.batteryVoltage.toFixed(2)}V)
+                      {unit.batteryPercent !== null ? `${unit.batteryPercent}%` : 'N/A'}
                     </span>
                   </div>
 
@@ -450,7 +495,9 @@ export function FleetManagementScreen({
                       </span>
                     </div>
                     <span className="font-mono text-xs font-black block">
-                      &plusmn;{unit.location.accuracyMeters.toFixed(1)}m (Kalman)
+                      {unit.location.accuracyMeters !== null
+                        ? `\u00B1${unit.location.accuracyMeters.toFixed(1)}m`
+                        : 'N/A'}
                     </span>
                   </div>
 
@@ -467,7 +514,7 @@ export function FleetManagementScreen({
                       </span>
                     </div>
                     <span className="font-mono text-xs font-black block truncate">
-                      T-Beam 915MHz
+                      {unit.terminalType ?? 'N/A'}
                     </span>
                   </div>
 
@@ -484,44 +531,25 @@ export function FleetManagementScreen({
                       </span>
                     </div>
                     <span className="font-mono text-xs font-black block">
-                      {unit.relayedReportsCount} Packets
+                      {unit.relayedReportsCount !== null
+                        ? `${unit.relayedReportsCount} Packets`
+                        : 'N/A'}
                     </span>
                   </div>
                 </div>
 
                 {/* Active Assignment Snippet */}
                 <div className="mb-5 flex-1">
-                  {assignedIncident ? (
-                    <div
-                      className={`p-3.5 rounded-2xl border space-y-1 ${
-                        isLight
-                          ? 'bg-orange-50/50 border-orange-200'
-                          : 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono uppercase font-bold text-[var(--accent-primary)]">
-                          Assigned Incident: {assignedIncident.id}
-                        </span>
-                        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
-                          {assignedIncident.urgency}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs font-bold truncate">
-                        <MapPin size={12} className="text-[var(--accent-primary)] shrink-0" />
-                        <span className="truncate">{assignedIncident.location.name}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      className={`p-3 rounded-2xl border text-xs text-[var(--text-secondary)] flex items-center justify-between ${
-                        isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
-                      }`}
-                    >
-                      <span>Staging Area Standby</span>
-                      <span className="font-mono text-[10px] text-emerald-500 font-bold">Ready</span>
-                    </div>
-                  )}
+                  <div
+                    className={`p-3 rounded-2xl border text-xs text-[var(--text-secondary)] flex items-center justify-between ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
+                    }`}
+                  >
+                    <span>Assignment: N/A</span>
+                    <span className="font-mono text-[10px] text-[var(--text-secondary)] font-bold">
+                      Awaiting Mission
+                    </span>
+                  </div>
                 </div>
 
                 {/* Commander Actions (Circular Pills) */}
@@ -602,9 +630,7 @@ export function FleetManagementScreen({
       {inspectingUnit && (
         <UnitInspectorModal
           unit={inspectingUnit}
-          assignedIncident={
-            INITIAL_INCIDENTS.find((i) => i.id === inspectingUnit.assignedIncidentId) || null
-          }
+          assignedIncident={null}
           onClose={() => setInspectingUnit(null)}
           onUpdateStatus={handleUpdateStatus}
           onUpdateFatigue={handleUpdateFatigue}

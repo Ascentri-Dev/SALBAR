@@ -1,14 +1,34 @@
 import { useState } from 'react'
 import { X, Battery, Radio, Crosshair, Cpu, Shield, Activity, Copy, Check } from 'lucide-react'
-import type { FieldResponder, IncidentReport } from '../../types/cad'
+import type { IncidentReport, ResponderStatus } from '../../types/cad'
 import { useTheme } from '../../context'
 
+export interface FleetResponderUnit {
+  id: string
+  name: string
+  role: 'Search and Rescue' | 'Damage Assessment' | 'Relief Operations'
+  status: ResponderStatus | 'N/A'
+  batteryPercent: number | null
+  batteryVoltage: number | null
+  fatigueScore: number | null
+  location: {
+    lat: number | null
+    lng: number | null
+    accuracyMeters: number | null
+    kalmanFiltered: boolean
+  }
+  assignedIncidentId?: string | null
+  lastSeen?: string | null
+  relayedReportsCount: number | null
+  terminalType?: string | null
+}
+
 export interface UnitInspectorModalProps {
-  unit: FieldResponder | null
+  unit: FleetResponderUnit | null
   assignedIncident: IncidentReport | null
   onClose: () => void
-  onUpdateStatus: (unitId: string, status: FieldResponder['status']) => void
-  onUpdateFatigue: (unitId: string, fatigueScore: number) => void
+  onUpdateStatus: (unitId: string, status: ResponderStatus | 'N/A') => void
+  onUpdateFatigue: (unitId: string, fatigueScore: number | null) => void
 }
 
 export function UnitInspectorModal({
@@ -22,14 +42,16 @@ export function UnitInspectorModal({
   const isLight = theme === 'light'
 
   const [copied, setCopied] = useState(false)
-  const [localFatigue, setLocalFatigue] = useState(unit?.fatigueScore ?? 0)
+  const [localFatigue, setLocalFatigue] = useState<number>(unit?.fatigueScore ?? 0)
 
   if (!unit) return null
 
   const handleCopyCoords = () => {
-    navigator.clipboard.writeText(`${unit.location.lat.toFixed(6)}, ${unit.location.lng.toFixed(6)}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (unit.location.lat !== null && unit.location.lng !== null) {
+      navigator.clipboard.writeText(`${unit.location.lat.toFixed(6)}, ${unit.location.lng.toFixed(6)}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   const handleSaveFatigue = () => {
@@ -67,11 +89,17 @@ export function UnitInspectorModal({
           style: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
           dot: 'bg-purple-500',
         }
-      default:
+      case 'OFFLINE':
         return {
           label: 'OFFLINE',
           style: 'bg-slate-500/15 text-slate-500 border-slate-500/30',
           dot: 'bg-slate-500',
+        }
+      default:
+        return {
+          label: 'N/A',
+          style: 'bg-slate-500/10 text-[var(--text-secondary)] border-slate-300 dark:border-slate-700',
+          dot: 'bg-slate-400',
         }
     }
   }
@@ -113,7 +141,7 @@ export function UnitInspectorModal({
                 </span>
               </div>
               <span className="text-xs text-[var(--text-secondary)] font-medium">
-                {unit.role} &bull; Last seen {unit.lastSeen}
+                {unit.role} &bull; Last seen: {unit.lastSeen ?? 'N/A'}
               </span>
             </div>
           </div>
@@ -145,16 +173,17 @@ export function UnitInspectorModal({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[var(--text-secondary)] font-bold">Commander Quick Status:</span>
+              <span className="text-xs text-[var(--text-secondary)] font-bold">Commander Status:</span>
               <select
                 value={unit.status}
-                onChange={(e) => onUpdateStatus(unit.id, e.target.value as FieldResponder['status'])}
+                onChange={(e) => onUpdateStatus(unit.id, e.target.value as ResponderStatus | 'N/A')}
                 className={`text-xs font-bold rounded-full px-3 py-1 border transition-colors focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer ${
                   isLight
                     ? 'bg-slate-100 border-slate-300 text-slate-800'
                     : 'bg-[var(--bg-surface-elevated)] border-[var(--border-subtle)] text-slate-200'
                 }`}
               >
+                <option value="N/A">N/A (Unset)</option>
                 <option value="AVAILABLE">Available</option>
                 <option value="EN_ROUTE">En Route</option>
                 <option value="ON_SCENE">On Scene</option>
@@ -194,8 +223,8 @@ export function UnitInspectorModal({
                 isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/50 border-[var(--border-subtle)]'
               }`}
             >
-              <span>Current Staging: Standing by at Barangay EOC Base Camp</span>
-              <span className="font-mono text-[11px] text-emerald-500 font-bold">Unassigned</span>
+              <span>Current Staging: N/A (Awaiting Backend Sync)</span>
+              <span className="font-mono text-[11px] text-[var(--text-secondary)] font-bold">N/A</span>
             </div>
           )}
 
@@ -213,7 +242,7 @@ export function UnitInspectorModal({
                 </span>
               </div>
               <span className="font-mono font-black text-sm text-[var(--accent-primary)]">
-                {localFatigue}%
+                {unit.fatigueScore !== null ? `${localFatigue}%` : 'N/A'}
               </span>
             </div>
 
@@ -244,14 +273,14 @@ export function UnitInspectorModal({
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:bg-[var(--border-subtle)]'
                 }`}
               >
-                Reset to Zero (Post-Rest)
+                Reset to Zero
               </button>
               <button
                 type="button"
                 onClick={handleSaveFatigue}
                 className="px-4 py-1.5 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
               >
-                Save Fatigue Score
+                Save Score
               </button>
             </div>
           </div>
@@ -273,15 +302,19 @@ export function UnitInspectorModal({
               <div className="space-y-1 font-mono text-xs">
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Charge Level:</span>
-                  <span className="font-bold text-emerald-500">{unit.batteryPercent}%</span>
+                  <span className="font-bold text-[var(--text-secondary)]">
+                    {unit.batteryPercent !== null ? `${unit.batteryPercent}%` : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Bus Voltage:</span>
-                  <span className="font-bold">{unit.batteryVoltage.toFixed(2)} V</span>
+                  <span className="font-bold">
+                    {unit.batteryVoltage !== null ? `${unit.batteryVoltage.toFixed(2)} V` : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Estimated Runtime:</span>
-                  <span className="font-bold">~{Math.round(unit.batteryPercent * 0.08)} hours</span>
+                  <span className="font-bold">N/A</span>
                 </div>
               </div>
             </div>
@@ -301,22 +334,28 @@ export function UnitInspectorModal({
               <div className="space-y-1 font-mono text-xs">
                 <div className="flex justify-between items-center">
                   <span className="text-[var(--text-secondary)]">Coordinates:</span>
-                  <button
-                    type="button"
-                    onClick={handleCopyCoords}
-                    className="flex items-center gap-1 text-[11px] font-bold text-[var(--accent-primary)] hover:underline cursor-pointer"
-                  >
-                    {copied ? <Check size={12} /> : <Copy size={12} />}
-                    <span>{unit.location.lat.toFixed(4)}, {unit.location.lng.toFixed(4)}</span>
-                  </button>
+                  {unit.location.lat !== null && unit.location.lng !== null ? (
+                    <button
+                      type="button"
+                      onClick={handleCopyCoords}
+                      className="flex items-center gap-1 text-[11px] font-bold text-[var(--accent-primary)] hover:underline cursor-pointer"
+                    >
+                      {copied ? <Check size={12} /> : <Copy size={12} />}
+                      <span>{unit.location.lat.toFixed(4)}, {unit.location.lng.toFixed(4)}</span>
+                    </button>
+                  ) : (
+                    <span className="font-bold text-[var(--text-secondary)]">N/A</span>
+                  )}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Horizontal Accuracy:</span>
-                  <span className="font-bold">&plusmn;{unit.location.accuracyMeters.toFixed(1)} m</span>
+                  <span className="font-bold">
+                    {unit.location.accuracyMeters !== null ? `\u00B1${unit.location.accuracyMeters.toFixed(1)} m` : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Filter Status:</span>
-                  <span className="font-bold text-cyan-400">Kalman Filter Active</span>
+                  <span className="font-bold text-[var(--text-secondary)]">N/A</span>
                 </div>
               </div>
             </div>
@@ -336,15 +375,15 @@ export function UnitInspectorModal({
               <div className="space-y-1 font-mono text-xs">
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Hardware Terminal:</span>
-                  <span className="font-bold">{unit.terminalType.replace(/_/g, ' ')}</span>
+                  <span className="font-bold">{unit.terminalType ?? 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Estimated SNR / RSSI:</span>
-                  <span className="font-bold text-emerald-500">+8.5 dB / -92 dBm</span>
+                  <span className="font-bold text-[var(--text-secondary)]">N/A</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Mesh Routing Hops:</span>
-                  <span className="font-bold">1 Hop (Direct to Gateway)</span>
+                  <span className="font-bold">N/A</span>
                 </div>
               </div>
             </div>
@@ -364,15 +403,17 @@ export function UnitInspectorModal({
               <div className="space-y-1 font-mono text-xs">
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Ingested Reports:</span>
-                  <span className="font-bold text-[var(--accent-primary)]">{unit.relayedReportsCount} Packets</span>
+                  <span className="font-bold text-[var(--text-secondary)]">
+                    {unit.relayedReportsCount !== null ? `${unit.relayedReportsCount} Packets` : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">BLE Advert Status:</span>
-                  <span className="font-bold text-emerald-500">Broadcasting Relay Beacon</span>
+                  <span className="font-bold text-[var(--text-secondary)]">N/A</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Mesh Sync State:</span>
-                  <span className="font-bold">Synchronized</span>
+                  <span className="font-bold">N/A</span>
                 </div>
               </div>
             </div>

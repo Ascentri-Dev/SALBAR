@@ -12,42 +12,21 @@ function renderScreen(props = {}) {
 }
 
 describe('Field Responder Fleet Management Screen', () => {
-  it('renders header, fleet summary KPIs, and all 3 unit cards', () => {
+  it('renders header, fleet summary KPIs with N/A, and all 3 unit cards', () => {
     renderScreen()
 
     expect(screen.getByTestId('screen-fleet-management')).toBeInTheDocument()
     expect(screen.getByText('Field Responder Fleet Management')).toBeInTheDocument()
-    expect(screen.getByText('3 Units')).toBeInTheDocument()
+    expect(screen.getByText('Deployed Terminals')).toBeInTheDocument()
     expect(screen.getByTestId('responder-units-grid')).toBeInTheDocument()
 
     expect(screen.getByTestId('unit-card-sar-01')).toBeInTheDocument()
     expect(screen.getByTestId('unit-card-da-02')).toBeInTheDocument()
     expect(screen.getByTestId('unit-card-relief-03')).toBeInTheDocument()
-  })
 
-  it('filters units by status pills', () => {
-    renderScreen()
-
-    // Default: all 3 units visible
-    expect(screen.getByTestId('unit-card-sar-01')).toBeInTheDocument()
-    expect(screen.getByTestId('unit-card-da-02')).toBeInTheDocument()
-    expect(screen.getByTestId('unit-card-relief-03')).toBeInTheDocument()
-
-    // Click "EN ROUTE" filter
-    const enRouteFilterBtn = screen.getByRole('button', { name: /EN ROUTE \(1\)/i })
-    fireEvent.click(enRouteFilterBtn)
-
-    expect(screen.queryByTestId('unit-card-sar-01')).not.toBeInTheDocument()
-    expect(screen.getByTestId('unit-card-da-02')).toBeInTheDocument()
-    expect(screen.queryByTestId('unit-card-relief-03')).not.toBeInTheDocument()
-
-    // Click "AVAILABLE" filter
-    const availableFilterBtn = screen.getByRole('button', { name: /AVAILABLE \(2\)/i })
-    fireEvent.click(availableFilterBtn)
-
-    expect(screen.getByTestId('unit-card-sar-01')).toBeInTheDocument()
-    expect(screen.queryByTestId('unit-card-da-02')).not.toBeInTheDocument()
-    expect(screen.getByTestId('unit-card-relief-03')).toBeInTheDocument()
+    // Battery, GPS, and other telemetry display N/A
+    const sarCard = screen.getByTestId('unit-card-sar-01')
+    expect(sarCard).toHaveTextContent('N/A')
   })
 
   it('filters units by search query', () => {
@@ -61,12 +40,11 @@ describe('Field Responder Fleet Management Screen', () => {
     expect(screen.queryByTestId('unit-card-relief-03')).not.toBeInTheDocument()
   })
 
-  it('toggles mandatory rest on a responder unit', () => {
+  it('toggles mandatory rest on a responder unit and updates status filter', () => {
     renderScreen()
 
-    // SAR-01 starts as AVAILABLE
     const sarCard = screen.getByTestId('unit-card-sar-01')
-    expect(sarCard).toHaveTextContent('AVAILABLE')
+    expect(sarCard).toHaveTextContent('N/A')
 
     // Find the Force Rest button inside the SAR card
     const restButtons = screen.getAllByRole('button', { name: /force rest/i })
@@ -74,9 +52,17 @@ describe('Field Responder Fleet Management Screen', () => {
 
     // Should now show RESTING and button should change to Resume Duty
     expect(sarCard).toHaveTextContent('RESTING')
+
+    // Click RESTING filter
+    const restingFilterBtn = screen.getByRole('button', { name: /RESTING/i })
+    fireEvent.click(restingFilterBtn)
+
+    expect(screen.getByTestId('unit-card-sar-01')).toBeInTheDocument()
+    expect(screen.queryByTestId('unit-card-da-02')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('unit-card-relief-03')).not.toBeInTheDocument()
   })
 
-  it('opens and closes the detailed telemetry inspector modal', () => {
+  it('opens and closes the detailed telemetry inspector modal with N/A fields', () => {
     renderScreen()
 
     const telemetryButtons = screen.getAllByRole('button', { name: /telemetry/i })

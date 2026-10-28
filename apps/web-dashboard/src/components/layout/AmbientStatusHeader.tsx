@@ -119,7 +119,7 @@ const AnimatedLink = ({ title, id, icon: Icon, isActive, onClick, isLight }: Ani
       type="button"
       data-testid={`nav-tab-${id}`}
       onClick={() => onClick(id)}
-      className="group relative cursor-pointer flex items-center gap-2 shrink-0 py-1"
+      className="group relative cursor-pointer flex items-center gap-2.5 shrink-0 py-1.5 px-3 rounded-full transition-all active:scale-95"
     >
       <Icon
         size={15}
@@ -203,19 +203,16 @@ export function AmbientStatusHeader({
             opacity: isNavbarOpen ? 1 : 0,
           }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className={`w-full h-full flex items-center justify-between rounded-full px-6 sm:px-10 pointer-events-auto border transition-colors duration-300 shadow-2xl ${
+          className={`relative w-full h-full flex items-center justify-between rounded-full px-6 sm:px-10 pointer-events-auto border transition-colors duration-300 shadow-2xl ${
             isLight
               ? 'bg-white border-slate-300 shadow-slate-400/25'
               : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] shadow-black/50'
           }`}
         >
-          {/* Left spacer so center links align properly leaving room for SALBAR text */}
-          <div className="w-28 sm:w-32 shrink-0 pointer-events-none" />
-
-          {/* Center: Navigation Links with Staggered Letter-by-Letter Animation */}
+          {/* Center: Navigation Links with Staggered Letter-by-Letter Animation (Mathematically Centered) */}
           <nav
             data-testid="screen-navigation-tabs"
-            className="hidden lg:flex items-center gap-8 xl:gap-14"
+            className="hidden lg:flex items-center gap-12 xl:gap-20 absolute left-1/2 -translate-x-1/2 pointer-events-auto"
             aria-label="Operations Screen Switcher"
           >
             {NAV_ITEMS.map((item) => (
@@ -232,7 +229,7 @@ export function AmbientStatusHeader({
           </nav>
 
           {/* Right: Theme Toggle */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3 ml-auto pointer-events-auto">
             <button
               type="button"
               onClick={toggleTheme}
@@ -249,7 +246,7 @@ export function AmbientStatusHeader({
           </div>
 
           {/* Mobile Buttons */}
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-2 lg:hidden ml-auto pointer-events-auto">
             <button
               type="button"
               onClick={toggleTheme}

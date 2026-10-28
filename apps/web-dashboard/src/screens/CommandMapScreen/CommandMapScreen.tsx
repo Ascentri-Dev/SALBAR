@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react'
-import { TacticalMap } from '../../components/map/TacticalMap'
+import { useState, useRef, useCallback } from 'react'
+import L from 'leaflet'
+import { TacticalMap, type MapTileType } from '../../components/map/TacticalMap'
 import { KPIStrip, type KpiFilter } from '../../components/kpi/KPIStrip'
 import { IncidentStreamPanel } from '../../components/stream/IncidentStreamPanel'
 import { HITLDispatchDrawer } from '../../components/dispatch/HITLDispatchDrawer'
-import { AISitRepPanel } from '../../components/sitrep/AISitRepPanel'
+import { MapControlsDock } from '../../components/map/MapControlsDock'
 import {
   INITIAL_INCIDENTS,
   INITIAL_RESPONDERS,
@@ -16,15 +16,20 @@ export interface CommandMapScreenProps {
   className?: string
 }
 
+const DEFAULT_CENTER: [number, number] = [10.3157, 123.8854]
+const DEFAULT_ZOOM = 14
+
 export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   const [incidents, setIncidents] = useState<IncidentReport[]>(INITIAL_INCIDENTS)
   const [responders, setResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
   const [selectedIncident, setSelectedIncident] = useState<IncidentReport | null>(null)
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('ALL')
 
+  const [mapTileType, setMapTileType] = useState<MapTileType>('standard')
   const [isFocusMode, setIsFocusMode] = useState(false)
-  const [isLeftPanelMinimized, setIsLeftPanelMinimized] = useState(false)
-  const [isRightPanelMinimized, setIsRightPanelMinimized] = useState(false)
+  const [isQueueOpen, setIsQueueOpen] = useState(true)
+
+  const mapRef = useRef<L.Map | null>(null)
 
   // Filter incidents based on active KPI filter
   const filteredIncidents = incidents.filter((inc) => {
@@ -35,6 +40,47 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
     if (kpiFilter === 'RESOLVED') return inc.status === 'RESOLVED'
     return true
   })
+
+  // Map Controls Callbacks
+  const handleZoomIn = useCallback(() => {
+    mapRef.current?.zoomIn()
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    mapRef.current?.zoomOut()
+  }, [])
+
+  const handleLocate = useCallback(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          mapRef.current?.flyTo(
+            [position.coords.latitude, position.coords.longitude],
+            15,
+            { duration: 1.0 }
+          )
+        },
+        () => {
+          // Fallback to default operational coordinates
+          mapRef.current?.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 1.0 })
+        }
+      )
+    } else {
+      mapRef.current?.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 1.0 })
+    }
+  }, [])
+
+  const handleToggleTileType = useCallback(() => {
+    setMapTileType((prev) => (prev === 'standard' ? 'humanitarian' : 'standard'))
+  }, [])
+
+  const handleToggleFocusMode = useCallback(() => {
+    setIsFocusMode((prev) => !prev)
+  }, [])
+
+  const handleToggleQueue = useCallback(() => {
+    setIsQueueOpen((prev) => !prev)
+  }, [])
 
   // Approve dispatch action
   const handleApproveDispatch = (incidentId: string, unitId: string) => {
@@ -100,20 +146,26 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           incidents={filteredIncidents}
           responders={responders}
           hazards={ROAD_HAZARDS}
-          selectedIncident={selectedIncident}
-          onSelectIncident={(inc) => {
-            setSelectedIncident(inc)
-            setIsRightPanelMinimized(false)
+          selectedIncidentId={selectedIncident ? selectedIncident.id : null}
+          onSelectIncident={(incidentId) => {
+            const found = incidents.find((i) => i.id === incidentId)
+            if (found) {
+              setSelectedIncident(found)
+              setIsQueueOpen(true)
+            }
           }}
+          onApproveDispatch={handleApproveDispatch}
+          mapTileType={mapTileType}
+          mapRef={mapRef}
         />
       </div>
 
       {/* 2. Floating Command HUD Overlay */}
       <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-        {/* Top: Floating Skewed KPI Strip */}
+        {/* 2.a Top: Floating KPI & Filter Strip */}
         <div
-          className={`pointer-events-auto absolute left-2 right-2 md:left-4 md:right-4 z-20 transition-all duration-300 ease-in-out ${
-            isFocusMode ? '-top-24 opacity-0 pointer-events-none' : 'top-3 opacity-100'
+          className={`pointer-events-auto absolute left-2 right-2 md:left-6 md:right-6 z-20 transition-all duration-300 ease-in-out ${
+            isFocusMode ? '-top-28 opacity-0 pointer-events-none' : 'top-3 opacity-100'
           }`}
         >
           <KPIStrip
@@ -123,74 +175,35 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           />
         </div>
 
-        {/* Left Floating Panel: AI Situation Report (SitRep) */}
-        <div
-          className={`pointer-events-auto absolute left-2 md:left-4 bottom-14 top-18 z-20 w-[290px] lg:w-[320px] transition-transform duration-300 ease-out ${
-            isLeftPanelMinimized || isFocusMode
-              ? '-translate-x-[calc(100%+1.5rem)]'
-              : 'translate-x-0'
-          }`}
-        >
-          <div className="relative h-full">
-            <AISitRepPanel
-              incidents={incidents}
-              responders={responders}
-              hazards={ROAD_HAZARDS}
-              onFocusIncident={(inc) => {
-                setSelectedIncident(inc)
-                setIsRightPanelMinimized(false)
-              }}
-            />
-
-            {/* Minimize button */}
-            <button
-              type="button"
-              onClick={() => setIsLeftPanelMinimized(true)}
-              title="Minimize SitRep"
-              className="absolute -right-7 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-r border border-l-0 border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow cursor-pointer"
-            >
-              <ChevronLeft size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Restore Left Button (When Minimized) */}
-        {!isFocusMode && isLeftPanelMinimized && (
-          <button
-            type="button"
-            onClick={() => setIsLeftPanelMinimized(false)}
-            title="Expand SitRep"
-            className="pointer-events-auto absolute left-0 top-20 z-20 flex h-8 px-2.5 items-center gap-1 rounded-r border border-l-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 text-xs font-mono font-bold text-[var(--accent-primary)] shadow-lg backdrop-blur-md hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
-          >
-            <span>SITREP</span>
-            <ChevronRight size={14} />
-          </button>
-        )}
-
-        {/* Right Floating Panel: Live CAD Feed & HITL Dispatch Drawer */}
+        {/* 2.b Right: Live CAD Dispatch Queue & HITL Authorization Drawer */}
         <div
           data-testid="incident-stream-panel"
-          className={`pointer-events-auto absolute right-2 md:right-4 bottom-14 top-18 z-20 w-[340px] lg:w-[400px] flex flex-col transition-transform duration-300 ease-out ${
-            isRightPanelMinimized || isFocusMode
+          className={`pointer-events-auto absolute right-2 md:right-4 bottom-20 top-18 z-20 w-[340px] lg:w-[400px] flex flex-col transition-transform duration-300 ease-out ${
+            !isQueueOpen || isFocusMode
               ? 'translate-x-[calc(100%+1.5rem)]'
               : 'translate-x-0'
           }`}
         >
-          <div className="relative h-full flex flex-col min-h-0">
-            {/* Top half or main feed */}
-            <div className={`transition-all duration-300 ${selectedIncident ? 'h-1/2' : 'h-full'}`}>
+          <div className="relative h-full flex flex-col min-h-0 gap-2">
+            {/* Top segment: Live Queue Feed */}
+            <div
+              className={`transition-all duration-300 overflow-hidden ${
+                selectedIncident ? 'h-1/2 min-h-[220px]' : 'h-full'
+              }`}
+            >
               <IncidentStreamPanel
                 incidents={filteredIncidents}
                 selectedIncident={selectedIncident}
-                onSelectIncident={(inc) => setSelectedIncident(inc)}
-                isMinimized={isRightPanelMinimized}
-                onToggleMinimize={() => setIsRightPanelMinimized(true)}
+                onSelectIncident={(inc) => {
+                  setSelectedIncident(inc)
+                  setIsQueueOpen(true)
+                }}
               />
             </div>
 
-            {/* Bottom half: HITL Dispatch Drawer when incident selected */}
+            {/* Bottom segment: HITL Dispatch Authorization Drawer */}
             {selectedIncident && (
-              <div className="h-1/2 min-h-0">
+              <div className="h-1/2 min-h-[260px] overflow-hidden">
                 <HITLDispatchDrawer
                   key={selectedIncident.id}
                   incident={selectedIncident}
@@ -201,49 +214,22 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 />
               </div>
             )}
-
-            {/* Minimize right button */}
-            <button
-              type="button"
-              onClick={() => setIsRightPanelMinimized(true)}
-              title="Minimize CAD Feed"
-              className="absolute -left-7 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-l border border-r-0 border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow cursor-pointer"
-            >
-              <ChevronRight size={16} />
-            </button>
           </div>
         </div>
 
-        {/* Restore Right Button (When Minimized) */}
-        {!isFocusMode && isRightPanelMinimized && (
-          <button
-            type="button"
-            onClick={() => setIsRightPanelMinimized(false)}
-            title="Expand CAD Feed"
-            className="pointer-events-auto absolute right-0 top-20 z-20 flex h-8 px-2.5 items-center gap-1 rounded-l border border-r-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 text-xs font-mono font-bold text-[var(--accent-primary)] shadow-lg backdrop-blur-md hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
-          >
-            <ChevronLeft size={14} />
-            <span>CAD FEED ({filteredIncidents.length})</span>
-          </button>
-        )}
-
-        {/* Bottom Center: FOCUS Mode Toggle Button */}
+        {/* 2.c Center-Bottom: Floating Tactical Map Controls Dock */}
         <div className="pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
-          <button
-            type="button"
-            onClick={() => setIsFocusMode((prev) => !prev)}
-            aria-label="Toggle Tactical Focus Mode"
-            className={`flex h-9 items-center justify-center gap-1.5 rounded-sm border px-3.5 shadow-xl backdrop-blur-md transition-all font-mono text-xs font-bold tracking-wider cursor-pointer -skew-x-12 ${
-              isFocusMode
-                ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/50'
-                : 'bg-[var(--bg-surface)]/90 text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]'
-            }`}
-          >
-            <span className="skew-x-12 inline-flex items-center gap-1.5">
-              {isFocusMode ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              <span>{isFocusMode ? 'EXIT FOCUS' : 'FOCUS MAP'}</span>
-            </span>
-          </button>
+          <MapControlsDock
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onLocate={handleLocate}
+            mapTileType={mapTileType}
+            onToggleTileType={handleToggleTileType}
+            isFocusMode={isFocusMode}
+            onToggleFocusMode={handleToggleFocusMode}
+            isQueueOpen={isQueueOpen}
+            onToggleQueue={handleToggleQueue}
+          />
         </div>
       </div>
     </div>

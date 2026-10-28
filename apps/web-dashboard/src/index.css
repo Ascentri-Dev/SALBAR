@@ -177,3 +177,9 @@ body {
 .leaflet-popup-tip-container {
   display: none !important;
 }
+
+/* Hide default Leaflet controls and attribution watermark */
+.leaflet-control-attribution,
+.leaflet-control-zoom {
+  display: none !important;
+}

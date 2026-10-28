@@ -155,3 +155,25 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+/* Leaflet Custom Theming for SALBAR Tactical Map */
+.leaflet-container {
+  background-color: var(--bg-base) !important;
+  font-family: var(--font-sans) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+
+.leaflet-popup-tip-container {
+  display: none !important;
+}

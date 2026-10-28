@@ -1,13 +1,12 @@
 import { useState, useMemo } from 'react'
-import { Radio, Search, Filter, AlertCircle, CheckCircle2, Clock, MapPin } from 'lucide-react'
+import { Radio, Search, Filter, AlertCircle, CheckCircle2, Clock, MapPin, ChevronRight } from 'lucide-react'
 import type { IncidentReport } from '../../types/cad'
 
 export interface IncidentStreamPanelProps {
   incidents: IncidentReport[]
   selectedIncident: IncidentReport | null
   onSelectIncident: (incident: IncidentReport) => void
-  isMinimized?: boolean
-  onToggleMinimize?: () => void
+  onClose?: () => void
   className?: string
 }
 
@@ -15,6 +14,7 @@ export function IncidentStreamPanel({
   incidents,
   selectedIncident,
   onSelectIncident,
+  onClose,
   className = '',
 }: IncidentStreamPanelProps) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -45,9 +45,20 @@ export function IncidentStreamPanel({
             Live Dispatch Queue
           </h2>
         </div>
-        <div className="flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-secondary)]">
+        <div className="flex items-center gap-2 font-mono text-[11px] text-[var(--text-secondary)]">
           <span className="font-bold text-[var(--text-primary)]">{filteredIncidents.length}</span>
-          <span className="text-[10px] text-[var(--text-muted)]">/ {incidents.length} active</span>
+          <span className="text-[10px] text-[var(--text-muted)]">/ {incidents.length}</span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+              title="Collapse Queue"
+              aria-label="Collapse Queue"
+            >
+              <ChevronRight size={16} />
+            </button>
+          )}
         </div>
       </div>
 

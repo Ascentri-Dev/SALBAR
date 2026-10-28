@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { ChevronRight, ChevronLeft, Minimize2 } from 'lucide-react'
 import L from 'leaflet'
 import { TacticalMap, type MapTileType } from '../../components/map/TacticalMap'
 import { KPIStrip, type KpiFilter } from '../../components/kpi/KPIStrip'
@@ -26,8 +27,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('ALL')
 
   const [mapTileType, setMapTileType] = useState<MapTileType>('standard')
-  const [isFocusMode, setIsFocusMode] = useState(false)
+  const [isKpiOpen, setIsKpiOpen] = useState(true)
+  const [isControlsOpen, setIsControlsOpen] = useState(true)
   const [isQueueOpen, setIsQueueOpen] = useState(true)
+  const [isFocusMode, setIsFocusMode] = useState(false)
 
   const mapRef = useRef<L.Map | null>(null)
 
@@ -61,7 +64,6 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           )
         },
         () => {
-          // Fallback to default operational coordinates
           mapRef.current?.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 1.0 })
         }
       )
@@ -74,13 +76,19 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
     setMapTileType((prev) => (prev === 'standard' ? 'humanitarian' : 'standard'))
   }, [])
 
-  const handleToggleFocusMode = useCallback(() => {
-    setIsFocusMode((prev) => !prev)
-  }, [])
-
-  const handleToggleQueue = useCallback(() => {
-    setIsQueueOpen((prev) => !prev)
-  }, [])
+  const toggleFocusMode = useCallback(() => {
+    if (isFocusMode) {
+      setIsFocusMode(false)
+      setIsKpiOpen(true)
+      setIsControlsOpen(true)
+      setIsQueueOpen(true)
+    } else {
+      setIsFocusMode(true)
+      setIsKpiOpen(false)
+      setIsQueueOpen(false)
+      setIsControlsOpen(true) // Keep controls dock available to exit focus mode
+    }
+  }, [isFocusMode])
 
   // Approve dispatch action
   const handleApproveDispatch = (incidentId: string, unitId: string) => {
@@ -160,28 +168,78 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
         />
       </div>
 
-      {/* 2. Floating Command HUD Overlay */}
+      {/* 2. Floating Overlays (Z-20) */}
       <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-        {/* 2.a Top: Floating KPI & Filter Strip */}
+        {/* 2.a Left Panel: Vertically Stacked KPI Priority Filter (10-15% width) */}
         <div
-          className={`pointer-events-auto absolute left-2 right-2 md:left-6 md:right-6 z-20 transition-all duration-300 ease-in-out ${
-            isFocusMode ? '-top-28 opacity-0 pointer-events-none' : 'top-3 opacity-100'
+          className={`pointer-events-auto absolute left-4 top-20 z-20 transition-all duration-500 ease-out ${
+            isKpiOpen && !isFocusMode
+              ? 'translate-x-0 opacity-100'
+              : '-translate-x-[calc(100%+2rem)] opacity-0 pointer-events-none'
           }`}
         >
           <KPIStrip
             incidents={incidents}
             activeFilter={kpiFilter}
             onFilterChange={setKpiFilter}
+            onClose={() => setIsKpiOpen(false)}
           />
         </div>
 
-        {/* 2.b Right: Live CAD Dispatch Queue & HITL Authorization Drawer */}
+        {/* Reveal KPI Filter Button when Minimized */}
+        {!isKpiOpen && !isFocusMode && (
+          <button
+            type="button"
+            onClick={() => setIsKpiOpen(true)}
+            className="pointer-events-auto absolute left-0 top-20 z-30 flex h-10 px-2.5 items-center gap-1.5 border border-l-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 text-xs font-mono font-bold text-[var(--accent-primary)] shadow-lg backdrop-blur-md transition-colors hover:text-white hover:bg-[var(--accent-primary)] rounded-r-sm cursor-pointer"
+            title="Show Priority Metrics"
+            aria-label="Show Priority Metrics"
+          >
+            <ChevronRight size={16} />
+            <span className="text-[10px] uppercase tracking-wider">Metrics</span>
+          </button>
+        )}
+
+        {/* 2.b Bottom-Left: Compact Icon-Only Tactical Map Controls Dock */}
+        <div
+          className={`pointer-events-auto absolute bottom-4 left-4 z-30 transition-all duration-500 ease-out ${
+            isControlsOpen
+              ? 'translate-x-0 opacity-100'
+              : '-translate-x-[calc(100%+2rem)] opacity-0 pointer-events-none'
+          }`}
+        >
+          <MapControlsDock
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onLocate={handleLocate}
+            mapTileType={mapTileType}
+            onToggleTileType={handleToggleTileType}
+            isFocusMode={isFocusMode}
+            onToggleFocusMode={toggleFocusMode}
+            onClose={() => setIsControlsOpen(false)}
+          />
+        </div>
+
+        {/* Reveal Map Controls Button when Minimized */}
+        {!isControlsOpen && (
+          <button
+            type="button"
+            onClick={() => setIsControlsOpen(true)}
+            className="pointer-events-auto absolute left-0 bottom-4 z-30 flex h-10 w-10 items-center justify-center border border-l-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] shadow-lg backdrop-blur-md transition-colors rounded-r-sm cursor-pointer"
+            title="Show Map Controls"
+            aria-label="Show Map Controls"
+          >
+            <ChevronRight size={18} />
+          </button>
+        )}
+
+        {/* 2.c Right Panel: Live CAD Dispatch Queue & HITL Authorization Drawer */}
         <div
           data-testid="incident-stream-panel"
-          className={`pointer-events-auto absolute right-2 md:right-4 bottom-20 top-18 z-20 w-[340px] lg:w-[400px] flex flex-col transition-transform duration-300 ease-out ${
-            !isQueueOpen || isFocusMode
-              ? 'translate-x-[calc(100%+1.5rem)]'
-              : 'translate-x-0'
+          className={`pointer-events-auto absolute right-4 top-20 bottom-4 z-20 w-[340px] lg:w-[400px] flex flex-col transition-transform duration-500 ease-out ${
+            isQueueOpen && !isFocusMode
+              ? 'translate-x-0 opacity-100'
+              : 'translate-x-[calc(100%+2rem)] opacity-0 pointer-events-none'
           }`}
         >
           <div className="relative h-full flex flex-col min-h-0 gap-2">
@@ -198,6 +256,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                   setSelectedIncident(inc)
                   setIsQueueOpen(true)
                 }}
+                onClose={() => setIsQueueOpen(false)}
               />
             </div>
 
@@ -217,20 +276,35 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           </div>
         </div>
 
-        {/* 2.c Center-Bottom: Floating Tactical Map Controls Dock */}
-        <div className="pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
-          <MapControlsDock
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onLocate={handleLocate}
-            mapTileType={mapTileType}
-            onToggleTileType={handleToggleTileType}
-            isFocusMode={isFocusMode}
-            onToggleFocusMode={handleToggleFocusMode}
-            isQueueOpen={isQueueOpen}
-            onToggleQueue={handleToggleQueue}
-          />
-        </div>
+        {/* Reveal Queue Button when Minimized */}
+        {!isQueueOpen && !isFocusMode && (
+          <button
+            type="button"
+            onClick={() => setIsQueueOpen(true)}
+            className="pointer-events-auto absolute right-0 top-20 z-30 flex h-10 px-2.5 items-center gap-1.5 border border-r-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 text-xs font-mono font-bold text-[var(--accent-primary)] shadow-lg backdrop-blur-md transition-colors hover:text-white hover:bg-[var(--accent-primary)] rounded-l-sm cursor-pointer"
+            title="Show Live Dispatch Queue"
+            aria-label="Show Live Dispatch Queue"
+          >
+            <ChevronLeft size={16} />
+            <span className="text-[10px] uppercase tracking-wider">
+              Queue ({filteredIncidents.length})
+            </span>
+          </button>
+        )}
+
+        {/* Exit Focus Mode Floating Pill (When in Focus Mode) */}
+        {isFocusMode && (
+          <div className="pointer-events-auto absolute top-20 left-1/2 -translate-x-1/2 z-30">
+            <button
+              type="button"
+              onClick={toggleFocusMode}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-sm bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider shadow-2xl backdrop-blur-md hover:bg-[var(--accent-hover)] transition-colors cursor-pointer -skew-x-6"
+            >
+              <Minimize2 size={14} className="skew-x-6" />
+              <span className="skew-x-6">Exit Tactical Focus</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

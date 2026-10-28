@@ -21,8 +21,8 @@
 // Instantiate RadioLib SX1262 module with T3S3 pin mappings
 static SX1262 radio = new Module(LORA_NSS, LORA_DIO1, LORA_RST, LORA_BUSY);
 
-// Hardware SPI bus instance for ESP32-S3
-static SPIClass spiBus(FSPI);
+// Radio operational status flag
+static bool radioReady = false;
 
 // Flag indicating a packet has been received via interrupt
 static volatile bool packetReceivedFlag = false;
@@ -272,6 +272,7 @@ static void handleSerialCommand(const String &cmdLine) {
         errDoc["msg"] = err.c_str();
         serializeJson(errDoc, Serial);
         Serial.println();
+        Serial.flush();
         return;
     }
 
@@ -282,10 +283,12 @@ static void handleSerialCommand(const String &cmdLine) {
         res["status"] = "PONG";
         res["device"] = "LILYGO_T3S3_SX1262";
         res["band"] = "915MHz";
+        res["radioReady"] = radioReady;
         res["rxCount"] = totalPacketsReceived;
         res["txCount"] = totalPacketsTransmitted;
         serializeJson(res, Serial);
         Serial.println();
+        Serial.flush();
     } else if (strcmp(cmd, "DISPATCH") == 0) {
         const char *target = doc["targetUnit"] | "SAR-01";
         uint16_t incId = doc["incidentIdNum"] | 1;
@@ -301,6 +304,7 @@ static void handleSerialCommand(const String &cmdLine) {
         res["incidentIdNum"] = incId;
         serializeJson(res, Serial);
         Serial.println();
+        Serial.flush();
     } else if (strcmp(cmd, "SIMULATE_TELEMETRY") == 0) {
         // Built-in test: injects simulated telemetry packet over serial
         JsonDocument res;
@@ -321,6 +325,7 @@ static void handleSerialCommand(const String &cmdLine) {
         data["relayedReportsCount"] = doc["relayed"] | 6;
         serializeJson(res, Serial);
         Serial.println();
+        Serial.flush();
     } else if (strcmp(cmd, "SIMULATE_INCIDENT") == 0) {
         // Built-in test: injects simulated emergency report over serial
         JsonDocument res;
@@ -339,20 +344,24 @@ static void handleSerialCommand(const String &cmdLine) {
         data["rawText"] = doc["rawText"] | "Simulated emergency transmission via LoRa.";
         serializeJson(res, Serial);
         Serial.println();
+        Serial.flush();
     }
 }
 
 void setup() {
     // Initialize USB CDC Serial
     Serial.begin(115200);
+    delay(1000);
+    Serial.println("{\"status\":\"GATEWAY_BOOTING\",\"device\":\"LILYGO_T3S3_SX1262\"}");
+    Serial.flush();
     
     #ifdef STATUS_LED
     pinMode(STATUS_LED, OUTPUT);
     digitalWrite(STATUS_LED, LOW);
     #endif
 
-    // Setup custom SPI bus for T3S3
-    spiBus.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_NSS);
+    // Setup SPI bus for LilyGO T3S3 SX1262 (SCK 5, MISO 3, MOSI 6, NSS 7)
+    SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_NSS);
 
     // Give host serial connection a moment to enumerate
     delay(1500);
@@ -368,6 +377,10 @@ void setup() {
         SALBAR_LORA_PREAMBLE_LEN
     );
 
+    // Essential LilyGO T3S3 SX1262 hardware configuration
+    radio.setDio2AsRfSwitch(true);
+    radio.setTCXO(1.8);
+
     if (state != RADIOLIB_ERR_NONE) {
         JsonDocument doc;
         doc["status"] = "INIT_FAILED";
@@ -375,34 +388,33 @@ void setup() {
         doc["device"] = "LILYGO_T3S3_SX1262";
         serializeJson(doc, Serial);
         Serial.println();
-        while (true) {
-            #ifdef STATUS_LED
-            digitalWrite(STATUS_LED, !digitalRead(STATUS_LED));
-            #endif
-            delay(250);
-        }
-    }
-
-    // Attach DIO1 interrupt callback for asynchronous non-blocking packet reception
-    radio.setPacketReceivedAction(onPacketReceived);
-
-    // Begin listening for packets
-    state = radio.startReceive();
-    if (state != RADIOLIB_ERR_NONE) {
-        JsonDocument doc;
-        doc["status"] = "RX_START_FAILED";
-        doc["error_code"] = state;
-        serializeJson(doc, Serial);
-        Serial.println();
+        Serial.flush();
+        // Continue without hanging so serial commands still work for diagnostics
     } else {
-        JsonDocument doc;
-        doc["status"] = "GATEWAY_ONLINE";
-        doc["device"] = "LILYGO_T3S3_SX1262";
-        doc["freqMHz"] = SALBAR_LORA_FREQ_MHZ;
-        doc["sf"] = SALBAR_LORA_SF;
-        doc["bwKHz"] = SALBAR_LORA_BW_KHZ;
-        serializeJson(doc, Serial);
-        Serial.println();
+        radioReady = true;
+        // Attach DIO1 interrupt callback for asynchronous non-blocking packet reception
+        radio.setPacketReceivedAction(onPacketReceived);
+
+        // Begin listening for packets
+        state = radio.startReceive();
+        if (state != RADIOLIB_ERR_NONE) {
+            JsonDocument doc;
+            doc["status"] = "RX_START_FAILED";
+            doc["error_code"] = state;
+            serializeJson(doc, Serial);
+            Serial.println();
+            Serial.flush();
+        } else {
+            JsonDocument doc;
+            doc["status"] = "GATEWAY_ONLINE";
+            doc["device"] = "LILYGO_T3S3_SX1262";
+            doc["freqMHz"] = SALBAR_LORA_FREQ_MHZ;
+            doc["sf"] = SALBAR_LORA_SF;
+            doc["bwKHz"] = SALBAR_LORA_BW_KHZ;
+            serializeJson(doc, Serial);
+            Serial.println();
+            Serial.flush();
+        }
     }
 }
 

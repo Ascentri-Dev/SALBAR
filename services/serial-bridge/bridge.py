@@ -27,10 +27,18 @@ import serial.tools.list_ports
 try:
     from websockets.asyncio.server import serve, ServerConnection  # type: ignore
     from websockets.exceptions import ConnectionClosed  # type: ignore
+    import websockets.http11
+    # Increase HTTP header size and count limits to prevent HTTP 431 errors
+    # caused by accumulated browser localhost cookies/session tokens.
+    websockets.http11.MAX_LINE_LENGTH = 65536
+    websockets.http11.MAX_NUM_HEADERS = 512
     WebSocketType = ServerConnection
 except ImportError:
     import websockets  # type: ignore
     from websockets.exceptions import ConnectionClosed  # type: ignore
+    if hasattr(websockets, "http11"):
+        websockets.http11.MAX_LINE_LENGTH = 65536
+        websockets.http11.MAX_NUM_HEADERS = 512
     serve = websockets.serve  # type: ignore
     WebSocketType = Any
 
@@ -46,10 +54,19 @@ logger = logging.getLogger("SALBAR-Bridge")
 
 # Global connected WebSocket clients
 connected_clients: Set[WebSocketType] = set()
+client_locks: dict[Any, asyncio.Lock] = {}
 
-# Global serial handle
+# Global serial handle & mode
 serial_conn = None
 active_port_name = None
+is_mock_mode = False
+
+
+async def safe_send(ws: WebSocketType, message: str):
+    """Safely send a message to a client using a per-connection lock to prevent ConcurrencyError."""
+    lock = client_locks.setdefault(ws, asyncio.Lock())
+    async with lock:
+        await ws.send(message)
 
 
 def find_esp32_port() -> str | None:
@@ -71,12 +88,14 @@ async def broadcast_to_clients(message: str):
     if not connected_clients:
         return
     disconnected = set()
-    for ws in connected_clients:
+    for ws in list(connected_clients):
         try:
-            await ws.send(message)
+            await safe_send(ws, message)
         except Exception:
             disconnected.add(ws)
     connected_clients.difference_update(disconnected)
+    for ws in disconnected:
+        client_locks.pop(ws, None)
 
 
 async def serial_reader_task(port: str, baud: int):
@@ -87,7 +106,11 @@ async def serial_reader_task(port: str, baud: int):
     while True:
         try:
             logger.info(f"{Fore.YELLOW}Opening serial connection to {port} @ {baud} baud...{Style.RESET_ALL}")
-            serial_conn = serial.Serial(port, baudrate=baud, timeout=1.0)
+            serial_conn = serial.Serial(port, baudrate=baud, timeout=1.0, write_timeout=1.0)
+            try:
+                serial_conn.dtr = True
+            except Exception:
+                pass
             logger.info(f"{Fore.GREEN}✓ Connected to LoRa Gateway on {port}{Style.RESET_ALL}")
             
             # Broadcast status update
@@ -130,8 +153,8 @@ async def serial_reader_task(port: str, baud: int):
                     await broadcast_to_clients(raw_str)
 
                 except json.JSONDecodeError:
-                    # Non-JSON debug message from ESP32
-                    logger.debug(f"[RAW SERIAL] {raw_str}")
+                    # Non-JSON or debug message from ESP32
+                    logger.info(f"{Fore.LIGHTBLACK_EX}[RAW SERIAL]{Style.RESET_ALL} {raw_str}")
 
         except serial.SerialException as ex:
             logger.warning(f"{Fore.RED}Serial error on {port}: {ex}. Retrying in 3 seconds...{Style.RESET_ALL}")
@@ -168,8 +191,9 @@ async def mock_generator_task():
     }))
 
     seq = 100
+    # Send initial telemetry after a brief delay
+    await asyncio.sleep(1)
     while True:
-        await asyncio.sleep(8)
         seq += 1
 
         # Simulate periodic telemetry from SAR-01
@@ -194,6 +218,7 @@ async def mock_generator_task():
         }
         await broadcast_to_clients(json.dumps(telem_msg))
         logger.info(f"{Fore.BLUE}[MOCK LoRa Telemetry]{Style.RESET_ALL} SAR-01 update sent to {len(connected_clients)} client(s)")
+        await asyncio.sleep(5)
 
 
 async def websocket_handler(websocket, path=None):
@@ -203,10 +228,10 @@ async def websocket_handler(websocket, path=None):
     logger.info(f"{Fore.GREEN}Dashboard client connected: {client_ip}{Style.RESET_ALL} (Total: {len(connected_clients)})")
 
     # Send current gateway status immediately upon connection
-    await websocket.send(json.dumps({
+    await safe_send(websocket, json.dumps({
         "type": "GATEWAY_STATUS",
-        "connected": serial_conn is not None and serial_conn.is_open,
-        "port": active_port_name or "NONE",
+        "connected": is_mock_mode or (serial_conn is not None and serial_conn.is_open),
+        "port": "MOCK_VIRTUAL_T3S3" if is_mock_mode else (active_port_name or "NONE"),
         "timestamp": time.time()
     }))
 
@@ -218,16 +243,25 @@ async def websocket_handler(websocket, path=None):
                 
                 # Forward command to gateway serial connection
                 if serial_conn and serial_conn.is_open:
-                    serial_conn.write((message + "\n").encode("utf-8"))
-                    serial_conn.flush()
-                    await websocket.send(json.dumps({
+                    try:
+                        serial_conn.write((message + "\n").encode("utf-8"))
+                    except Exception as ex:
+                        logger.error(f"Error writing to gateway serial: {ex}")
+                    await safe_send(websocket, json.dumps({
                         "type": "DOWNLINK_ACK",
                         "status": "FORWARDED_TO_GATEWAY",
                         "timestamp": time.time()
                     }))
+                elif is_mock_mode:
+                    logger.info(f"{Fore.GREEN}[MOCK LoRa Downlink Transmitted]{Style.RESET_ALL} Downlink sent over simulated RF to {cmd_data.get('targetUnit')}")
+                    await safe_send(websocket, json.dumps({
+                        "type": "DOWNLINK_ACK",
+                        "status": "FORWARDED_TO_GATEWAY_MOCK",
+                        "timestamp": time.time()
+                    }))
                 else:
                     logger.warning("Received dispatch command, but Gateway serial port is not connected!")
-                    await websocket.send(json.dumps({
+                    await safe_send(websocket, json.dumps({
                         "type": "DOWNLINK_ACK",
                         "status": "SERIAL_PORT_OFFLINE",
                         "timestamp": time.time()
@@ -240,10 +274,12 @@ async def websocket_handler(websocket, path=None):
         pass
     finally:
         connected_clients.discard(websocket)
+        client_locks.pop(websocket, None)
         logger.info(f"Dashboard client disconnected: {client_ip} (Remaining: {len(connected_clients)})")
 
 
 async def main():
+    global is_mock_mode
     parser = argparse.ArgumentParser(description="SALBAR Gateway Serial-to-WebSocket Bridge")
     parser.add_argument("--port", type=str, default=None, help="Serial COM port (e.g. COM3 or /dev/ttyUSB0)")
     parser.add_argument("--baud", type=int, default=115200, help="Serial baud rate (default: 115200)")
@@ -260,6 +296,8 @@ async def main():
             args.mock = True
         else:
             logger.info(f"Auto-detected ESP32 serial port: {Fore.GREEN}{port}{Style.RESET_ALL}")
+
+    is_mock_mode = args.mock
 
     # Start WebSocket server
     ws_server = await serve(websocket_handler, "0.0.0.0", args.ws_port)

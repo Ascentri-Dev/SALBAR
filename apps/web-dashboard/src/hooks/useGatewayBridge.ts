@@ -128,7 +128,14 @@ export function useGatewayBridge(
         clearTimeout(reconnectTimeoutRef.current)
       }
       if (wsRef.current) {
-        wsRef.current.close()
+        const socket = wsRef.current
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close()
+        } else if (socket.readyState === WebSocket.CONNECTING) {
+          socket.onopen = () => {
+            socket.close()
+          }
+        }
       }
     }
   }, [connect])

@@ -5,8 +5,10 @@ on:
     branches:
       - main
       - develop
+      - "feat/**"
       - "feature/**"
       - "chore/**"
+      - "fix/**"
     paths:
       - "apps/web-dashboard/**"
       - ".github/workflows/web-dashboard-ci.yml"

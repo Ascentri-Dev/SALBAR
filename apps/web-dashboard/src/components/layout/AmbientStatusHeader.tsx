@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Menu, X, Sun, Moon } from 'lucide-react'
+import { Menu, X, Sun, Moon, Map, Shield, Archive } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { ScreenId, ScreenNavigationItem } from '../../types/navigation'
+import type { ScreenId } from '../../types/navigation'
 import { useTheme } from '../../context'
 
 export interface AmbientStatusHeaderProps {
@@ -12,21 +13,27 @@ export interface AmbientStatusHeaderProps {
   operatingMode?: 'lora-mesh-blackout' | 'cloud-sync'
 }
 
-const NAV_ITEMS: ScreenNavigationItem[] = [
+interface NavItem {
+  id: ScreenId
+  label: string
+  icon: LucideIcon
+}
+
+const NAV_ITEMS: NavItem[] = [
   {
     id: 'command-map',
-    label: 'Command Map & Triage',
-    subtitle: 'Primary Live Operations',
+    label: 'Command Map',
+    icon: Map,
   },
   {
     id: 'fleet-management',
-    label: 'Field Responders',
-    subtitle: 'Status & Fatigue',
+    label: 'Management',
+    icon: Shield,
   },
   {
     id: 'incident-archive',
-    label: 'Incident Archive',
-    subtitle: 'Audit & Records',
+    label: 'Archive',
+    icon: Archive,
   },
 ]
 
@@ -100,19 +107,30 @@ function StaggeredText({
 interface AnimatedLinkProps {
   title: string
   id: ScreenId
+  icon: LucideIcon
   isActive?: boolean
   onClick: (id: ScreenId) => void
   isLight: boolean
 }
 
-const AnimatedLink = ({ title, id, isActive, onClick, isLight }: AnimatedLinkProps) => {
+const AnimatedLink = ({ title, id, icon: Icon, isActive, onClick, isLight }: AnimatedLinkProps) => {
   return (
     <button
       type="button"
       data-testid={`nav-tab-${id}`}
       onClick={() => onClick(id)}
-      className="group relative cursor-pointer block shrink-0 py-1"
+      className="group relative cursor-pointer flex items-center gap-2 shrink-0 py-1"
     >
+      <Icon
+        size={15}
+        className={`shrink-0 transition-colors duration-200 ${
+          isActive
+            ? 'text-[var(--accent-primary)]'
+            : isLight
+              ? 'text-slate-700 group-hover:text-[var(--accent-hover)]'
+              : 'text-slate-300 group-hover:text-[var(--accent-hover)]'
+        }`}
+      />
       <StaggeredText
         text={title}
         isActive={isActive}
@@ -205,6 +223,7 @@ export function AmbientStatusHeader({
                 key={item.id}
                 title={item.label}
                 id={item.id}
+                icon={item.icon}
                 isActive={activeScreen === item.id}
                 onClick={handleSelectScreen}
                 isLight={isLight}
@@ -306,6 +325,7 @@ export function AmbientStatusHeader({
                     <AnimatedLink
                       title={item.label}
                       id={item.id}
+                      icon={item.icon}
                       isActive={activeScreen === item.id}
                       onClick={handleSelectScreen}
                       isLight={isLight}

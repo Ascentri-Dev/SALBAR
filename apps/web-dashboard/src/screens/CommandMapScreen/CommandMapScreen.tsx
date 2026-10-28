@@ -209,7 +209,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 type="button"
                 onClick={() => setIsKpiOpen(true)}
-                className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-9.5 px-3.5 items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
                   isLight
                     ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
@@ -349,7 +349,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
               <button
                 type="button"
                 onClick={() => setIsQueueOpen(true)}
-                className={`pointer-events-auto flex h-9.5 px-3.5 items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                className={`pointer-events-auto flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
                   isLight
                     ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
@@ -374,7 +374,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                     type="button"
                     onClick={() => setIsKpiOpen(true)}
-                    className={`pointer-events-auto flex h-9.5 px-3.5 items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                    className={`pointer-events-auto flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
                       isLight
                         ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                         : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { ChevronRight, ChevronLeft, Minimize2, Sun, Moon } from 'lucide-react'
+import { ChevronLeft, Minimize2, Sun, Moon } from 'lucide-react'
 import L from 'leaflet'
 import { TacticalMap, type MapTileType } from '../../components/map/TacticalMap'
 import { KPIStrip, type KpiFilter } from '../../components/kpi/KPIStrip'
@@ -174,35 +174,20 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
 
       {/* 2. Floating Overlays (Z-20) */}
       <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-        {/* 2.a Left Panel: Vertically Stacked KPI Priority Filter */}
+        {/* 2.a Left Panel: Unified METRICS Pill & Staggered Circular KPI Filter */}
         <div
-          className={`pointer-events-auto absolute left-4 top-20 z-20 transition-all duration-500 ease-out ${
-            isKpiOpen && !isFocusMode
-              ? 'translate-x-0 opacity-100'
-              : '-translate-x-[calc(100%+2rem)] opacity-0 pointer-events-none'
+          className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-20 transition-all duration-300 ${
+            isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         >
           <KPIStrip
             incidents={incidents}
             activeFilter={kpiFilter}
             onFilterChange={setKpiFilter}
-            onClose={() => setIsKpiOpen(false)}
+            isOpen={isKpiOpen}
+            onToggleOpen={() => setIsKpiOpen((prev) => !prev)}
           />
         </div>
-
-        {/* Reveal KPI Filter Button when Minimized */}
-        {!isKpiOpen && !isFocusMode && (
-          <button
-            type="button"
-            onClick={() => setIsKpiOpen(true)}
-            className="pointer-events-auto absolute left-0 top-20 z-30 flex h-10 px-2.5 items-center gap-1.5 border border-l-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 text-xs font-mono font-bold text-[var(--accent-primary)] shadow-lg backdrop-blur-md transition-colors hover:text-white hover:bg-[var(--accent-primary)] rounded-r-sm cursor-pointer"
-            title="Show Priority Metrics"
-            aria-label="Show Priority Metrics"
-          >
-            <ChevronRight size={16} />
-            <span className="text-[10px] uppercase tracking-wider">Metrics</span>
-          </button>
-        )}
 
         {/* 2.b Bottom-Left: Compact Icon-Only Tactical Map Controls Dock */}
         <div
@@ -235,7 +220,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
             title="Show Map Controls"
             aria-label="Show Map Controls"
           >
-            <ChevronRight size={18} />
+            <span className="text-sm font-bold">&gt;</span>
           </button>
         )}
 
@@ -298,7 +283,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           </button>
         )}
 
-        {/* Bottom-Right Map Dark Mode Control (Dedicated Floating Button when Queue is minimized or in focus) */}
+        {/* Bottom-Right Map Dark Mode Control */}
         {(!isQueueOpen || isFocusMode) && (
           <div className="pointer-events-auto absolute bottom-4 right-4 z-30">
             <button

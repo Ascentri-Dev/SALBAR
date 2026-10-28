@@ -1,5 +1,7 @@
-import { ChevronLeft } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import type { IncidentReport } from '../../types/cad'
+import { useTheme } from '../../context'
 
 export type KpiFilter = 'ALL' | 'CRITICAL' | 'ACTIVE' | 'PENDING' | 'RESOLVED'
 
@@ -7,17 +9,56 @@ export interface KPIStripProps {
   incidents: IncidentReport[]
   activeFilter: KpiFilter
   onFilterChange: (filter: KpiFilter) => void
-  onClose?: () => void
+  isOpen: boolean
+  onToggleOpen: () => void
   className?: string
+}
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.09,
+      delayChildren: 0.03,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      staggerChildren: 0.05,
+      staggerDirection: -1,
+    },
+  },
+}
+
+const cardVariants: Variants = {
+  hidden: { x: -35, opacity: 0, scale: 0.94 },
+  show: {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
+  },
+  exit: {
+    x: -35,
+    opacity: 0,
+    scale: 0.94,
+    transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as const },
+  },
 }
 
 export function KPIStrip({
   incidents,
   activeFilter,
   onFilterChange,
-  onClose,
+  isOpen,
+  onToggleOpen,
   className = '',
 }: KPIStripProps) {
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
+
   const totalCount = incidents.length
   const criticalCount = incidents.filter(
     (i) => i.urgency === 'CRITICAL' && i.status !== 'RESOLVED'
@@ -41,139 +82,156 @@ export function KPIStrip({
     {
       id: 'ALL' as const,
       label: 'TOTAL INCIDENTS',
-      shortLabel: 'ALL',
       value: totalCount,
-      subtext: 'All Command Pins',
-      tone: 'text-[var(--text-primary)]',
-      border: 'border-[var(--border-subtle)]',
-      barBg: 'bg-[var(--accent-primary)]',
       pct: 100,
+      pctText: '100%',
+      tone: isLight ? 'text-slate-900' : 'text-slate-100',
+      border: isLight ? 'border-slate-300' : 'border-[var(--border-subtle)]',
+      barBg: 'bg-[var(--accent-primary)]',
       pulse: false,
     },
     {
       id: 'CRITICAL' as const,
       label: 'CRITICAL',
-      shortLabel: 'CRIT',
       value: criticalCount,
-      subtext: `${getPercentage(criticalCount)}% High Urgency`,
-      tone: 'text-red-400',
+      pct: getPercentage(criticalCount),
+      pctText: `${getPercentage(criticalCount)}%`,
+      tone: 'text-red-500 dark:text-red-400',
       border: 'border-red-500/40',
       barBg: 'bg-red-500',
-      pct: getPercentage(criticalCount),
       pulse: criticalCount > 0,
     },
     {
       id: 'ACTIVE' as const,
       label: 'ACTIVE NEEDS',
-      shortLabel: 'ACTIVE',
       value: activeCount,
-      subtext: `${getPercentage(activeCount)}% In Progress`,
-      tone: 'text-orange-400',
+      pct: getPercentage(activeCount),
+      pctText: `${getPercentage(activeCount)}%`,
+      tone: 'text-orange-500 dark:text-orange-400',
       border: 'border-orange-500/40',
       barBg: 'bg-orange-500',
-      pct: getPercentage(activeCount),
       pulse: false,
     },
     {
       id: 'PENDING' as const,
       label: 'AWAITING DISPATCH',
-      shortLabel: 'PENDING',
       value: pendingCount,
-      subtext: `${getPercentage(pendingCount)}% In Pipeline`,
-      tone: 'text-amber-400',
+      pct: getPercentage(pendingCount),
+      pctText: `${getPercentage(pendingCount)}%`,
+      tone: 'text-amber-500 dark:text-amber-400',
       border: 'border-amber-500/40',
       barBg: 'bg-amber-500',
-      pct: getPercentage(pendingCount),
       pulse: pendingCount > 0,
     },
     {
       id: 'RESOLVED' as const,
       label: 'RESOLVED',
-      shortLabel: 'CLEARED',
       value: resolvedCount,
-      subtext: `${getPercentage(resolvedCount)}% Cleared`,
-      tone: 'text-emerald-400',
+      pct: getPercentage(resolvedCount),
+      pctText: `${getPercentage(resolvedCount)}%`,
+      tone: 'text-emerald-500 dark:text-emerald-400',
       border: 'border-emerald-500/40',
       barBg: 'bg-emerald-500',
-      pct: getPercentage(resolvedCount),
       pulse: false,
     },
   ]
 
   return (
-    <div className={`pointer-events-auto flex flex-col select-none w-56 sm:w-60 ${className}`.trim()}>
-      {/* Header with Title and Collapse Button */}
-      <div className="flex items-center justify-between px-1 mb-1.5">
-        <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-[var(--text-secondary)]">
-          Priority Metrics
+    <div className={`pointer-events-auto flex flex-col select-none w-60 sm:w-64 ${className}`.trim()}>
+      {/* Unified "METRICS" Toggle Button in Safety Orange */}
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        className={`h-11 flex items-center justify-between gap-2.5 px-5 rounded-full border shadow-xl backdrop-blur-md transition-all cursor-pointer select-none group ${
+          isLight
+            ? 'bg-white border-slate-300 hover:border-[var(--accent-primary)]'
+            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] hover:border-[var(--accent-primary)] shadow-black/40'
+        }`}
+        title={isOpen ? 'Click "METRICS" to collapse' : 'Click "METRICS" to expand'}
+        aria-label={isOpen ? 'Collapse Metrics' : 'Expand Metrics'}
+      >
+        <span className="font-heading font-black text-xs sm:text-sm tracking-widest uppercase text-[var(--accent-primary)] group-hover:text-[var(--accent-hover)] transition-colors">
+          METRICS
         </span>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
-            title="Hide Priority Filter"
-            aria-label="Hide Priority Filter"
+        <motion.span
+          animate={{ rotate: isOpen ? 0 : -90 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="text-[var(--accent-primary)] group-hover:text-[var(--accent-hover)] transition-colors"
+        >
+          <ChevronDown size={16} />
+        </motion.span>
+      </button>
+
+      {/* Slower Staggered Animated Circular Pill Cards */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            className="flex flex-col gap-2.5 mt-2.5"
           >
-            <ChevronLeft size={16} />
-          </button>
-        )}
-      </div>
+            {kpiStats.map((stat) => {
+              const isSelected = activeFilter === stat.id
 
-      {/* Vertically Stacked Metric Cards */}
-      <div className="flex flex-col gap-2">
-        {kpiStats.map((stat) => {
-          const isSelected = activeFilter === stat.id
-          return (
-            <button
-              key={stat.id}
-              type="button"
-              onClick={() => onFilterChange(stat.id)}
-              className={`group relative overflow-hidden flex h-13 w-full items-center border bg-[var(--bg-surface)]/90 backdrop-blur-md shadow-lg transition-all duration-300 hover:border-[var(--accent-primary)] -skew-x-6 cursor-pointer text-left rounded-sm ${
-                stat.border
-              } ${
-                isSelected
-                  ? 'ring-1 sm:ring-2 ring-[var(--accent-primary)] opacity-100 z-10 bg-[var(--bg-surface-elevated)] shadow-md shadow-[var(--accent-primary)]/20'
-                  : 'opacity-90 hover:opacity-100'
-              }`}
-              title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pct}%)`}
-            >
-              {/* Proportional Occupancy Fill Bar */}
-              <div
-                className={`absolute inset-y-0 left-0 opacity-15 pointer-events-none transition-all duration-500 ${stat.barBg}`}
-                style={{ width: `${stat.pct}%` }}
-              />
-
-              {/* Bottom Accent Bar */}
-              <div className="absolute bottom-0 left-0 h-1 bg-[var(--border-subtle)]/50 w-full overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-500 ${stat.barBg}`}
-                  style={{ width: `${stat.pct}%` }}
-                />
-              </div>
-
-              {/* Content (Unskewed) */}
-              <div className="relative z-10 flex w-full items-center justify-between gap-2 px-3 py-1 skew-x-6">
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-[var(--text-secondary)] group-hover:text-[var(--accent-primary)] transition-colors truncate">
-                    {stat.label}
-                  </span>
-                  <span className="text-[8px] font-mono text-[var(--text-muted)] tracking-tight truncate">
-                    {stat.subtext}
-                  </span>
-                </div>
-                <span
-                  className={`text-lg font-mono font-bold shrink-0 leading-none ${
-                    stat.tone
-                  } ${stat.pulse ? 'animate-pulse' : ''}`}
+              return (
+                <motion.button
+                  key={stat.id}
+                  variants={cardVariants}
+                  type="button"
+                  onClick={() => onFilterChange(stat.id)}
+                  className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full border px-5 sm:px-6 shadow-xl transition-all duration-300 cursor-pointer text-left ${
+                    stat.border
+                  } ${
+                    isLight
+                      ? isSelected
+                        ? 'ring-2 ring-[var(--accent-primary)] bg-white border-[var(--accent-primary)] shadow-md'
+                        : 'bg-white hover:border-[var(--accent-primary)]'
+                      : isSelected
+                        ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] border-[var(--accent-primary)] shadow-md shadow-[var(--accent-primary)]/20'
+                        : 'bg-[var(--bg-surface)] hover:border-[var(--accent-primary)]'
+                  }`}
+                  title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}
                 >
-                  {stat.value}
-                </span>
-              </div>
-            </button>
-          )
-        })}
-      </div>
+                  {/* High-Visibility Proportional Occupancy Meter Fill Bar */}
+                  <div
+                    className={`absolute inset-y-0 left-0 rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
+                    style={{ width: `${stat.pct}%` }}
+                  />
+
+                  {/* Header & Percentage-Only Subheader */}
+                  <div className="flex flex-col z-10 min-w-0">
+                    <span
+                      className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
+                        isSelected
+                          ? 'text-[var(--accent-primary)]'
+                          : isLight
+                            ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
+                            : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
+                      }`}
+                    >
+                      {stat.label}
+                    </span>
+                    <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
+                      {stat.pctText}
+                    </span>
+                  </div>
+
+                  {/* Big, Bold Numeric Count */}
+                  <span
+                    className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
+                      stat.tone
+                    } ${stat.pulse ? 'animate-pulse' : ''}`}
+                  >
+                    {stat.value}
+                  </span>
+                </motion.button>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

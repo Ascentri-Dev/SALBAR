@@ -3,6 +3,8 @@
 ## Overview
 A web-based mission control interface for barangay and city-level disaster management operators. It visualizes live incidents, responder telemetry, and provides a Human-in-the-Loop (HITL) interface for reviewing and authorizing dispatch assignments. Built with React, TypeScript, and Vite.
 
+For the full screen architecture and color palette specification, see the [UI Plan and Design System](../../docs/web-dashboard-ui-plan.md).
+
 ## Core Features
 - **Live GIS Map View**: Displays real-time location pins for incoming disaster incidents, field response teams, and road condition updates.
 - **Incident Triage Queue**: Lists classified civilian and responder reports sorted by urgency and priority.

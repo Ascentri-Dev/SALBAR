@@ -15,7 +15,9 @@ export function App() {
         onSelectScreen={setActiveScreen}
       >
         {activeScreen === 'command-map' && <CommandMapScreen />}
-        {activeScreen === 'fleet-management' && <FleetManagementScreen />}
+        {activeScreen === 'fleet-management' && (
+          <FleetManagementScreen onSelectScreen={setActiveScreen} />
+        )}
         {activeScreen === 'incident-archive' && <IncidentArchiveScreen />}
       </DashboardLayout>
     </ThemeProvider>

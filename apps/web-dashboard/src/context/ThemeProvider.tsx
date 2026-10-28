@@ -24,8 +24,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (theme === 'light') {
       root.setAttribute('data-theme', 'light')
       root.classList.add('light')
+      root.classList.remove('dark')
     } else {
-      root.removeAttribute('data-theme')
+      root.setAttribute('data-theme', 'dark')
+      root.classList.add('dark')
       root.classList.remove('light')
     }
     localStorage.setItem('salbar-theme', theme)
@@ -36,7 +38,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [isMapDark])
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
+    setTheme((prevTheme) => {
+      const nextTheme = prevTheme === 'dark' ? 'light' : 'dark'
+      if (nextTheme === 'light') {
+        // Switching to Light Mode: set both app and map to light mode
+        setIsMapDark(false)
+      } else {
+        // Switching to Dark Mode: ensure map is also set to dark mode
+        setIsMapDark(true)
+      }
+      return nextTheme
+    })
   }
 
   const toggleMapDark = () => {

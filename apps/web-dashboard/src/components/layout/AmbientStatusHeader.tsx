@@ -43,8 +43,8 @@ function StaggeredText({
   text,
   isActive = false,
   className = '',
-  inactiveColorClass = 'text-[var(--text-secondary)]',
-  activeColorClass = 'text-[var(--accent-primary)]',
+  inactiveColorClass = 'text-slate-900 font-bold',
+  activeColorClass = 'text-[var(--accent-primary)] font-extrabold',
   hoverColorClass = 'group-hover:text-[var(--accent-hover)]',
 }: StaggeredTextProps) {
   const characters = text.split('')
@@ -64,8 +64,8 @@ function StaggeredText({
               initial={false}
               animate={isActive ? { y: '-100%' } : { y: '0%' }}
               transition={{
-                duration: 0.4,
-                delay: index * 0.022,
+                duration: 0.38,
+                delay: index * 0.02,
                 ease: [0.76, 0, 0.24, 1],
               }}
               className={`inline-block transition-colors duration-200 ${
@@ -80,11 +80,11 @@ function StaggeredText({
               initial={false}
               animate={isActive ? { y: '0%' } : { y: '100%' }}
               transition={{
-                duration: 0.4,
-                delay: index * 0.022,
+                duration: 0.38,
+                delay: index * 0.02,
                 ease: [0.76, 0, 0.24, 1],
               }}
-              className={`absolute inset-0 inline-block ${
+              className={`absolute inset-0 inline-block font-extrabold ${
                 isSpace ? 'w-1.5 sm:w-2' : ''
               } ${activeColorClass}`}
             >
@@ -102,9 +102,10 @@ interface AnimatedLinkProps {
   id: ScreenId
   isActive?: boolean
   onClick: (id: ScreenId) => void
+  isLight: boolean
 }
 
-const AnimatedLink = ({ title, id, isActive, onClick }: AnimatedLinkProps) => {
+const AnimatedLink = ({ title, id, isActive, onClick, isLight }: AnimatedLinkProps) => {
   return (
     <button
       type="button"
@@ -112,7 +113,13 @@ const AnimatedLink = ({ title, id, isActive, onClick }: AnimatedLinkProps) => {
       onClick={() => onClick(id)}
       className="group relative cursor-pointer block shrink-0 py-1"
     >
-      <StaggeredText text={title} isActive={isActive} />
+      <StaggeredText
+        text={title}
+        isActive={isActive}
+        inactiveColorClass={isLight ? 'text-slate-900 font-bold' : 'text-slate-100 font-bold'}
+        activeColorClass="text-[var(--accent-primary)] font-extrabold"
+        hoverColorClass="group-hover:text-[var(--accent-hover)]"
+      />
     </button>
   )
 }
@@ -125,6 +132,8 @@ export function AmbientStatusHeader({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { theme, toggleTheme, isMapDark } = useTheme()
 
+  const isLight = theme === 'light'
+
   const handleSelectScreen = (screenId: ScreenId) => {
     setIsMobileMenuOpen(false)
     onSelectScreen(screenId)
@@ -135,25 +144,25 @@ export function AmbientStatusHeader({
     if (isMobileMenuOpen) setIsMobileMenuOpen(false)
   }
 
-  // Adaptive contrast for "SALBAR" text when navbar is hidden over the map
+  // Adaptive high contrast for "SALBAR" text
   const getSalbarColorClasses = () => {
     if (isNavbarOpen) {
       return {
-        inactive: 'text-[var(--text-primary)]',
-        active: 'text-[var(--accent-primary)]',
+        inactive: isLight ? 'text-slate-950 font-black' : 'text-white font-black',
+        active: 'text-[var(--accent-primary)] font-black',
         hover: 'group-hover:text-[var(--accent-hover)]',
       }
     }
-    // When navbar is hidden, adapt to map theme
+    // When navbar is hidden, adapt directly to the underlying map theme
     if (!isMapDark) {
-      // Map is in Light Mode -> Text must be dark
+      // Light map -> Jet black text with subtle white halo
       return {
         inactive: 'text-slate-950 font-black',
-        active: 'text-slate-900 font-black',
-        hover: 'group-hover:text-[var(--accent-primary)]',
+        active: 'text-[var(--accent-primary)] font-black',
+        hover: 'group-hover:text-[var(--accent-hover)]',
       }
     }
-    // Map is in Dark Mode -> Text must be bright/accent
+    // Dark map -> Pure white text with dark shadow
     return {
       inactive: 'text-white font-black',
       active: 'text-[var(--accent-primary)] font-black',
@@ -169,15 +178,19 @@ export function AmbientStatusHeader({
       className="fixed top-3 sm:top-4 left-0 right-0 z-40 pointer-events-none flex justify-center px-2 sm:px-4 md:px-5 select-none w-full"
     >
       <div className="w-full relative pointer-events-none h-13 sm:h-14 flex items-center">
-        {/* Full-width Translucent Frosted Glass Navbar Bar */}
+        {/* Full-width Solid Rounded Navbar Bar */}
         <motion.div
           initial={false}
           animate={{
             y: isNavbarOpen ? 0 : -90,
             opacity: isNavbarOpen ? 1 : 0,
           }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full h-full flex items-center justify-between rounded-full px-6 sm:px-10 pointer-events-auto bg-[var(--bg-surface)]/45 backdrop-blur-xl backdrop-saturate-150 border border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36),inset_0_1px_1px_0_rgba(255,255,255,0.15)] transition-all duration-300"
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className={`w-full h-full flex items-center justify-between rounded-full px-6 sm:px-10 pointer-events-auto border transition-colors duration-300 shadow-2xl ${
+            isLight
+              ? 'bg-white border-slate-300 shadow-slate-400/25'
+              : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] shadow-black/50'
+          }`}
         >
           {/* Left spacer so center links align properly leaving room for SALBAR text */}
           <div className="w-28 sm:w-32 shrink-0 pointer-events-none" />
@@ -195,6 +208,7 @@ export function AmbientStatusHeader({
                 id={item.id}
                 isActive={activeScreen === item.id}
                 onClick={handleSelectScreen}
+                isLight={isLight}
               />
             ))}
           </nav>
@@ -204,11 +218,15 @@ export function AmbientStatusHeader({
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 hover:bg-[var(--bg-surface-elevated)]/80 rounded-full transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+              className={`p-2 rounded-full transition-colors cursor-pointer ${
+                isLight
+                  ? 'hover:bg-slate-100 text-slate-800 hover:text-[var(--accent-primary)]'
+                  : 'hover:bg-[var(--bg-surface-elevated)] text-slate-100 hover:text-[var(--accent-primary)]'
+              }`}
               aria-label="Toggle Theme"
-              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+              {isLight ? <Moon size={17} /> : <Sun size={17} />}
             </button>
           </div>
 
@@ -217,15 +235,23 @@ export function AmbientStatusHeader({
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 hover:bg-[var(--bg-surface-elevated)]/80 rounded-full transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+              className={`p-2 rounded-full transition-colors cursor-pointer ${
+                isLight
+                  ? 'hover:bg-slate-100 text-slate-800 hover:text-[var(--accent-primary)]'
+                  : 'hover:bg-[var(--bg-surface-elevated)] text-slate-100 hover:text-[var(--accent-primary)]'
+              }`}
               aria-label="Toggle Theme"
             >
-              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+              {isLight ? <Moon size={17} /> : <Sun size={17} />}
             </button>
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] bg-[var(--bg-surface-elevated)]/80 rounded-full border border-[var(--border-subtle)] cursor-pointer"
+              className={`p-2 rounded-full border cursor-pointer ${
+                isLight
+                  ? 'bg-slate-100 text-slate-800 border-slate-300 hover:text-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface-elevated)] text-slate-100 border-[var(--border-subtle)] hover:text-[var(--accent-primary)]'
+              }`}
               aria-label="Toggle Navigation Menu"
             >
               {isMobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
@@ -241,9 +267,9 @@ export function AmbientStatusHeader({
             className={`font-heading relative group cursor-pointer text-base sm:text-lg font-black tracking-wider uppercase block shrink-0 select-none transition-all duration-300 ${
               !isNavbarOpen
                 ? !isMapDark
-                  ? 'drop-shadow-[0_1px_4px_rgba(255,255,255,0.95)]'
+                  ? 'drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)]'
                   : 'drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]'
-                : 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]'
+                : ''
             }`}
             title={isNavbarOpen ? 'Click "SALBAR" to hide navbar' : 'Click "SALBAR" to reveal navbar'}
             aria-label={isNavbarOpen ? 'Hide navbar' : 'Reveal navbar'}
@@ -259,7 +285,7 @@ export function AmbientStatusHeader({
           </button>
         </div>
 
-        {/* Mobile Dropdown Menu with Frosted Glass Effect */}
+        {/* Mobile Dropdown Menu with Solid Styling */}
         <AnimatePresence>
           {isNavbarOpen && isMobileMenuOpen && (
             <motion.div
@@ -269,14 +295,21 @@ export function AmbientStatusHeader({
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="absolute top-full mt-2.5 left-0 w-full z-50 lg:hidden pointer-events-auto"
             >
-              <div className="bg-[var(--bg-surface)]/85 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl p-5 flex flex-col gap-3.5 shadow-2xl">
+              <div
+                className={`border rounded-2xl p-5 flex flex-col gap-3.5 shadow-2xl ${
+                  isLight
+                    ? 'bg-white border-slate-300 text-slate-900'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100'
+                }`}
+              >
                 {NAV_ITEMS.map((item) => (
-                  <div key={item.id} className="border-b border-[var(--border-subtle)]/50 pb-2.5">
+                  <div key={item.id} className="border-b border-slate-200 dark:border-[var(--border-subtle)]/50 pb-2.5">
                     <AnimatedLink
                       title={item.label}
                       id={item.id}
                       isActive={activeScreen === item.id}
                       onClick={handleSelectScreen}
+                      isLight={isLight}
                     />
                   </div>
                 ))}

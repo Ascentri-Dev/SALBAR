@@ -1,9 +1,10 @@
 # Base Station LoRa Gateway Firmware (`firmware/gateway`)
 
 ## Target Hardware
-- **Base Board**: LilyGO TTGO LoRa32 V2.1 (ESP32, SX1276 LoRa 915 MHz, integrated OLED).
+- **Base Board**: LilyGO T3S3 (ESP32-S3 Dual-Core Xtensa LX7, Semtech SX1262 LoRa 915 MHz).
+- **USB Interface**: Native USB Type-C (USB CDC Serial on boot).
 - **Enclosure**: IP65 weatherproof ABS enclosure with 915 MHz 5–8 dBi high-gain base station antenna.
-- **Connection**: Shielded USB-to-UART cable connected directly to the host computer.
+- **Connection**: USB-C data cable connected directly to the host coordination computer.
 
 ## Responsibilities
 - **Mesh Root Listener**: Listens continuously on 915 MHz LoRa channels for incoming telemetry packets forwarded by field terminals.

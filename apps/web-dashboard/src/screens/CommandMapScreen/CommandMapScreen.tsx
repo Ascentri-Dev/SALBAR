@@ -14,6 +14,7 @@ import {
   ROAD_HAZARDS,
 } from '../../data/mockCadData'
 import type { IncidentReport, FieldResponder } from '../../types/cad'
+import { useGatewayBridge, type LiveTelemetryUpdate } from '../../hooks/useGatewayBridge'
 
 export interface CommandMapScreenProps {
   className?: string
@@ -30,6 +31,66 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   const [responders, setResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
   const [selectedIncident, setSelectedIncident] = useState<IncidentReport | null>(null)
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('ALL')
+
+  // Handler for live LoRa telemetry packet arriving from Gateway
+  const handleLiveTelemetry = useCallback(
+    (telemetry: LiveTelemetryUpdate) => {
+      setResponders((prev) => {
+        const exists = prev.some((r) => r.id === telemetry.id)
+        if (!exists) {
+          const newUnit: FieldResponder = {
+            id: telemetry.id,
+            name: `Unit ${telemetry.id}`,
+            role: 'Search and Rescue',
+            terminalType: 'TTGO_T_BEAM_V12',
+            status: telemetry.status || 'AVAILABLE',
+            batteryPercent: telemetry.batteryPercent ?? 90,
+            batteryVoltage: telemetry.batteryVoltage ?? 4.0,
+            fatigueScore: telemetry.fatigueScore ?? 10,
+            location: {
+              lat: telemetry.lat ?? 10.315,
+              lng: telemetry.lng ?? 123.885,
+              accuracyMeters: telemetry.accuracyMeters ?? 2.0,
+              kalmanFiltered: telemetry.kalmanFiltered ?? true,
+            },
+            lastSeen: 'Just now',
+            relayedReportsCount: telemetry.relayedReportsCount ?? 0,
+          }
+          return [...prev, newUnit]
+        }
+        return prev.map((r) => {
+          if (r.id !== telemetry.id) return r
+          return {
+            ...r,
+            ...telemetry,
+            location: {
+              ...r.location,
+              ...(telemetry.lat !== undefined && telemetry.lng !== undefined
+                ? {
+                    lat: telemetry.lat,
+                    lng: telemetry.lng,
+                    accuracyMeters: telemetry.accuracyMeters ?? r.location.accuracyMeters,
+                    kalmanFiltered: telemetry.kalmanFiltered ?? r.location.kalmanFiltered,
+                  }
+                : {}),
+            },
+            lastSeen: 'Just now',
+          }
+        })
+      })
+    },
+    []
+  )
+
+  // Handler for live emergency reports arriving over LoRa from Gateway
+  const handleLiveIncident = useCallback((incomingInc: IncidentReport) => {
+    setIncidents((prev) => {
+      if (prev.some((i) => i.id === incomingInc.id)) return prev
+      return [incomingInc, ...prev]
+    })
+  }, [])
+
+  const { sendDispatch } = useGatewayBridge(handleLiveTelemetry, handleLiveIncident)
 
   const [mapTileType, setMapTileType] = useState<MapTileType>('standard')
   const [isKpiOpen, setIsKpiOpen] = useState(false)
@@ -101,6 +162,9 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
 
   // Approve dispatch action
   const handleApproveDispatch = (incidentId: string, unitId: string) => {
+    // Send downlink dispatch command via Gateway Serial Bridge over LoRa
+    sendDispatch(unitId, incidentId, 'Command approved: proceed to destination.')
+
     setIncidents((prev) =>
       prev.map((inc) =>
         inc.id === incidentId

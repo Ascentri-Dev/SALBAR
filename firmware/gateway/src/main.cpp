@@ -12,11 +12,25 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include <Wire.h>
 #include <RadioLib.h>
 #include <ArduinoJson.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 #include "pins_config.h"
 #include "salbar_protocol.h"
+
+// ============================================================================
+// Onboard SSD1306 OLED Display Configuration (128x64, I2C)
+// ============================================================================
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define SCREEN_ADDRESS 0x3C
+
+static Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+static bool oledReady = false;
 
 // Instantiate RadioLib SX1262 module with T3S3 pin mappings
 static SX1262 radio = new Module(LORA_NSS, LORA_DIO1, LORA_RST, LORA_BUSY);
@@ -88,6 +102,37 @@ static const char* sourceToString(uint8_t src) {
     }
 }
 
+// Update the onboard SSD1306 OLED status display
+static void updateDisplay(const char *statusMsg = nullptr) {
+    if (!oledReady) return;
+    display.clearDisplay();
+    display.setTextColor(SSD1306_WHITE);
+
+    // Title Header
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.println(F("Ascentri's"));
+    display.setCursor(0, 10);
+    display.println(F("SALBAR Gateway"));
+
+    // Horizontal Divider
+    display.drawLine(0, 20, 127, 20, SSD1306_WHITE);
+
+    // Radio RF Settings
+    display.setCursor(0, 24);
+    display.printf("RF: 915 MHz | SF%d\n", SALBAR_LORA_SF);
+
+    // Live Operational Status
+    display.setCursor(0, 36);
+    display.printf("Status: %s\n", statusMsg ? statusMsg : (radioReady ? "ONLINE" : "RADIO_ERR"));
+
+    // Live Packet Counters
+    display.setCursor(0, 49);
+    display.printf("RX: %lu   TX: %lu\n", (unsigned long)totalPacketsReceived, (unsigned long)totalPacketsTransmitted);
+
+    display.display();
+}
+
 // Process and unpack a received radio packet
 static void processReceivedPacket() {
     uint8_t rxBuffer[256];
@@ -108,6 +153,7 @@ static void processReceivedPacket() {
     float rssi = radio.getRSSI();
     float snr = radio.getSNR();
     totalPacketsReceived++;
+    updateDisplay("PACKET_RX");
 
     // Blink status LED
     #ifdef STATUS_LED
@@ -249,6 +295,7 @@ static bool transmitDispatchDownlink(const char *targetNode, uint16_t incidentId
     #ifdef STATUS_LED
     digitalWrite(STATUS_LED, HIGH);
     #endif
+    updateDisplay("TX_LORA");
 
     int state = radio.transmit(txBuffer, sizeof(txBuffer));
 
@@ -258,6 +305,7 @@ static bool transmitDispatchDownlink(const char *targetNode, uint16_t incidentId
 
     // Re-enter receive mode immediately after transmission
     radio.startReceive();
+    updateDisplay("ONLINE");
 
     return (state == RADIOLIB_ERR_NONE);
 }
@@ -360,6 +408,13 @@ void setup() {
     digitalWrite(STATUS_LED, LOW);
     #endif
 
+    // Initialize I2C bus for onboard SSD1306 OLED (SDA 18, SCL 17)
+    Wire.begin(I2C_SDA, I2C_SCL);
+    if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+        oledReady = true;
+        updateDisplay("BOOTING...");
+    }
+
     // Setup SPI bus for LilyGO T3S3 SX1262 (SCK 5, MISO 3, MOSI 6, NSS 7)
     SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_NSS);
 
@@ -382,6 +437,7 @@ void setup() {
     radio.setTCXO(1.8);
 
     if (state != RADIOLIB_ERR_NONE) {
+        updateDisplay("INIT_FAILED");
         JsonDocument doc;
         doc["status"] = "INIT_FAILED";
         doc["error_code"] = state;
@@ -398,6 +454,7 @@ void setup() {
         // Begin listening for packets
         state = radio.startReceive();
         if (state != RADIOLIB_ERR_NONE) {
+            updateDisplay("RX_ERR");
             JsonDocument doc;
             doc["status"] = "RX_START_FAILED";
             doc["error_code"] = state;
@@ -405,6 +462,7 @@ void setup() {
             Serial.println();
             Serial.flush();
         } else {
+            updateDisplay("ONLINE");
             JsonDocument doc;
             doc["status"] = "GATEWAY_ONLINE";
             doc["device"] = "LILYGO_T3S3_SX1262";

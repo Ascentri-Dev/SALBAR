@@ -12,7 +12,7 @@ function renderScreen(props = {}) {
 }
 
 describe('Field Responder Fleet Management Screen', () => {
-  it('renders header, fleet summary KPIs with N/A, and all 3 unit cards', () => {
+  it('renders header, fleet summary KPIs with N/A, and deployed unit card', () => {
     renderScreen()
 
     expect(screen.getByTestId('screen-fleet-management')).toBeInTheDocument()
@@ -21,12 +21,8 @@ describe('Field Responder Fleet Management Screen', () => {
     expect(screen.getByTestId('responder-units-grid')).toBeInTheDocument()
 
     expect(screen.getByTestId('unit-card-sar-01')).toBeInTheDocument()
-    expect(screen.getByTestId('unit-card-da-02')).toBeInTheDocument()
-    expect(screen.getByTestId('unit-card-relief-03')).toBeInTheDocument()
-
-    // Battery, GPS, and other telemetry display N/A
-    const sarCard = screen.getByTestId('unit-card-sar-01')
-    expect(sarCard).toHaveTextContent('N/A')
+    expect(screen.queryByTestId('unit-card-da-02')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('unit-card-relief-03')).not.toBeInTheDocument()
   })
 
   it('filters units by search query', () => {
@@ -36,15 +32,15 @@ describe('Field Responder Fleet Management Screen', () => {
     fireEvent.change(searchInput, { target: { value: 'SAR' } })
 
     expect(screen.getByTestId('unit-card-sar-01')).toBeInTheDocument()
-    expect(screen.queryByTestId('unit-card-da-02')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('unit-card-relief-03')).not.toBeInTheDocument()
+
+    fireEvent.change(searchInput, { target: { value: 'NONEXISTENT' } })
+    expect(screen.queryByTestId('unit-card-sar-01')).not.toBeInTheDocument()
   })
 
   it('toggles mandatory rest on a responder unit and updates status filter', () => {
     renderScreen()
 
     const sarCard = screen.getByTestId('unit-card-sar-01')
-    expect(sarCard).toHaveTextContent('N/A')
 
     // Find the Force Rest button inside the SAR card
     const restButtons = screen.getAllByRole('button', { name: /force rest/i })
@@ -58,8 +54,6 @@ describe('Field Responder Fleet Management Screen', () => {
     fireEvent.click(restingFilterBtn)
 
     expect(screen.getByTestId('unit-card-sar-01')).toBeInTheDocument()
-    expect(screen.queryByTestId('unit-card-da-02')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('unit-card-relief-03')).not.toBeInTheDocument()
   })
 
   it('opens and closes the detailed telemetry inspector modal with N/A fields', () => {

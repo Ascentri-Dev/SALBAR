@@ -31,10 +31,17 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   const [responders, setResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
   const [selectedIncident, setSelectedIncident] = useState<IncidentReport | null>(null)
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('ALL')
+  const hasAutoCenteredRef = useRef(false)
 
   // Handler for live LoRa telemetry packet arriving from Gateway
   const handleLiveTelemetry = useCallback(
     (telemetry: LiveTelemetryUpdate) => {
+      // Auto-center map on unit upon receiving valid live coordinates
+      if (!hasAutoCenteredRef.current && telemetry.lat !== undefined && telemetry.lng !== undefined && mapRef.current) {
+        mapRef.current.flyTo([telemetry.lat, telemetry.lng], 15, { duration: 1.0 })
+        hasAutoCenteredRef.current = true
+      }
+
       setResponders((prev) => {
         const exists = prev.some((r) => r.id === telemetry.id)
         if (!exists) {
@@ -121,6 +128,15 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   }, [])
 
   const handleLocate = useCallback(() => {
+    // Center directly on the active live LoRa responder
+    if (responders.length > 0 && responders[0].location.lat && responders[0].location.lng) {
+      mapRef.current?.flyTo(
+        [responders[0].location.lat, responders[0].location.lng],
+        16,
+        { duration: 1.0 }
+      )
+      return
+    }
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -137,7 +153,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
     } else {
       mapRef.current?.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 1.0 })
     }
-  }, [])
+  }, [responders])
 
   const handleToggleTileType = useCallback(() => {
     setMapTileType((prev) => (prev === 'standard' ? 'humanitarian' : 'standard'))

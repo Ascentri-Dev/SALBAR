@@ -93,104 +93,150 @@ function createIncidentMarkerIcon(
   const isCritical = incident.urgency === 'CRITICAL' && incident.status !== 'RESOLVED'
   const isHigh = incident.urgency === 'HIGH' && incident.status !== 'RESOLVED'
   const isResolved = incident.status === 'RESOLVED'
+  const isModerate = incident.urgency === 'MODERATE' && incident.status !== 'RESOLVED'
 
-  let pinColor = '#3B82F6'
-  let glowColor = 'rgba(59, 130, 246, 0.4)'
+  // Precision high-grade vector styling with luminous multi-stop gradients
+  let bg = 'linear-gradient(135deg, #0284C7 0%, #0369A1 50%, #0C4A6E 100%)'
+  let border = '#38BDF8'
+  let shadow = 'rgba(2, 132, 199, 0.7)'
+  let arrowBg = '#0369A1'
+  let label = 'INC'
+  let subLabel = 'LOW'
+
   if (isResolved) {
-    pinColor = '#10B981'
-    glowColor = 'rgba(16, 185, 129, 0.4)'
+    bg = 'linear-gradient(135deg, #10B981 0%, #059669 50%, #064E3B 100%)'
+    border = '#6EE7B7'
+    shadow = 'rgba(16, 185, 129, 0.7)'
+    arrowBg = '#059669'
+    label = '&#10003;'
+    subLabel = 'CLR'
   } else if (isCritical) {
-    pinColor = '#EF4444'
-    glowColor = 'rgba(239, 68, 68, 0.55)'
+    bg = 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #991B1B 100%)'
+    border = '#FCA5A5'
+    shadow = 'rgba(239, 68, 68, 0.85)'
+    arrowBg = '#DC2626'
+    label = 'SOS'
+    subLabel = 'CRIT'
   } else if (isHigh) {
-    pinColor = '#EA580C'
-    glowColor = 'rgba(234, 88, 12, 0.45)'
-  } else if (incident.urgency === 'MODERATE') {
-    pinColor = '#F59E0B'
-    glowColor = 'rgba(245, 158, 11, 0.4)'
+    bg = 'linear-gradient(135deg, #F97316 0%, #EA580C 50%, #9A3412 100%)'
+    border = '#FDBA74'
+    shadow = 'rgba(249, 115, 22, 0.75)'
+    arrowBg = '#EA580C'
+    label = 'ALERT'
+    subLabel = 'HIGH'
+  } else if (isModerate) {
+    bg = 'linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #78350F 100%)'
+    border = '#FDE68A'
+    shadow = 'rgba(245, 158, 11, 0.7)'
+    arrowBg = '#D97706'
+    label = 'ACTIVE'
+    subLabel = 'MOD'
   }
 
-  const pulseRing = (isCritical || isHigh)
-    ? `<span style="border-color: ${pinColor};" class="absolute -inset-2.5 rounded-full border-2 animate-ping opacity-75"></span>
-       <span style="border-color: ${pinColor};" class="absolute -inset-1 rounded-full border animate-pulse opacity-60"></span>`
+  // Radar ground pings for Critical and High urgency alerts
+  const radarPing = (isCritical || isHigh)
+    ? `<div style="border-color: ${border};" class="absolute -bottom-2 w-12 h-12 rounded-full border-2 animate-ping pointer-events-none opacity-60"></div>
+       <div style="background-color: ${shadow};" class="absolute -bottom-1 w-6 h-6 rounded-full blur-[2px] animate-pulse pointer-events-none opacity-70"></div>`
     : ''
 
-  const selectionRing = isSelected
-    ? `<span class="absolute -inset-3.5 rounded-full border-2 border-[var(--accent-primary)] animate-pulse"></span>`
+  // Focused selection halo
+  const selectionGlow = isSelected
+    ? `<div class="absolute -inset-2.5 rounded-full border-2 border-white animate-pulse" style="box-shadow: 0 0 16px #fff, 0 0 24px ${border};"></div>`
     : ''
 
-  const label = isCritical ? 'SOS' : isHigh ? '!' : isResolved ? '&#10003;' : 'INC'
+  // Category short abbreviation or victim count badge
+  const categoryBadge = incident.victimCount && incident.victimCount > 0
+    ? `<span class="px-1.5 py-0.2 rounded-full bg-black/40 text-[9px] font-mono font-bold tracking-tight border border-white/20">${incident.victimCount} VICT</span>`
+    : `<span class="px-1.5 py-0.2 rounded-full bg-black/40 text-[9px] font-mono font-bold tracking-tight border border-white/20">${subLabel}</span>`
 
   const html = `
     <div class="relative flex flex-col items-center justify-center cursor-pointer select-none group">
-      ${pulseRing}
-      ${selectionRing}
-      
-      <!-- Beacon Body -->
-      <div class="relative z-10 flex items-center justify-center px-3 py-1 rounded-full bg-[var(--bg-surface)]/95 backdrop-blur-md border border-[var(--border-subtle)] shadow-2xl transition-transform duration-200 group-hover:scale-110"
-           style="box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 10px ${glowColor};">
-        <span class="w-2 h-2 rounded-full mr-1.5 inline-block" style="background-color: ${pinColor};"></span>
-        <span class="font-mono text-[10px] font-black uppercase tracking-wider" style="color: ${pinColor};">
-          ${label}
-        </span>
+      ${radarPing}
+      ${selectionGlow}
+
+      <!-- Main High-Grade Pinhead Vector Badge -->
+      <div style="background: ${bg}; border: 2px solid ${border}; box-shadow: 0 0 16px ${shadow}, 0 4px 14px rgba(0,0,0,0.5);"
+           class="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white font-mono font-black text-xs shadow-2xl transition-all duration-200 group-hover:scale-115">
+        <span class="w-2 h-2 rounded-full bg-white shadow-[0_0_6px_#fff] ${isCritical ? 'animate-ping' : ''}"></span>
+        <span class="font-heading font-black tracking-wider text-xs">${label}</span>
+        ${categoryBadge}
       </div>
+
+      <!-- Downward Pointer Arrow Tip -->
+      <div style="background: ${arrowBg}; border-right: 2px solid ${border}; border-bottom: 2px solid ${border};"
+           class="w-2.5 h-2.5 rotate-45 -mt-1.5 z-10"></div>
       
-      <!-- Downward Pointer Arrow -->
-      <div class="w-1.5 h-1.5 rotate-45 border-r border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] -mt-1 z-10"></div>
-      <div class="w-2 h-2 rounded-full -mt-0.5" style="background-color: ${pinColor}; box-shadow: 0 0 6px ${pinColor};"></div>
+      <!-- Ground Contact Glow Point -->
+      <div style="background-color: ${border}; box-shadow: 0 0 8px ${border};"
+           class="w-1.5 h-1.5 rounded-full -mt-0.5 z-10"></div>
     </div>
   `
 
   return L.divIcon({
     html,
     className: 'salbar-marker-icon',
-    iconSize: [64, 34],
-    iconAnchor: [32, 34],
-    popupAnchor: [0, -36],
+    iconSize: [84, 42],
+    iconAnchor: [42, 42],
+    popupAnchor: [0, -44],
   })
 }
 
 function createResponderMarkerIcon(responder: FieldResponder): L.DivIcon {
   const isAvailable = responder.status === 'AVAILABLE'
   const isEnRoute = responder.status === 'EN_ROUTE'
-  const statusColor = isAvailable ? '#10B981' : isEnRoute ? '#EA580C' : '#3B82F6'
-  const statusGlow = isAvailable ? 'rgba(16, 185, 129, 0.45)' : 'rgba(234, 88, 12, 0.45)'
+  const statusColor = isAvailable ? '#10B981' : isEnRoute ? '#F97316' : '#0284C7'
+  const statusBorder = isAvailable ? '#6EE7B7' : isEnRoute ? '#FDBA74' : '#38BDF8'
+  const statusGlow = isAvailable ? 'rgba(16, 185, 129, 0.75)' : 'rgba(249, 115, 22, 0.75)'
+  const bg = isAvailable
+    ? 'linear-gradient(135deg, #059669 0%, #047857 50%, #064E3B 100%)'
+    : isEnRoute
+      ? 'linear-gradient(135deg, #EA580C 0%, #C2410C 50%, #7C2D12 100%)'
+      : 'linear-gradient(135deg, #0284C7 0%, #0369A1 50%, #0C4A6E 100%)'
+  const arrowBg = isAvailable ? '#047857' : isEnRoute ? '#C2410C' : '#0369A1'
   const battery = responder.batteryPercent ?? 100
 
   const html = `
-    <div class="relative flex flex-col items-center cursor-pointer select-none group">
-      <!-- Pulsing Ground Radar Ripple for Live LoRa Transmission -->
-      <div class="absolute -bottom-1 w-8 h-8 rounded-full border-2 animate-ping pointer-events-none opacity-40"
-           style="border-color: ${statusColor};"></div>
-      <div class="absolute -bottom-0.5 w-3 h-3 rounded-full opacity-80"
-           style="background-color: ${statusColor}; box-shadow: 0 0 8px ${statusGlow};"></div>
+    <div class="relative flex flex-col items-center justify-center cursor-pointer select-none group">
+      <!-- Ground LoRa Radar Pulse Wave -->
+      <div style="border-color: ${statusBorder};"
+           class="absolute -bottom-2.5 w-14 h-14 rounded-full border-2 animate-ping pointer-events-none opacity-50"></div>
+      <div style="background-color: ${statusColor}; box-shadow: 0 0 12px ${statusColor};"
+           class="absolute -bottom-1 w-5 h-5 rounded-full blur-[1px] opacity-80 pointer-events-none"></div>
 
-      <!-- Tactical Floating Pill Badge -->
-      <div class="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-surface)]/95 backdrop-blur-md border border-[var(--border-subtle)] shadow-2xl transition-transform duration-200 group-hover:scale-105"
-           style="box-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 12px ${statusGlow};">
-        <span class="relative flex h-2 w-2">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background-color: ${statusColor};"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2" style="background-color: ${statusColor};"></span>
+      <!-- Tactical Mobile Terminal Badge -->
+      <div style="background: ${bg}; border: 2px solid ${statusBorder}; box-shadow: 0 0 18px ${statusGlow}, 0 4px 16px rgba(0,0,0,0.55);"
+           class="relative z-10 flex items-center gap-2 px-3 py-1.5 rounded-full text-white font-mono font-bold text-xs shadow-2xl transition-all duration-200 group-hover:scale-110">
+        <!-- Live Antenna Beacon Dot -->
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background-color: ${statusBorder};"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5" style="background-color: ${statusBorder};"></span>
         </span>
-        <span class="font-mono text-[11px] font-black tracking-wider text-[var(--text-primary)]">
+
+        <!-- Terminal Unit Call Sign -->
+        <span class="font-heading font-black tracking-wider text-xs text-white">
           ${responder.id}
         </span>
-        <span class="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-emerald-400">
+
+        <!-- Battery Gauge Pill -->
+        <span class="font-mono text-[9px] font-black px-1.5 py-0.5 rounded-full bg-black/40 border border-white/20 text-emerald-300">
           ${battery}%
         </span>
       </div>
 
-      <!-- Downward Pointer Arrow -->
-      <div class="w-2 h-2 rotate-45 border-r border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] -mt-1 z-10"></div>
+      <!-- Downward Pointer Arrow Tip -->
+      <div style="background: ${arrowBg}; border-right: 2px solid ${statusBorder}; border-bottom: 2px solid ${statusBorder};"
+           class="w-2.5 h-2.5 rotate-45 -mt-1.5 z-10"></div>
+      <div style="background-color: ${statusBorder}; box-shadow: 0 0 8px ${statusBorder};"
+           class="w-1.5 h-1.5 rounded-full -mt-0.5 z-10"></div>
     </div>
   `
 
   return L.divIcon({
     html,
     className: 'salbar-responder-icon',
-    iconSize: [116, 38],
-    iconAnchor: [58, 38],
-    popupAnchor: [0, -40],
+    iconSize: [120, 44],
+    iconAnchor: [60, 44],
+    popupAnchor: [0, -46],
   })
 }
 
@@ -254,17 +300,19 @@ export function TacticalMap({
             position={[haz.lat, haz.lng]}
             icon={L.divIcon({
               html: `
-                <div class="relative flex flex-col items-center cursor-pointer select-none">
-                  <div class="w-7 h-7 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-amber-500 font-bold text-xs shadow-lg backdrop-blur-md">
-                    !
+                <div class="relative flex flex-col items-center justify-center cursor-pointer select-none group">
+                  <div style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 60%, #78350F 100%); border: 2px solid #FDE68A; box-shadow: 0 0 16px rgba(245, 158, 11, 0.7), 0 4px 12px rgba(0,0,0,0.5);"
+                       class="w-7 h-7 rounded-full flex items-center justify-center text-white font-mono font-black text-xs shadow-lg transition-transform duration-200 group-hover:scale-120">
+                    <span>!</span>
                   </div>
-                  <div class="w-1.5 h-1.5 rotate-45 border-r border-b border-amber-500 bg-[var(--bg-surface)] -mt-1"></div>
+                  <div style="background: #D97706; border-right: 2px solid #FDE68A; border-bottom: 2px solid #FDE68A;"
+                       class="w-2 h-2 rotate-45 -mt-1 z-10"></div>
                 </div>
               `,
               className: 'salbar-hazard-icon',
-              iconSize: [28, 30],
-              iconAnchor: [14, 30],
-              popupAnchor: [0, -32],
+              iconSize: [30, 36],
+              iconAnchor: [15, 36],
+              popupAnchor: [0, -38],
             })}
           >
             <Popup closeButton={false} className="salbar-popup">

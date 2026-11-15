@@ -290,17 +290,28 @@ static void updateDisplay(const char *banner = nullptr) {
 // ============================================================================
 // Serial Monitor ASCII OLED Screen Simulation
 // ============================================================================
-// Helper function to print an exactly 66-character wide bordered row
-static void printBoxRow(const char *fmt, ...) {
+#define CLR_RESET   "\033[0m"
+#define CLR_CYAN    "\033[1;36m"
+#define CLR_GREEN   "\033[1;32m"
+#define CLR_YELLOW  "\033[1;33m"
+#define CLR_RED     "\033[1;31m"
+#define CLR_WHITE   "\033[1;37m"
+#define CLR_GRAY    "\033[0;90m"
+#define CLR_MAGENTA "\033[1;35m"
+
+// Helper function to print an exactly 66-character wide bordered row with ANSI color coding
+static void printBoxRow(const char *colorCode, const char *fmt, ...) {
     char buf[128];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
 
-    // "%-62.62s": Pads with spaces to 62 chars, truncates at 62 chars.
-    // "| " (2) + 62 + " |" (2) = exactly 66 characters wide!
-    Serial.printf("| %-62.62s |\n", buf);
+    // Cyan border, colored text, cyan border
+    Serial.print(F(CLR_CYAN "| " CLR_RESET));
+    Serial.print(colorCode);
+    Serial.printf("%-62.62s", buf);
+    Serial.print(F(CLR_RESET CLR_CYAN " |" CLR_RESET "\n"));
 }
 
 static void printSerialOledSimulation(const char *lastEvent = nullptr) {
@@ -314,67 +325,68 @@ static void printSerialOledSimulation(const char *lastEvent = nullptr) {
     // Clear terminal screen and position cursor at top-left (VT100 / ANSI)
     Serial.print(F("\033[2J\033[H"));
 
-    Serial.println(F("+----------------------------------------------------------------+"));
-    printBoxRow("SALBAR HANDHELD TERMINAL (SAR-01) | BATT: %u%% (%umV)", pct, mv);
-    printBoxRow("LORA: 915.0 MHz SF9 CR4/7         | GPS: %s",
+    Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
+    printBoxRow(CLR_WHITE, "SALBAR HANDHELD TERMINAL (SAR-01) | BATT: %u%% (%umV)", pct, mv);
+    printBoxRow(CLR_CYAN, "LORA: 915.0 MHz SF9 CR4/7         | GPS: %s",
                 kalmanGps.isInitialized() ? "FIX (LIVE GPS)" : "FALLBACK (CEBU)");
-    Serial.println(F("+----------------------------------------------------------------+"));
-    printBoxRow("LIVE TELEMETRY (FIXED ON TERMINAL):");
-    printBoxRow("  SEQ: #%-5u | LAT: %10.6f | LNG: %10.6f", txSeqNum, lat, lng);
-    printBoxRow("  STATUS: %-9s | TX: %-4lu pkts | RX: %-4lu pkts",
+    Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
+    printBoxRow(CLR_YELLOW, "LIVE TELEMETRY (FIXED ON TERMINAL):");
+    printBoxRow(CLR_WHITE, "  SEQ: #%-5u | LAT: %10.6f | LNG: %10.6f", txSeqNum, lat, lng);
+    printBoxRow(currentStatus == SALBAR_STATUS_AVAILABLE ? CLR_GREEN : CLR_YELLOW,
+                "  STATUS: %-9s | TX: %-4lu pkts | RX: %-4lu pkts",
                 currentStatus == SALBAR_STATUS_AVAILABLE ? "AVAILABLE" :
                 currentStatus == SALBAR_STATUS_EN_ROUTE   ? "EN_ROUTE" : "BUSY",
                 (unsigned long)txCount, (unsigned long)rxCount);
-    printBoxRow("  ORDERS: %s", activeDispatchNote);
+    printBoxRow(CLR_WHITE, "  ORDERS: %s", activeDispatchNote);
     if (lastEvent) {
-        printBoxRow("  EVENT : %s", lastEvent);
+        printBoxRow(CLR_MAGENTA, "  EVENT : %s", lastEvent);
     }
-    Serial.println(F("+----------------------------------------------------------------+"));
+    Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
 
     if (currentScreen == UiScreen::STATUS_TELEMETRY) {
-        printBoxRow("[OLED DISPLAY: STANDBY TELEMETRY MODE]");
-        printBoxRow("");
-        printBoxRow("Handheld is broadcasting periodic telemetry to Command Center.");
-        printBoxRow("Press [1] or [2] to open Field Triage Incident Menu.");
-        printBoxRow("");
-        Serial.println(F("+----------------------------------------------------------------+"));
-        printBoxRow("CONTROLS: [1] TRIAGE MENU  [T] SEND TELEMETRY  [I] BENCH SOS");
-        Serial.println(F("+----------------------------------------------------------------+"));
+        printBoxRow(CLR_GREEN, "[OLED DISPLAY: STANDBY TELEMETRY MODE]");
+        printBoxRow(CLR_WHITE, "");
+        printBoxRow(CLR_WHITE, "Handheld is broadcasting periodic telemetry to Command Center.");
+        printBoxRow(CLR_YELLOW, "Press [1] or [2] to open Field Triage Incident Menu.");
+        printBoxRow(CLR_WHITE, "");
+        Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
+        printBoxRow(CLR_CYAN, "CONTROLS: [1] TRIAGE MENU  [T] SEND TELEMETRY  [I] BENCH SOS");
+        Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
     } else if (currentScreen == UiScreen::TRIAGE_CATEGORY) {
-        printBoxRow("[OLED DISPLAY: FIELD TRIAGE - STEP 1/3: CATEGORY]");
+        printBoxRow(CLR_YELLOW, "[OLED DISPLAY: FIELD TRIAGE - STEP 1/3: CATEGORY]");
         for (uint8_t i = 0; i < NUM_CATEGORIES; i++) {
             if (i == selectedCatIdx) {
-                printBoxRow("--> [%u] %s", i + 1, TRIAGE_CATEGORIES[i]);
+                printBoxRow(CLR_GREEN, "--> [%u] %s", i + 1, TRIAGE_CATEGORIES[i]);
             } else {
-                printBoxRow("    [%u] %s", i + 1, TRIAGE_CATEGORIES[i]);
+                printBoxRow(CLR_GRAY, "    [%u] %s", i + 1, TRIAGE_CATEGORIES[i]);
             }
         }
-        Serial.println(F("+----------------------------------------------------------------+"));
-        printBoxRow("CONTROLS: [1] UP  [2] DOWN  [3] SELECT/CONFIRM  [4] INSTANT TX");
-        Serial.println(F("+----------------------------------------------------------------+"));
+        Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
+        printBoxRow(CLR_CYAN, "CONTROLS: [1] UP  [2] DOWN  [3] SELECT/CONFIRM  [4] INSTANT TX");
+        Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
     } else if (currentScreen == UiScreen::TRIAGE_URGENCY) {
-        printBoxRow("[OLED DISPLAY: FIELD TRIAGE - STEP 2/3: URGENCY LEVEL]");
-        printBoxRow("Category: %s", TRIAGE_CATEGORIES[selectedCatIdx]);
-        printBoxRow("");
+        printBoxRow(CLR_YELLOW, "[OLED DISPLAY: FIELD TRIAGE - STEP 2/3: URGENCY LEVEL]");
+        printBoxRow(CLR_WHITE, "Category: %s", TRIAGE_CATEGORIES[selectedCatIdx]);
+        printBoxRow(CLR_WHITE, "");
         for (uint8_t i = 0; i < NUM_URGENCIES; i++) {
             if (i == selectedUrgIdx) {
-                printBoxRow("--> [%u] %s", i + 1, URGENCY_LEVELS[i]);
+                printBoxRow(CLR_RED, "--> [%u] %s", i + 1, URGENCY_LEVELS[i]);
             } else {
-                printBoxRow("    [%u] %s", i + 1, URGENCY_LEVELS[i]);
+                printBoxRow(CLR_GRAY, "    [%u] %s", i + 1, URGENCY_LEVELS[i]);
             }
         }
-        Serial.println(F("+----------------------------------------------------------------+"));
-        printBoxRow("CONTROLS: [1] UP  [2] DOWN  [3] SELECT/CONFIRM  [4] INSTANT TX");
-        Serial.println(F("+----------------------------------------------------------------+"));
+        Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
+        printBoxRow(CLR_CYAN, "CONTROLS: [1] UP  [2] DOWN  [3] SELECT/CONFIRM  [4] INSTANT TX");
+        Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
     } else if (currentScreen == UiScreen::INCIDENT_CONFIRM) {
-        printBoxRow("[OLED DISPLAY: FIELD TRIAGE - STEP 3/3: TRANSMIT INCIDENT]");
-        printBoxRow("CATEGORY : %s", TRIAGE_CATEGORIES[selectedCatIdx]);
-        printBoxRow("URGENCY  : %s", URGENCY_LEVELS[selectedUrgIdx]);
-        printBoxRow("COORDS   : %.6f, %.6f (Accuracy: 1.5m)", lat, lng);
-        printBoxRow("TARGET   : GATEWAY / COMMAND CENTER (LORA 915 MHz)");
-        Serial.println(F("+----------------------------------------------------------------+"));
-        printBoxRow("CONTROLS: [1] BACK  [2] CANCEL  [4] BROADCAST OVER LORA NOW");
-        Serial.println(F("+----------------------------------------------------------------+"));
+        printBoxRow(CLR_RED, "[OLED DISPLAY: FIELD TRIAGE - STEP 3/3: TRANSMIT INCIDENT]");
+        printBoxRow(CLR_WHITE, "CATEGORY : %s", TRIAGE_CATEGORIES[selectedCatIdx]);
+        printBoxRow(CLR_RED, "URGENCY  : %s", URGENCY_LEVELS[selectedUrgIdx]);
+        printBoxRow(CLR_WHITE, "COORDS   : %.6f, %.6f (Accuracy: 1.5m)", lat, lng);
+        printBoxRow(CLR_CYAN, "TARGET   : GATEWAY / COMMAND CENTER (LORA 915 MHz)");
+        Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
+        printBoxRow(CLR_YELLOW, "CONTROLS: [1] BACK  [2] CANCEL  [4] BROADCAST OVER LORA NOW");
+        Serial.println(F(CLR_CYAN "+----------------------------------------------------------------+" CLR_RESET));
     }
 }
 
@@ -438,13 +450,8 @@ static void sendTelemetry() {
     telem->flags = kalmanGps.isInitialized() ? 0x01 : 0x00;
 
     if (transmitPacket(txBuf, sizeof(SalbarHeader) + sizeof(SalbarTelemetryPayload))) {
-        char evtBuf[64];
-        snprintf(evtBuf, sizeof(evtBuf), "TELEMETRY #%u SENT OVER LORA (OK)", hdr->seq_num);
+        // Periodic background telemetry transmits silently over LoRa without refreshing the serial terminal
         updateDisplay("TX TELEMETRY");
-        // Only redraw simulation in standby mode so periodic telemetry doesn't disturb menu navigation
-        if (currentScreen == UiScreen::STATUS_TELEMETRY) {
-            printSerialOledSimulation(evtBuf);
-        }
     }
 }
 
@@ -726,6 +733,7 @@ void loop() {
             printSerialOledSimulation("CATEGORY DIRECT SELECT");
         } else if (ch == 't' || ch == 'T') {
             sendTelemetry();
+            printSerialOledSimulation("MANUAL TELEMETRY TRANSMITTED");
         } else if (ch == 'i' || ch == 'I') {
             sendIncidentReport(
                 "Bench test incident from T-Beam SAR-01.",

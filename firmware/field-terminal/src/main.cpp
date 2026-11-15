@@ -287,6 +287,84 @@ static void updateDisplay(const char *banner = nullptr) {
 }
 
 // ============================================================================
+// Serial Monitor ASCII OLED Screen Simulation
+// ============================================================================
+static void printSerialOledSimulation(const char *lastEvent = nullptr) {
+    uint16_t mv = 0;
+    uint8_t pct = 0;
+    readBattery(mv, pct);
+
+    double lat = kalmanGps.isInitialized() ? kalmanGps.lat() : FALLBACK_LAT;
+    double lng = kalmanGps.isInitialized() ? kalmanGps.lng() : FALLBACK_LNG;
+
+    // Clear terminal screen and position cursor at top-left (VT100 / ANSI)
+    Serial.print(F("\033[2J\033[H"));
+
+    Serial.println(F("+------------------------------------------------------------------+"));
+    Serial.printf("|  SALBAR HANDHELD TERMINAL (SAR-01) | BATT: %3u%% (%4umV)         |\n", pct, mv);
+    Serial.printf("|  LORA: 915.0 MHz SF9 CR4/7         | GPS: %-26s |\n",
+                  kalmanGps.isInitialized() ? "FIX (LIVE GPS)" : "FALLBACK (CEBU CITY)");
+    Serial.println(F("+------------------------------------------------------------------+"));
+    Serial.println(F("|  LIVE TELEMETRY (FIXED ON TERMINAL):                             |"));
+    Serial.printf("|    SEQ: #%-5u | LAT: %10.6f | LNG: %10.6f               |\n", txSeqNum, lat, lng);
+    Serial.printf("|    STATUS: %-11s | TX: %-5lu pkts | RX: %-5lu pkts         |\n",
+                  currentStatus == SALBAR_STATUS_AVAILABLE ? "AVAILABLE" :
+                  currentStatus == SALBAR_STATUS_EN_ROUTE   ? "EN_ROUTE" : "BUSY",
+                  (unsigned long)txCount, (unsigned long)rxCount);
+    Serial.printf("|    ORDERS: %-51s |\n", activeDispatchNote);
+    if (lastEvent) {
+        Serial.printf("|    EVENT : %-51s |\n", lastEvent);
+    }
+    Serial.println(F("+------------------------------------------------------------------+"));
+
+    if (currentScreen == UiScreen::STATUS_TELEMETRY) {
+        Serial.println(F("|  [OLED DISPLAY: STANDBY TELEMETRY MODE]                          |"));
+        Serial.println(F("|                                                                  |"));
+        Serial.println(F("|  Handheld is broadcasting periodic telemetry to Command Center.  |"));
+        Serial.println(F("|  Press [1] or [2] to open Field Triage Incident Menu.            |"));
+        Serial.println(F("|                                                                  |"));
+        Serial.println(F("+------------------------------------------------------------------+"));
+        Serial.println(F("|  CONTROLS: [1] TRIAGE MENU  [T] SEND TELEMETRY  [I] BENCH SOS    |"));
+        Serial.println(F("+------------------------------------------------------------------+"));
+    } else if (currentScreen == UiScreen::TRIAGE_CATEGORY) {
+        Serial.println(F("|  [OLED DISPLAY: FIELD TRIAGE - STEP 1/3: CATEGORY]               |"));
+        for (uint8_t i = 0; i < NUM_CATEGORIES; i++) {
+            if (i == selectedCatIdx) {
+                Serial.printf("|  --> [%u] %-53s |\n", i + 1, TRIAGE_CATEGORIES[i]);
+            } else {
+                Serial.printf("|      [%u] %-53s |\n", i + 1, TRIAGE_CATEGORIES[i]);
+            }
+        }
+        Serial.println(F("+------------------------------------------------------------------+"));
+        Serial.println(F("|  CONTROLS: [1] UP  [2] DOWN  [3] SELECT/CONFIRM  [4] INSTANT TX  |"));
+        Serial.println(F("+------------------------------------------------------------------+"));
+    } else if (currentScreen == UiScreen::TRIAGE_URGENCY) {
+        Serial.println(F("|  [OLED DISPLAY: FIELD TRIAGE - STEP 2/3: URGENCY LEVEL]          |"));
+        Serial.printf("|  Category: %-53s |\n", TRIAGE_CATEGORIES[selectedCatIdx]);
+        Serial.println(F("|                                                                  |"));
+        for (uint8_t i = 0; i < NUM_URGENCIES; i++) {
+            if (i == selectedUrgIdx) {
+                Serial.printf("|  --> [%u] %-53s |\n", i + 1, URGENCY_LEVELS[i]);
+            } else {
+                Serial.printf("|      [%u] %-53s |\n", i + 1, URGENCY_LEVELS[i]);
+            }
+        }
+        Serial.println(F("+------------------------------------------------------------------+"));
+        Serial.println(F("|  CONTROLS: [1] UP  [2] DOWN  [3] SELECT/CONFIRM  [4] INSTANT TX  |"));
+        Serial.println(F("+------------------------------------------------------------------+"));
+    } else if (currentScreen == UiScreen::INCIDENT_CONFIRM) {
+        Serial.println(F("|  [OLED DISPLAY: FIELD TRIAGE - STEP 3/3: TRANSMIT INCIDENT]      |"));
+        Serial.printf("|  CATEGORY : %-50s |\n", TRIAGE_CATEGORIES[selectedCatIdx]);
+        Serial.printf("|  URGENCY  : %-50s |\n", URGENCY_LEVELS[selectedUrgIdx]);
+        Serial.printf("|  COORDS   : %.6f, %.6f (Accuracy: 1.5m)            |\n", lat, lng);
+        Serial.println(F("|  TARGET   : GATEWAY / COMMAND CENTER (LORA 915 MHz)              |"));
+        Serial.println(F("+------------------------------------------------------------------+"));
+        Serial.println(F("|  CONTROLS: [1] BACK  [2] CANCEL  [4] BROADCAST OVER LORA NOW     |"));
+        Serial.println(F("+------------------------------------------------------------------+"));
+    }
+}
+
+// ============================================================================
 // LoRa Packet Builders & Transmitters
 // ============================================================================
 static void fillHeader(SalbarHeader *hdr, uint8_t msgType) {
@@ -346,9 +424,10 @@ static void sendTelemetry() {
     telem->flags = kalmanGps.isInitialized() ? 0x01 : 0x00;
 
     if (transmitPacket(txBuf, sizeof(SalbarHeader) + sizeof(SalbarTelemetryPayload))) {
-        Serial.printf("[TX] TELEMETRY seq=%u lat=%.6f lng=%.6f batt=%umV(%u%%)\n",
-                      hdr->seq_num, lat, lng, mv, pct);
+        char evtBuf[64];
+        snprintf(evtBuf, sizeof(evtBuf), "TELEMETRY #%u SENT OVER LORA (OK)", hdr->seq_num);
         updateDisplay("TX TELEMETRY");
+        printSerialOledSimulation(evtBuf);
     }
 }
 
@@ -377,8 +456,10 @@ static void sendIncidentReport(const char *text, uint8_t urgency, uint8_t catego
     memcpy(inc->raw_text, text, len);
 
     if (transmitPacket(txBuf, sizeof(SalbarHeader) + sizeof(SalbarIncidentPayload))) {
-        Serial.printf("[TX] INCIDENT #%u seq=%u: %s\n", inc->incident_id_num, hdr->seq_num, text);
+        char evtBuf[64];
+        snprintf(evtBuf, sizeof(evtBuf), "INCIDENT #%u BROADCASTED OVER LORA", inc->incident_id_num);
         updateDisplay("TX INCIDENT!");
+        printSerialOledSimulation(evtBuf);
     }
 }
 
@@ -412,7 +493,6 @@ static void processReceivedPacket() {
     uint16_t rxCrc = rxBuf[len - 2] | (rxBuf[len - 1] << 8);
     uint16_t calcCrc = salbar_crc16(rxBuf, len - 2);
     if (rxCrc != calcCrc) {
-        Serial.println(F("[LoRa] CRC mismatch on RX"));
         radio.startReceive();
         return;
     }
@@ -435,9 +515,10 @@ static void processReceivedPacket() {
                 currentStatus = SALBAR_STATUS_AVAILABLE;
             }
 
-            Serial.printf("[RX] DISPATCH inc=%u code=%u notes=\"%s\"\n",
-                          cmd->incident_id_num, cmd->command_code, activeDispatchNote);
+            char evtBuf[64];
+            snprintf(evtBuf, sizeof(evtBuf), "RX DISPATCH: INC-%03u", cmd->incident_id_num);
             updateDisplay("RX DISPATCH!");
+            printSerialOledSimulation(evtBuf);
         }
     }
 
@@ -460,9 +541,8 @@ static void handleNavUp() {
     } else if (currentScreen == UiScreen::INCIDENT_CONFIRM) {
         currentScreen = UiScreen::TRIAGE_URGENCY;
     }
-    Serial.printf("[UI-NAV] BTN 1 (UP) -> Screen=%d Category=\"%s\" Urgency=\"%s\"\n",
-                  (int)currentScreen, TRIAGE_CATEGORIES[selectedCatIdx], URGENCY_LEVELS[selectedUrgIdx]);
     updateDisplay();
+    printSerialOledSimulation("BUTTON 1 (UP) PRESSED");
 }
 
 static void handleNavDown() {
@@ -476,9 +556,8 @@ static void handleNavDown() {
     } else if (currentScreen == UiScreen::INCIDENT_CONFIRM) {
         currentScreen = UiScreen::STATUS_TELEMETRY;
     }
-    Serial.printf("[UI-NAV] BTN 2 (DOWN) -> Screen=%d Category=\"%s\" Urgency=\"%s\"\n",
-                  (int)currentScreen, TRIAGE_CATEGORIES[selectedCatIdx], URGENCY_LEVELS[selectedUrgIdx]);
     updateDisplay();
+    printSerialOledSimulation("BUTTON 2 (DOWN) PRESSED");
 }
 
 static void handleNavSelect() {
@@ -493,9 +572,8 @@ static void handleNavSelect() {
         handleNavSend();
         return;
     }
-    Serial.printf("[UI-NAV] BTN 3 (SELECT) -> Screen=%d Category=\"%s\" Urgency=\"%s\"\n",
-                  (int)currentScreen, TRIAGE_CATEGORIES[selectedCatIdx], URGENCY_LEVELS[selectedUrgIdx]);
     updateDisplay();
+    printSerialOledSimulation("BUTTON 3 (SELECT) PRESSED");
 }
 
 static void handleNavSend() {
@@ -504,12 +582,10 @@ static void handleNavSend() {
     snprintf(reportMsg, sizeof(reportMsg), "Field triage report: %s [%s] at GPS fix.",
              TRIAGE_CATEGORIES[selectedCatIdx], URGENCY_LEVELS[selectedUrgIdx]);
 
-    Serial.printf("[UI-NAV] BTN 4 (SEND) -> Broadcasting LoRa INCIDENT! Cat=%u Urg=%u Msg=\"%s\"\n",
-                  selectedCatIdx, selectedUrgIdx, reportMsg);
-
     sendIncidentReport(reportMsg, selectedUrgIdx, selectedCatIdx, 1);
     currentScreen = UiScreen::STATUS_TELEMETRY;
     updateDisplay("INCIDENT SENT!");
+    printSerialOledSimulation("BUTTON 4 (SEND) - INCIDENT TRANSMITTED!");
 }
 
 // ============================================================================
@@ -565,16 +641,7 @@ void setup() {
         updateDisplay("LORA ERR!");
     }
 
-    Serial.println(F("\n=============================================="));
-    Serial.println(F("SALBAR Field Terminal: 4-Button Firmware Online"));
-    Serial.println(F("Navigation Controls (Physical or Serial CLI):"));
-    Serial.println(F("  '1' or 'UP'     -> Button 1: Prev Category / Up"));
-    Serial.println(F("  '2' or 'DOWN'   -> Button 2: Next Category / Down"));
-    Serial.println(F("  '3' or 'SELECT' -> Button 3: Confirm / Urgency"));
-    Serial.println(F("  '4' or 'SEND'   -> Button 4: Transmit Incident"));
-    Serial.println(F("  'TELEMETRY'     -> Force Immediate Telemetry TX"));
-    Serial.println(F("  'INCIDENT'      -> Instant Bench SOS Alert"));
-    Serial.println(F("==============================================\n"));
+    printSerialOledSimulation("BOOT COMPLETE - READY");
 }
 
 void loop() {
@@ -596,6 +663,7 @@ void loop() {
     if (currentScreen != UiScreen::STATUS_TELEMETRY && (millis() - lastMenuActionMs > 30000)) {
         currentScreen = UiScreen::STATUS_TELEMETRY;
         updateDisplay();
+        printSerialOledSimulation("STANDBY TIMEOUT");
     }
 
     // 4. Physical 4-Button Polling (Active LOW, debounced 200ms)
@@ -632,10 +700,13 @@ void loop() {
             handleNavUp();
         } else if (ch == '2' || ch == 'd' || ch == 'D') {
             handleNavDown();
-        } else if (ch == '3' || ch == 's' || ch == 'S') {
+        } else if (ch == '3' || ch == 's' || ch == 'S' || ch == '\r' || ch == '\n') {
             handleNavSelect();
         } else if (ch == '4' || ch == 'x' || ch == 'X') {
             handleNavSend();
+        } else if (ch >= '5' && ch <= '6' && currentScreen == UiScreen::TRIAGE_CATEGORY) {
+            selectedCatIdx = (uint8_t)(ch - '1');
+            printSerialOledSimulation("CATEGORY DIRECT SELECT");
         } else if (ch == 't' || ch == 'T') {
             sendTelemetry();
         } else if (ch == 'i' || ch == 'I') {
@@ -646,14 +717,7 @@ void loop() {
                 2
             );
         } else if (ch == 'h' || ch == 'H' || ch == '?') {
-            Serial.println(F("\n=== SALBAR Field Terminal CLI ==="));
-            Serial.println(F("  Press '1' : Navigate Up / Prev Category"));
-            Serial.println(F("  Press '2' : Navigate Down / Next Category"));
-            Serial.println(F("  Press '3' : Select / Confirm Urgency"));
-            Serial.println(F("  Press '4' : Transmit LoRa Incident Report"));
-            Serial.println(F("  Press 'T' : Force Immediate Telemetry TX"));
-            Serial.println(F("  Press 'I' : Send Immediate Bench SOS Alert"));
-            Serial.println(F("=================================\n"));
+            printSerialOledSimulation("HELP REQUESTED");
         }
     }
 

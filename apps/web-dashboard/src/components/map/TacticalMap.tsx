@@ -93,102 +93,93 @@ function createIncidentMarkerIcon(
   const isCritical = incident.urgency === 'CRITICAL' && incident.status !== 'RESOLVED'
   const isHigh = incident.urgency === 'HIGH' && incident.status !== 'RESOLVED'
   const isResolved = incident.status === 'RESOLVED'
+  const isReview = incident.status === 'PROPOSAL_PENDING'
 
-  // Colors matching custom-stop-marker vector pin styling
-  let bg = 'linear-gradient(135deg, #3B82F6, #1D4ED8)'
-  let border = '#60A5FA'
-  let shadow = 'rgba(59, 130, 246, 0.7)'
-  let arrowBg = '#1D4ED8'
+  let fillColor = '#0284C7'
+  let iconSvg = ''
 
   if (isResolved) {
-    bg = 'linear-gradient(135deg, #10B981, #059669)'
-    border = '#34D399'
-    shadow = 'rgba(16, 185, 129, 0.7)'
-    arrowBg = '#059669'
+    fillColor = '#10B981' // Green
+    iconSvg = `<polyline points="9.5,14 12.5,17 18.5,10.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`
   } else if (isCritical) {
-    bg = 'linear-gradient(135deg, #EF4444, #B91C1C)'
-    border = '#F87171'
-    shadow = 'rgba(239, 68, 68, 0.8)'
-    arrowBg = '#B91C1C'
+    fillColor = '#DC2626' // Red with warning triangle
+    iconSvg = `
+      <path d="M14 7L20.5 19H7.5L14 7Z" stroke="white" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+      <line x1="14" y1="12" x2="14" y2="15" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="14" cy="17.2" r="0.9" fill="white"/>
+    `
   } else if (isHigh) {
-    bg = 'linear-gradient(135deg, #F97316, #C2410C)'
-    border = '#FB923C'
-    shadow = 'rgba(249, 115, 22, 0.75)'
-    arrowBg = '#C2410C'
-  } else if (incident.urgency === 'MODERATE') {
-    bg = 'linear-gradient(135deg, #F59E0B, #D97706)'
-    border = '#FBBF24'
-    shadow = 'rgba(245, 158, 11, 0.7)'
-    arrowBg = '#D97706'
+    fillColor = '#EA580C' // Orange with warning triangle
+    iconSvg = `
+      <path d="M14 7L20.5 19H7.5L14 7Z" stroke="white" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+      <line x1="14" y1="12" x2="14" y2="15" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="14" cy="17.2" r="0.9" fill="white"/>
+    `
+  } else if (isReview) {
+    fillColor = '#8B5CF6' // Purple with search/inspection icon
+    iconSvg = `
+      <circle cx="13" cy="13" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+      <line x1="16.5" y1="16.5" x2="20" y2="20" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+    `
+  } else {
+    fillColor = '#D97706' // Amber with clock icon
+    iconSvg = `
+      <circle cx="14" cy="14" r="5.5" stroke="white" stroke-width="1.6" fill="none"/>
+      <polyline points="14,11 14,14 16.5,14" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    `
   }
 
-  // Extract clean number: e.g. "INC-001" -> 1
-  const rawNum = incident.id.replace(/\D/g, '')
-  const stopNumber = isResolved ? '&#10003;' : (rawNum ? parseInt(rawNum, 10) : '1')
+  const selectedClass = isSelected ? 'scale-125 z-50' : 'hover:scale-115'
 
-  const pulseRing = isCritical
-    ? `<div style="border-color: ${border};" class="absolute -inset-2.5 rounded-full border-2 animate-ping opacity-75"></div>`
-    : ''
-
-  const selectionRing = isSelected
-    ? `<div style="border-color: #FFFFFF; box-shadow: 0 0 12px #fff;" class="absolute -inset-2 rounded-full border-2 animate-pulse"></div>`
-    : ''
+  const html = `
+    <div class="relative flex flex-col items-center justify-center cursor-pointer select-none transition-transform duration-200 ${selectedClass}">
+      <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));">
+        <path d="M14 0.5C6.54 0.5 0.5 6.54 0.5 14C0.5 22.8 11.2 31.8 14 35.5C16.8 31.8 27.5 22.8 27.5 14C27.5 6.54 21.46 0.5 14 0.5Z"
+              fill="${fillColor}"
+              stroke="#FFFFFF"
+              stroke-width="2" />
+        ${iconSvg}
+      </svg>
+    </div>
+  `
 
   return L.divIcon({
-    className: 'custom-stop-marker',
-    html: `
-      <div class="relative flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group select-none">
-        ${pulseRing}
-        ${selectionRing}
-        <div style="
-          background: ${bg};
-          border: 2px solid ${border};
-          box-shadow: 0 0 16px ${shadow};
-        " class="w-7 h-7 rounded-full text-white font-mono font-black text-xs flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-125">
-          <span>${stopNumber}</span>
-        </div>
-        <div style="background: ${arrowBg};" class="w-1.5 h-1.5 rotate-45 border-r border-b border-white -mt-0.5"></div>
-      </div>
-    `,
-    iconSize: [28, 34],
-    iconAnchor: [14, 34],
-    popupAnchor: [0, -36]
+    html,
+    className: 'salbar-svg-pin',
+    iconSize: [28, 36],
+    iconAnchor: [14, 36],
+    popupAnchor: [0, -38],
   })
 }
 
 function createResponderMarkerIcon(responder: FieldResponder): L.DivIcon {
   const isAvailable = responder.status === 'AVAILABLE'
   const isEnRoute = responder.status === 'EN_ROUTE'
+  const fillColor = isAvailable ? '#059669' : isEnRoute ? '#EA580C' : '#0284C7'
 
-  const bg = isAvailable
-    ? 'linear-gradient(135deg, #0EA5E9, #0284C7)'
-    : isEnRoute
-      ? 'linear-gradient(135deg, #F97316, #C2410C)'
-      : 'linear-gradient(135deg, #3B82F6, #1D4ED8)'
-  const border = isAvailable ? '#38BDF8' : isEnRoute ? '#FB923C' : '#60A5FA'
-  const shadow = isAvailable ? 'rgba(14, 165, 233, 0.8)' : 'rgba(249, 115, 22, 0.8)'
-  const arrowBg = isAvailable ? '#0284C7' : isEnRoute ? '#C2410C' : '#1D4ED8'
+  const html = `
+    <div class="relative flex flex-col items-center justify-center cursor-pointer select-none hover:scale-110 transition-transform duration-200">
+      <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));">
+        <path d="M14 0.5C6.54 0.5 0.5 6.54 0.5 14C0.5 22.8 11.2 31.8 14 35.5C16.8 31.8 27.5 22.8 27.5 14C27.5 6.54 21.46 0.5 14 0.5Z"
+              fill="${fillColor}"
+              stroke="#FFFFFF"
+              stroke-width="2" />
+        <!-- Navigation Arrow Icon -->
+        <polygon points="14,8 19,19 14,16.5 9,19" fill="white"/>
+      </svg>
+      <!-- Callsign Pill beneath pin tip matching HQ DEPOT style -->
+      <div class="bg-[#0b1329]/95 border border-cyan-400 text-cyan-400 font-mono text-[9px] font-black px-1.5 py-0.2 rounded-xs uppercase tracking-wider -mt-1 shadow-lg whitespace-nowrap">
+        ${responder.id}
+      </div>
+    </div>
+  `
 
   return L.divIcon({
-    className: 'custom-responder-marker',
-    html: `
-      <div class="relative flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group select-none">
-        <!-- Radar Wave for Live Tracking -->
-        <div style="border-color: ${border};" class="absolute -inset-3 rounded-full border-2 animate-ping opacity-60"></div>
-
-        <div style="
-          background: ${bg};
-          border: 2px solid ${border};
-          box-shadow: 0 0 16px ${shadow};
-        " class="w-8 h-8 rounded-full text-white font-heading font-black text-[11px] flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-125">
-          <span>SAR</span>
-        </div>
-        <div style="background: ${arrowBg};" class="w-1.5 h-1.5 rotate-45 border-r border-b border-white -mt-0.5"></div>
-      </div>
-    `,
-    iconSize: [32, 38],
-    iconAnchor: [16, 38],
-    popupAnchor: [0, -40]
+    html,
+    className: 'salbar-responder-pin',
+    iconSize: [48, 52],
+    iconAnchor: [24, 36],
+    popupAnchor: [0, -38],
   })
 }
 
@@ -251,22 +242,23 @@ export function TacticalMap({
             key={haz.id}
             position={[haz.lat, haz.lng]}
             icon={L.divIcon({
-              className: 'custom-stop-marker',
+              className: 'salbar-hazard-pin',
               html: `
-                <div class="relative flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group select-none">
-                  <div style="
-                    background: linear-gradient(135deg, #F59E0B, #D97706);
-                    border: 2px solid #FDE68A;
-                    box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
-                  " class="w-7 h-7 rounded-full text-white font-mono font-black text-xs flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-120">
-                    <span>!</span>
-                  </div>
-                  <div style="background: #D97706;" class="w-1.5 h-1.5 rotate-45 border-r border-b border-white -mt-0.5"></div>
+                <div class="relative flex flex-col items-center justify-center cursor-pointer select-none hover:scale-115 transition-transform duration-200">
+                  <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));">
+                    <path d="M14 0.5C6.54 0.5 0.5 6.54 0.5 14C0.5 22.8 11.2 31.8 14 35.5C16.8 31.8 27.5 22.8 27.5 14C27.5 6.54 21.46 0.5 14 0.5Z"
+                          fill="#D97706"
+                          stroke="#FFFFFF"
+                          stroke-width="2" />
+                    <!-- Exclamation Hazard Icon -->
+                    <line x1="14" y1="9" x2="14" y2="16" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+                    <circle cx="14" cy="19.5" r="1.1" fill="white"/>
+                  </svg>
                 </div>
               `,
-              iconSize: [28, 34],
-              iconAnchor: [14, 34],
-              popupAnchor: [0, -36],
+              iconSize: [28, 36],
+              iconAnchor: [14, 36],
+              popupAnchor: [0, -38],
             })}
           >
             <Popup closeButton={false} className="salbar-popup">

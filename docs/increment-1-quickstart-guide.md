@@ -112,12 +112,47 @@ npm run dev
 | :--- | :--- | :--- |
 | **1. Gateway Online** | Plug T3-S3 into PC & start `bridge.py` | Top header on Web Dashboard turns **ONLINE**. |
 | **2. Live Telemetry** | Power on T-Beam (battery or USB) | Within 10s, `bridge.py` logs `TELEMETRY from SAR-01`. The `SAR-01` pin appears on the Leaflet Tactical Map. |
-| **3. Emergency Incident** | In T-Beam serial monitor, type `INCIDENT` and press Enter | Incident appears immediately in the dashboard's **Live CAD Incident Queue**. |
+| **3. 4-Button Triage Alert** | In T-Beam serial monitor, type `1`..`4` or press physical button | OLED/terminal shows category selection; pressing SEND broadcasts live `INCIDENT` to dashboard CAD queue. |
 | **4. HITL Dispatch Downlink** | Click incident in dashboard &rarr; click **[Approve & Dispatch via LoRa]** | Gateway transmits dispatch order over 915 MHz LoRa. T-Beam logs `[RX] DISPATCH for SAR-01` and changes status to `EN_ROUTE`. |
 
-### Optional: Monitor T-Beam Serial Output Directly
+---
+
+## Phase 5: 4-Button Field Triage Navigation (OLED & Serial CLI)
+
+The field terminal firmware implements a complete 4-button menu state machine for handheld triage category selection and dispatching.
+
+### 1. Physical Breadboard Pinout (Active LOW, internal pull-up)
+| Button | Action | T-Beam GPIO Pin | Connection |
+| :--- | :--- | :--- | :--- |
+| **Button 1** | `UP` (Previous Category / Menu Item) | **GPIO 13** | Pin 13 &rarr; Momentary Tactile Switch &rarr; GND |
+| **Button 2** | `DOWN` (Next Category / Menu Item) | **GPIO 14** | Pin 14 &rarr; Momentary Tactile Switch &rarr; GND |
+| **Button 3** | `SELECT` (Confirm Category / Set Urgency) | **GPIO 15** | Pin 15 &rarr; Momentary Tactile Switch &rarr; GND |
+| **Button 4** | `SEND` (Transmit LoRa Incident Alert) | **GPIO 25** | Pin 25 &rarr; Momentary Tactile Switch &rarr; GND |
+
+*(Note: If physical buttons are not yet wired to a breadboard, the firmware's internal pull-ups keep pins floating safely at 3.3V without accidental triggers).*
+
+### 2. Testing 4-Button Navigation via Serial Monitor (No Breadboard Needed)
+Open the T-Beam serial monitor in an Antigravity IDE terminal:
 ```powershell
 & "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" device monitor -p COM6 -b 115200
 ```
-*View live transmission logs from the T-Beam. Type `INCIDENT` and hit Enter to trigger an incident packet over the air.*
+
+Type any of the following single-character commands and press Enter:
+
+| Command | Action | Description |
+| :--- | :--- | :--- |
+| **`1`** or **`UP`** | Button 1: Up | Scrolls up through categories: `Trapped Persons`, `Landslide Hazard`, `Medical Emerg.`, `Flood Inundation`, `Relief Supplies`. |
+| **`2`** or **`DOWN`** | Button 2: Down | Scrolls down through the triage categories. |
+| **`3`** or **`SELECT`** | Button 3: Select | Confirms category and advances to Urgency level selection (`CRITICAL`, `HIGH`, `MODERATE`, `LOW`). |
+| **`4`** or **`SEND`** | Button 4: Send | Immediately packages and broadcasts `SALBAR_MSG_INCIDENT` over 915 MHz LoRa with live GPS coordinates. |
+| **`TELEMETRY`** | Manual Telemetry | Forces an immediate GPS/battery telemetry uplink to the Gateway. |
+| **`INCIDENT`** | Instant SOS Alert | Sends an emergency bench-test incident directly to the dashboard. |
+| **`HELP`** | Help Menu | Displays the command reference list in the console. |
+
+### 3. Verification During Thesis Defense
+1. Keep the Serial Monitor open in one terminal and `bridge.py` in another.
+2. Type `2` to select a category (e.g. `Landslide Hazard`).
+3. Type `3` to set urgency to `CRITICAL`.
+4. Type `4` to send.
+5. Watch the T3-S3 Gateway log `[LoRa Incident!]` in `bridge.py` and see the new incident instantly populate the Operator CAD Dashboard queue with the selected category and live coordinates.
 

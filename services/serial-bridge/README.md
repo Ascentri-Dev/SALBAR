@@ -24,7 +24,7 @@ A background service running on the host coordination computer that interfaces d
 
 3. **Specify explicit COM port**:
    ```bash
-   python bridge.py --port COM3
+   python bridge.py --port COM5
    ```
 
 4. **Run in Mock Simulation mode (when hardware is disconnected)**:

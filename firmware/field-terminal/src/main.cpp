@@ -625,35 +625,34 @@ void loop() {
         }
     }
 
-    // 5. USB Serial CLI for Bench Testing & Demonstration
-    if (Serial.available() > 0) {
-        String cmd = Serial.readStringUntil('\n');
-        cmd.trim();
-        if (cmd.equals("1") || cmd.equalsIgnoreCase("UP")) {
+    // 5. USB Serial CLI for Bench Testing & Demonstration (Instant single-key response)
+    while (Serial.available() > 0) {
+        char ch = (char)Serial.read();
+        if (ch == '1' || ch == 'u' || ch == 'U') {
             handleNavUp();
-        } else if (cmd.equals("2") || cmd.equalsIgnoreCase("DOWN") || cmd.equalsIgnoreCase("DN")) {
+        } else if (ch == '2' || ch == 'd' || ch == 'D') {
             handleNavDown();
-        } else if (cmd.equals("3") || cmd.equalsIgnoreCase("SELECT") || cmd.equalsIgnoreCase("SEL")) {
+        } else if (ch == '3' || ch == 's' || ch == 'S') {
             handleNavSelect();
-        } else if (cmd.equals("4") || cmd.equalsIgnoreCase("SEND") || cmd.equalsIgnoreCase("TX")) {
+        } else if (ch == '4' || ch == 'x' || ch == 'X') {
             handleNavSend();
-        } else if (cmd.equalsIgnoreCase("TELEMETRY")) {
+        } else if (ch == 't' || ch == 'T') {
             sendTelemetry();
-        } else if (cmd.equalsIgnoreCase("INCIDENT")) {
+        } else if (ch == 'i' || ch == 'I') {
             sendIncidentReport(
                 "Bench test incident from T-Beam SAR-01.",
                 SALBAR_URGENCY_CRITICAL,
                 SALBAR_CAT_TRAPPED_PERSONS,
                 2
             );
-        } else if (cmd.equalsIgnoreCase("HELP") || cmd.equalsIgnoreCase("?")) {
+        } else if (ch == 'h' || ch == 'H' || ch == '?') {
             Serial.println(F("\n=== SALBAR Field Terminal CLI ==="));
-            Serial.println(F("  1 or UP     : Navigate Up / Prev Category"));
-            Serial.println(F("  2 or DOWN   : Navigate Down / Next Category"));
-            Serial.println(F("  3 or SELECT : Select / Advance Menu"));
-            Serial.println(F("  4 or SEND   : Transmit LoRa Incident Report"));
-            Serial.println(F("  TELEMETRY   : Force Immediate Telemetry TX"));
-            Serial.println(F("  INCIDENT    : Send Immediate Bench SOS Alert"));
+            Serial.println(F("  Press '1' : Navigate Up / Prev Category"));
+            Serial.println(F("  Press '2' : Navigate Down / Next Category"));
+            Serial.println(F("  Press '3' : Select / Confirm Urgency"));
+            Serial.println(F("  Press '4' : Transmit LoRa Incident Report"));
+            Serial.println(F("  Press 'T' : Force Immediate Telemetry TX"));
+            Serial.println(F("  Press 'I' : Send Immediate Bench SOS Alert"));
             Serial.println(F("=================================\n"));
         }
     }

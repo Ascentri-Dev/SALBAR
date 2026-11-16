@@ -3,10 +3,11 @@ import { motion, type Variants } from 'framer-motion'
 import type { IncidentReport } from '../../types/cad'
 import { useTheme } from '../../context'
 
-export type KpiFilter = 'ALL' | 'CRITICAL' | 'ACTIVE' | 'PENDING' | 'RESOLVED'
+export type KpiFilter = 'ALL' | 'CRITICAL' | 'ACTIVE' | 'PENDING' | 'RESOLVED' | 'DEVICES'
 
 export interface KPIStripProps {
   incidents: IncidentReport[]
+  respondersCount?: number
   activeFilter: KpiFilter
   onFilterChange: (filter: KpiFilter) => void
   onClose: () => void
@@ -50,6 +51,7 @@ const getCardVariants = (align: 'left' | 'right'): Variants => ({
 
 export function KPIStrip({
   incidents,
+  respondersCount = 0,
   activeFilter,
   onFilterChange,
   onClose,
@@ -85,11 +87,22 @@ export function KPIStrip({
       label: 'TOTAL INCIDENTS',
       value: totalCount,
       pct: 100,
-      pctText: '100%',
+      pctText: 'Reports',
       tone: isLight ? 'text-slate-900' : 'text-slate-100',
       border: isLight ? 'border-slate-300' : 'border-[var(--border-subtle)]',
       barBg: 'bg-[var(--accent-primary)]',
       pulse: false,
+    },
+    {
+      id: 'DEVICES' as const,
+      label: 'HANDHELD DEVICES',
+      value: respondersCount,
+      pct: 100,
+      pctText: 'Live GPS',
+      tone: 'text-cyan-500 dark:text-cyan-400',
+      border: 'border-cyan-500/40',
+      barBg: 'bg-cyan-500',
+      pulse: respondersCount > 0,
     },
     {
       id: 'CRITICAL' as const,

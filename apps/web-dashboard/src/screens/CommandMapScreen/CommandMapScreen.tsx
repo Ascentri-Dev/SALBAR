@@ -31,10 +31,17 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   const [responders, setResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
   const [selectedIncident, setSelectedIncident] = useState<IncidentReport | null>(null)
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('ALL')
+  const hasAutoCenteredRef = useRef(false)
 
   // Handler for live LoRa telemetry packet arriving from Gateway
   const handleLiveTelemetry = useCallback(
     (telemetry: LiveTelemetryUpdate) => {
+      // Auto-center map on unit upon receiving valid live coordinates
+      if (!hasAutoCenteredRef.current && telemetry.lat !== undefined && telemetry.lng !== undefined && mapRef.current) {
+        mapRef.current.flyTo([telemetry.lat, telemetry.lng], 15, { duration: 1.0 })
+        hasAutoCenteredRef.current = true
+      }
+
       setResponders((prev) => {
         const exists = prev.some((r) => r.id === telemetry.id)
         if (!exists) {
@@ -88,6 +95,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
       if (prev.some((i) => i.id === incomingInc.id)) return prev
       return [incomingInc, ...prev]
     })
+    setKpiFilter('ALL')
+    if (incomingInc.location?.lat && incomingInc.location?.lng && mapRef.current) {
+      mapRef.current.flyTo([incomingInc.location.lat, incomingInc.location.lng], 16, { duration: 1.0 })
+    }
   }, [])
 
   const { sendDispatch } = useGatewayBridge(handleLiveTelemetry, handleLiveIncident)
@@ -103,13 +114,27 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
 
   // Filter incidents based on active KPI filter
   const filteredIncidents = incidents.filter((inc) => {
-    if (kpiFilter === 'ALL') return true
+    if (kpiFilter === 'ALL' || kpiFilter === 'DEVICES') return true
     if (kpiFilter === 'CRITICAL') return inc.urgency === 'CRITICAL' && inc.status !== 'RESOLVED'
     if (kpiFilter === 'ACTIVE') return inc.status === 'UNASSIGNED' || inc.status === 'PROPOSAL_PENDING'
     if (kpiFilter === 'PENDING') return inc.status === 'PROPOSAL_PENDING'
     if (kpiFilter === 'RESOLVED') return inc.status === 'RESOLVED'
     return true
   })
+
+  // Devices filter only shows live handheld terminals; Incident filters only show submitted reports
+  const mapIncidents = kpiFilter === 'DEVICES' ? [] : filteredIncidents
+  const mapResponders = kpiFilter === 'DEVICES' ? responders : []
+
+  const handleKpiFilterChange = useCallback(
+    (filter: KpiFilter) => {
+      setKpiFilter(filter)
+      if (filter === 'DEVICES' && responders.length > 0 && responders[0].location.lat && responders[0].location.lng) {
+        mapRef.current?.flyTo([responders[0].location.lat, responders[0].location.lng], 16, { duration: 1.0 })
+      }
+    },
+    [responders]
+  )
 
   // Map Controls Callbacks
   const handleZoomIn = useCallback(() => {
@@ -121,6 +146,15 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   }, [])
 
   const handleLocate = useCallback(() => {
+    // Center directly on the active live LoRa responder
+    if (responders.length > 0 && responders[0].location.lat && responders[0].location.lng) {
+      mapRef.current?.flyTo(
+        [responders[0].location.lat, responders[0].location.lng],
+        16,
+        { duration: 1.0 }
+      )
+      return
+    }
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -137,7 +171,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
     } else {
       mapRef.current?.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 1.0 })
     }
-  }, [])
+  }, [responders])
 
   const handleToggleTileType = useCallback(() => {
     setMapTileType((prev) => (prev === 'standard' ? 'humanitarian' : 'standard'))
@@ -224,8 +258,8 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
       {/* 1. Base Layer: Full-Viewport Tactical GIS Map */}
       <div data-testid="gis-map-container" className="absolute inset-0 z-0 w-full h-full">
         <TacticalMap
-          incidents={filteredIncidents}
-          responders={responders}
+          incidents={mapIncidents}
+          responders={mapResponders}
           hazards={ROAD_HAZARDS}
           selectedIncidentId={selectedIncident ? selectedIncident.id : null}
           onSelectIncident={(incidentId) => {
@@ -258,8 +292,9 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
               >
                 <KPIStrip
                   incidents={incidents}
+                  respondersCount={responders.length}
                   activeFilter={kpiFilter}
-                  onFilterChange={setKpiFilter}
+                  onFilterChange={handleKpiFilterChange}
                   onClose={() => setIsKpiOpen(false)}
                   align="left"
                 />
@@ -462,8 +497,9 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                   >
                     <KPIStrip
                       incidents={incidents}
+                      respondersCount={responders.length}
                       activeFilter={kpiFilter}
-                      onFilterChange={setKpiFilter}
+                      onFilterChange={handleKpiFilterChange}
                       onClose={() => setIsKpiOpen(false)}
                       align="right"
                     />

@@ -140,7 +140,13 @@ async def serial_reader_task(port: str, baud: int):
                     if msg_type == "TELEMETRY":
                         node = data.get("srcNode", "???")
                         rssi = data.get("rssi", 0)
-                        logger.info(f"{Fore.BLUE}[LoRa Telemetry]{Style.RESET_ALL} Node={Fore.WHITE}{node}{Style.RESET_ALL} RSSI={rssi}dBm")
+                        payload = data.get("data", {})
+                        lat = payload.get("lat")
+                        lng = payload.get("lng")
+                        batt = payload.get("batteryPercent")
+                        coords_str = f" Lat={lat:.6f} Lng={lng:.6f}" if (lat is not None and lng is not None) else ""
+                        batt_str = f" Batt={batt}%" if batt is not None else ""
+                        logger.info(f"{Fore.BLUE}[LoRa Telemetry]{Style.RESET_ALL} Node={Fore.WHITE}{node}{Style.RESET_ALL} RSSI={rssi}dBm{coords_str}{batt_str}")
                     elif msg_type == "INCIDENT":
                         inc_data = data.get("data", {})
                         inc_id = inc_data.get("id", "???")

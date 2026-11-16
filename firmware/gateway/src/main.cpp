@@ -111,7 +111,7 @@ static void updateDisplay(const char *statusMsg = nullptr) {
     // Title Header
     display.setTextSize(1);
     display.setCursor(0, 0);
-    display.println(F("Ascentri's"));
+    display.println(F("Ascentri"));
     display.setCursor(0, 10);
     display.println(F("SALBAR Gateway"));
 

@@ -68,6 +68,9 @@ typedef enum {
 // ============================================================================
 // Bit-Packed Packet Structures
 // ============================================================================
+#define SALBAR_NO_TIME 0xFFFFFFFFUL
+#define SALBAR_POS_NONE 0xFFFFU
+
 #pragma pack(push, 1)
 
 // Standard 10-byte Header
@@ -90,7 +93,16 @@ typedef struct {
     uint8_t  status;         // SalbarResponderStatus
     uint8_t  fatigue_score;  // 0 - 100%
     uint8_t  relayed_count;  // Count of BLE reports forwarded
-    uint8_t  flags;          // Bit 0: 1 = Kalman filtered, 0 = Raw GPS
+    uint8_t  flags;          // Bit 0: GPS fix, Bit 1: GPS module streaming, Bits 2-7: satellites used
+    uint8_t  sats_in_view;   // Satellites visible (from NMEA GSV), shows search progress before a fix
+    uint8_t  sats_tracked;   // Satellites with a measurable signal (GSV SNR > 0)
+    uint8_t  sats_strong;    // Satellites with SNR >= 30 dB-Hz (usable for a quick fix)
+    uint8_t  max_snr;        // Strongest satellite signal, dB-Hz (0 = none)
+    uint8_t  gps_receiver;   // Module's own fix report: bits 0-1 GSA mode (0 unknown,1 none,2 2D,3 3D),
+                             // bit 2 RMC status 'A', bits 3-5 GGA fix quality (0-7)
+    uint8_t  ubx_eph;        // u-blox NAV-SVINFO: satellites with ephemeris downloaded (0xFF = no UBX reply)
+    uint8_t  ubx_locked;     // satellites with code+time lock (quality >= 4)
+    uint8_t  ubx_used;       // satellites used in navigation solution
 } SalbarTelemetryPayload;
 
 // MSG_INCIDENT Payload (~150 bytes max)
@@ -102,6 +114,10 @@ typedef struct {
     uint8_t  victim_count;    // Estimated victim count
     int32_t  lat_e7;          // Incident latitude * 1e7
     int32_t  lng_e7;          // Incident longitude * 1e7
+    uint32_t sent_utc_ms;     // GPS UTC time of the Send press, ms since UTC midnight
+                              // (SALBAR_NO_TIME = GPS time unknown). Used to measure delivery delay.
+    uint16_t pos_age_s;       // 0 = live fix; 1-65534 = last-known position this many seconds old;
+                              // SALBAR_POS_NONE = no position at all (lat/lng = 0)
     uint8_t  text_len;        // Length of raw text
     char     raw_text[128];   // Raw civilian or field text (Cebuano/Tagalog/English)
 } SalbarIncidentPayload;

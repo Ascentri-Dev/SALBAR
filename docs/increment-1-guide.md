@@ -141,7 +141,7 @@ Source: `firmware/field-terminal/src/pins_config.h`
 #define BTN_NAV_UP     13   // Button 1: Previous Category / Menu Item
 #define BTN_NAV_DOWN   14   // Button 2: Next Category / Menu Item
 #define BTN_SELECT     15   // Button 3: Select / Confirm Urgency
-#define BTN_SEND       25   // Button 4: Transmit LoRa Incident Report
+#define BTN_SEND       25   // Button 4: Back (one menu level up)
 
 // Power & Status
 #define STATUS_LED     4
@@ -263,8 +263,8 @@ The field terminal firmware implements a 4-button menu state machine for handhel
 ### Physical Tactile Switch Connections
 - **Button 1 (`GPIO 13`)**: Navigate Up (previous incident category).
 - **Button 2 (`GPIO 14`)**: Navigate Down (next incident category).
-- **Button 3 (`GPIO 15`)**: Select / Advance to Urgency Level (`CRITICAL`, `HIGH`, `MODERATE`, `LOW`).
-- **Button 4 (`GPIO 25`)**: Send / Broadcast `SALBAR_MSG_INCIDENT` over LoRa.
+- **Button 3 (`GPIO 15`)**: Select / Confirm. Category → Urgency (`CRITICAL`, `HIGH`, `MODERATE`, `LOW`) → Confirm screen. On the Confirm screen, Button 3 broadcasts `SALBAR_MSG_INCIDENT` over LoRa.
+- **Button 4 (`GPIO 25`)**: Back. Confirm → Urgency → Category → Standby screen.
 
 *(Note: Pins use internal pull-ups and are active LOW. If buttons are not yet physically wired, the pins rest safely at 3.3V without accidental triggers).*
 
@@ -275,8 +275,8 @@ When monitoring `COM6` in the serial terminal, you can interact directly using s
 | :--- | :--- | :--- |
 | `1` or `UP` | Button 1: Up | Scroll up through categories: `Trapped Persons`, `Landslide Hazard`, `Medical Emerg.`, `Flood Inundation`, `Relief Supplies`. |
 | `2` or `DOWN` | Button 2: Down | Scroll down through triage categories. |
-| `3` or `SELECT` | Button 3: Select | Confirm selected category and advance to Urgency selection. |
-| `4` or `SEND` | Button 4: Send | Transmit `SALBAR_MSG_INCIDENT` over 915 MHz LoRa with live GPS coordinates. |
+| `3` or `S` / Enter | Button 3: Select | Advance Category → Urgency → Confirm. On the Confirm screen, transmits `SALBAR_MSG_INCIDENT` over 915 MHz LoRa. |
+| `4` or `B` | Button 4: Back | Go back one menu level (Confirm → Urgency → Category → Standby). |
 | `T` or `TELEMETRY` | Manual Telemetry | Forces immediate transmission of GPS and battery telemetry to Gateway. |
 | `I` or `INCIDENT` | Instant SOS Alert | Sends a quick critical bench-test incident directly to the dashboard. |
 | `H` or `HELP` | Help Menu | Displays the command reference list in the console. |
@@ -300,7 +300,7 @@ The serial monitor renders a color-coded simulation of the handheld OLED without
 |  [ ] 5. Relief Supplies                                        |
 | URGENCY: [CRITICAL]                                            |
 +----------------------------------------------------------------+
-| [1] UP  [2] DOWN  [3] SELECT  [4] SEND  [T] TX TELEM  [I] SOS  |
+| [1] UP  [2] DOWN  [3] SELECT  [4] BACK  [T] TX TELEM  [I] SOS  |
 +================================================================+
 ```
 
@@ -312,7 +312,7 @@ The serial monitor renders a color-coded simulation of the handheld OLED without
 | :--- | :--- | :--- |
 | **1. Gateway Online** | Connect T3-S3 to `COM5` and start `bridge.py` | Dashboard top bar shows `GATEWAY: ONLINE (COM5 / 915 MHz)`. |
 | **2. Upstream Telemetry** | Power TTGO T-Beam on `COM6` or battery | Within 10 seconds, `bridge.py` logs `TELEMETRY from SAR-01`. The clean vector teardrop pin for `SAR-01` appears on the Leaflet Tactical Map with accurate coordinates, battery %, and fatigue score. |
-| **3. 4-Button Incident Alert** | In T-Beam serial console, press `2` &rarr; `3` &rarr; `4` (or press physical switches) | T-Beam logs `[TX] INCIDENT`. `bridge.py` logs packet reception. The incident instantly prepends to the CAD queue and drops a vector marker pin on the map. |
+| **3. 4-Button Incident Alert** | In T-Beam serial console, press `2` &rarr; `3` &rarr; `3` &rarr; `3` (or press physical switches) | T-Beam logs `[TX] INCIDENT`. `bridge.py` logs packet reception. The incident instantly prepends to the CAD queue and drops a vector marker pin on the map. |
 | **4. HITL Dispatch Downlink** | In Web Dashboard, click the incident card, then click **[Approve & Dispatch via LoRa]** | Gateway transmits the dispatch order. T-Beam logs `[RX] DISPATCH for SAR-01` over serial/OLED and transitions status to `EN_ROUTE`. |
 | **5. Mock Simulation Mode** | Run `python bridge.py --mock` (no hardware connected) | Virtual gateway broadcasts simulated telemetry and acknowledges dispatch commands with `FORWARDED_TO_GATEWAY_MOCK`. |
 

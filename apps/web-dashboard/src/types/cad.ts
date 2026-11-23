@@ -25,6 +25,10 @@ export interface IncidentReport {
     name: string
     lat: number
     lng: number
+    /** false = reported without a GPS fix; lat/lng are 0 and not plotted */
+    gpsFix?: boolean
+    /** 0/undefined = live fix; > 0 = last-known position this many seconds old */
+    positionAgeS?: number
   }
   victimCount?: number
   aiBriefing: string
@@ -52,6 +56,14 @@ export interface FieldResponder {
     lng: number
     accuracyMeters: number
     kalmanFiltered: boolean
+    /** false = terminal has no GPS fix yet; lat/lng are not a real position */
+    gpsFix?: boolean
+    /** satellites used in the current fix (reported by terminal) */
+    satellites?: number
+    /** satellites visible to the receiver (search progress before a fix) */
+    satellitesInView?: number
+    /** false = terminal's GPS module is not sending any data */
+    gpsModuleOk?: boolean
   }
   assignedIncidentId?: string
   lastSeen: string

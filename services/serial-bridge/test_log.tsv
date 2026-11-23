@@ -1,0 +1,23 @@
+#	Time sent	Report	Delay (s)	RSSI (dBm)	GPS	Position (lat, lng)	GPS +/- (m)	Distance (m)	On dashboard	Result	Location / notes
+1	2026-11-22 16:21:51	flood-inundation / CRITICAL	1.37	-10	NONE	NONE			Yes	FAIL - no GPS position	
+2	2026-11-22 16:22:34	trapped-persons / CRITICAL	1.58	-10	NONE	NONE			Yes	FAIL - no GPS position	
+3	2026-11-22 16:28:32	medical-emergency / CRITICAL	1.48	-39	LIVE	10.299297, 123.876593	2.0	19.1	Yes	PASS	
+4	2026-11-22 16:33:40	flood-inundation / CRITICAL	0.59	-53	LIVE	10.299311, 123.876608	2.1	21.4	Yes	PASS	
+5	2026-11-22 16:36:07	relief-supplies / CRITICAL	0.93	-58	LIVE	10.299396, 123.876367	2.4	24.9	Yes	PASS	
+6	2026-11-22 16:36:59	landslide-hazard / LOW	0.60	-48	LIVE	10.299362, 123.876657	2.4	29.1	Yes	PASS	
+7	2026-11-22 16:38:36	flood-inundation / CRITICAL	0.77	-43	LIVE	10.299238, 123.876582	2.0	14.8	Yes	PASS	
+8	2026-11-22 16:40:26	trapped-persons / MODERATE	0.88	-43	LIVE	10.299304, 123.875912	2.7	60.9	Yes	PASS	
+9	2026-11-22 16:41:26	relief-supplies / HIGH	0.89	-50	LIVE	10.299346, 123.876441	2.7	17.4	Yes	PASS	
+10	2026-11-22 16:42:53	relief-supplies / HIGH	0.73	-81	LIVE	10.299026, 123.876054	3.6	47.6	Yes	PASS	
+11	2026-11-22 16:43:31	relief-supplies / HIGH	0.73	-79	LIVE	10.299345, 123.876122	2.8	40.4	Yes	PASS	
+12	2026-11-22 16:44:48	medical-emergency / CRITICAL	0.71	-52	LIVE	10.299101, 123.876452	3.6	9.9	Yes	PASS	
+13	2026-11-22 16:45:07	structural-collapse / CRITICAL	0.72	-51	LIVE	10.299343, 123.876486	2.9	17.3	Yes	PASS	
+
+Summary	Reports sent	13
+	Reports received	13
+	Packet delivery rate	100%
+	Average delay (s)	0.92
+	Max delay (s)	1.58
+	Average RSSI (dBm)	-47
+	Max distance (m)	60.9
+	Tests passed	11 / 13

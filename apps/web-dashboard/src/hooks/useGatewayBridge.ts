@@ -7,11 +7,21 @@ export interface LiveTelemetryUpdate {
   lng?: number
   accuracyMeters?: number
   kalmanFiltered?: boolean
+  gpsFix?: boolean
+  gpsModuleOk?: boolean
+  satellites?: number
+  satellitesInView?: number
   batteryVoltage?: number
   batteryPercent?: number
   status?: ResponderStatus
   fatigueScore?: number
   relayedReportsCount?: number
+}
+
+function formatAge(seconds?: number): string {
+  if (!seconds || seconds < 60) return `${seconds ?? 0} s`
+  if (seconds < 3600) return `${Math.round(seconds / 60)} min`
+  return `${Math.round(seconds / 3600)} h`
 }
 
 export interface GatewayConnectionState {
@@ -64,6 +74,11 @@ export function useGatewayBridge(
                 lat: payload.data.lat,
                 lng: payload.data.lng,
                 accuracyMeters: payload.data.accuracyMeters,
+                kalmanFiltered: payload.data.kalmanFiltered,
+                gpsFix: payload.data.gpsFix,
+                gpsModuleOk: payload.data.gpsModuleOk,
+                satellites: payload.data.satellites,
+                satellitesInView: payload.data.satellitesInView,
                 batteryVoltage: payload.data.batteryVoltage,
                 batteryPercent: payload.data.batteryPercent,
                 fatigueScore: payload.data.fatigueScore,
@@ -84,9 +99,18 @@ export function useGatewayBridge(
                 category: payload.data.category || 'trapped-persons',
                 urgency: payload.data.urgency || 'HIGH',
                 location: {
-                  name: `Site ${payload.srcNode || 'LoRa Node'}`,
-                  lat: payload.data.lat || 10.315,
-                  lng: payload.data.lng || 123.885,
+                  name:
+                    payload.data.positionSource === 'last-known'
+                      ? `Last known position, ${formatAge(payload.data.positionAgeS)} old (${payload.srcNode || 'LoRa Node'})`
+                      : payload.data.lat === undefined
+                        ? `No GPS position (${payload.srcNode || 'LoRa Node'})`
+                        : `Site ${payload.srcNode || 'LoRa Node'}`,
+                  // 0,0 = no position at all; never substitute a fake default location
+                  lat: payload.data.lat ?? 0,
+                  lng: payload.data.lng ?? 0,
+                  gpsFix: payload.data.gpsFix !== false && payload.data.lat !== undefined,
+                  positionAgeS:
+                    payload.data.positionSource === 'last-known' ? payload.data.positionAgeS : 0,
                 },
                 victimCount: payload.data.victimCount || 0,
                 aiBriefing: `Field transmission received via gateway from terminal ${payload.srcNode || 'UNKNOWN'}.`,

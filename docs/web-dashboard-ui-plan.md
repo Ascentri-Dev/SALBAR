@@ -13,7 +13,7 @@ The dashboard consolidates disaster response operations into three primary views
 
 ```
 +---------------------------------------------------------------------------------------+
-|  SALBAR EOC    [COM3: Online 915MHz]  [Mode: LoRa Mesh Blackout]  [Alerts: 4 Active]  |
+|  SALBAR EOC    [COM5: Online 915MHz]  [Mode: LoRa Mesh Blackout]  [Alerts: 4 Active]  |
 +------------------------------------+--------------------------------+-----------------+
 |  1. Command Map and Triage CAD     |  2. Field Responder Fleet      |  3. Incident    |
 |     (Primary Live Operations)      |     (Status and Fatigue)       |     Archive     |
@@ -78,7 +78,7 @@ Dedicated record-keeping view supporting post-disaster evaluation, barangay reli
 ### Ambient Status Header (Persistent System Health)
 Eliminates the need for a separate hardware diagnostics screen by displaying vital hardware parameters in the persistent top bar:
 
-- **LoRa Gateway Serial Bridge**: `Online (COM3 / 915 MHz)` (triggers immediate visual and audio warning if disconnected).
+- **LoRa Gateway Serial Bridge**: `Online (COM5 / 915 MHz)` (triggers immediate visual and audio warning if disconnected).
 - **Network Operating Mode**: `Local Mesh Only (Outage)` vs `Cloud Sync Active`.
 - **Active Incident Counter**: Ratio of active emergencies to resolved calls.
 - **Audio Siren / Chime Toggle**: Audible notification on reception of high-urgency rescue calls.

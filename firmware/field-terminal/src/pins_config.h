@@ -28,8 +28,15 @@
 #define OLED_ADDR              0x3C
 
 // User Button & Onboard LED
-#define USER_BTN               38   // Active LOW
+#define USER_BTN               38   // Active LOW on T-Beam V1.0/V1.1
 #define BOARD_LED              4    // Active LOW on T-Beam V1.1/V1.2
+
+// 4-Button Field Triage Matrix (Breadboard Header Pins or PCF8574 Expander)
+// Active LOW with internal pull-up (INPUT_PULLUP). Empty/floating pins stay safely HIGH.
+#define BTN_NAV_UP            13   // Button 1: Up / Previous Menu Item
+#define BTN_NAV_DOWN          14   // Button 2: Down / Next Menu Item
+#define BTN_NAV_SELECT        15   // Button 3: Select / Confirm Menu Item
+#define BTN_NAV_SEND          25   // Button 4: Transmit LoRa Incident Report
 
 // Telemetry & Power Limits
 #define TELEMETRY_INTERVAL_MS  10000

@@ -24,7 +24,7 @@ SALBAR bridges the critical post-disaster communication gap using a multi-tier, 
                             [ Intermediate Relay Node(s) ]                    │
                                   │                                           │
                                   ▼                                           │
-                            [ Gateway Base Station (LoRa32) ]                 │
+                            [ Gateway Base Station (T3-S3) ]                  │
                                   │ (Serial Connection)                       │
                                   ▼                                           ▼
                       [ Coordination Host / Backend Engine ] ◄────────────────┘
@@ -56,7 +56,7 @@ SALBAR/
 │
 ├── firmware/
 │   ├── field-terminal/     # ESP32 TTGO T-Beam firmware (LoRa mesh, GPS Kalman filter, BLE, OLED, keypad)
-│   ├── gateway/            # LilyGO TTGO LoRa32 gateway firmware (LoRa mesh receiver & serial forwarder)
+│   ├── gateway/            # LILYGO T3-S3 SX1262 gateway firmware (LoRa receiver & serial forwarder)
 │   └── shared/             # Common packet formats, binary serialization, and protocol definitions
 │
 ├── packages/
@@ -72,7 +72,7 @@ SALBAR/
 ## Key Subsystems
 
 1. **Firmware & Field Terminals (`/firmware`)**
-   - **Hardware**: LilyGO TTGO T-Beam V1.2 (ESP32, LoRa 915 MHz, GNSS/GPS) + LilyGO TTGO LoRa32 V2.1.
+   - **Hardware**: LilyGO TTGO T-Beam V1.2 (ESP32, SX1276 LoRa 915 MHz, GNSS/GPS) + LILYGO T3-S3 (ESP32-S3, SX1262 LoRa 915 MHz).
    - **LoRa Mesh Network**: Decentralized store-and-forward mesh protocol resilient to network partitions.
    - **GPS Kalman Filter**: Edge-computed recursive predict-correct filtering to suppress multipath drift.
    - **BLE Ingestion**: Opportunistic synchronization receiving emergency reports from civilian Android devices.

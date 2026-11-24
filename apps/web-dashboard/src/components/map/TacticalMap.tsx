@@ -63,6 +63,8 @@ const BorderBeam = ({ delay = 0, color = "#ff6b00" }: { delay?: number; color?: 
 export interface TacticalMapProps {
   incidents: IncidentReport[]
   responders: FieldResponder[]
+  /** All live units for the GPS status chip (shown even when unit pins are filtered out) */
+  gpsStatusResponders?: FieldResponder[]
   hazards: RoadHazard[]
   selectedIncidentId: string | null
   onSelectIncident: (incidentId: string) => void
@@ -130,14 +132,18 @@ function createIncidentMarkerIcon(
   }
 
   const selectedClass = isSelected ? 'scale-125 z-50' : 'hover:scale-115'
+  // Last-known (not live) position: faded pin with a dashed outline
+  const isLastKnown = (incident.location.positionAgeS ?? 0) > 0
+  const pinStyle = isLastKnown ? 'opacity: 0.6;' : ''
+  const strokeDash = isLastKnown ? 'stroke-dasharray="3 2"' : ''
 
   const html = `
-    <div class="relative flex flex-col items-center justify-center cursor-pointer select-none transition-transform duration-200 ${selectedClass}">
+    <div class="relative flex flex-col items-center justify-center cursor-pointer select-none transition-transform duration-200 ${selectedClass}" style="${pinStyle}">
       <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));">
         <path d="M14 0.5C6.54 0.5 0.5 6.54 0.5 14C0.5 22.8 11.2 31.8 14 35.5C16.8 31.8 27.5 22.8 27.5 14C27.5 6.54 21.46 0.5 14 0.5Z"
               fill="${fillColor}"
               stroke="#FFFFFF"
-              stroke-width="2" />
+              stroke-width="2" ${strokeDash} />
         ${iconSvg}
       </svg>
     </div>
@@ -186,6 +192,7 @@ function createResponderMarkerIcon(responder: FieldResponder): L.DivIcon {
 export function TacticalMap({
   incidents,
   responders,
+  gpsStatusResponders,
   hazards,
   selectedIncidentId,
   onSelectIncident,
@@ -279,8 +286,8 @@ export function TacticalMap({
           </Marker>
         ))}
 
-        {/* Field Responder Units */}
-        {responders.map((resp) => (
+        {/* Field Responder Units (units that never had a GPS fix sit at 0,0 and are not plotted) */}
+        {responders.filter((resp) => !(resp.location.lat === 0 && resp.location.lng === 0)).map((resp) => (
           <Marker
             key={resp.id}
             position={[resp.location.lat, resp.location.lng]}
@@ -333,7 +340,11 @@ export function TacticalMap({
                       <span>GNSS Precision</span>
                     </div>
                     <div className="font-mono font-bold text-cyan-400 text-[10px]">
-                      Kalman (+/-{resp.location.accuracyMeters}m)
+                      {resp.location.gpsFix === false
+                        ? `NO FIX - last known (${resp.location.satellites ?? 0} sats)`
+                        : `Kalman (+/-${resp.location.accuracyMeters}m${
+                            resp.location.satellites !== undefined ? `, ${resp.location.satellites} sats` : ''
+                          })`}
                     </div>
                   </div>
                 </div>
@@ -348,8 +359,8 @@ export function TacticalMap({
           </Marker>
         ))}
 
-        {/* Incident Reports */}
-        {incidents.map((inc) => {
+        {/* Incident Reports (reports without a GPS fix are listed but not plotted) */}
+        {incidents.filter((inc) => !(inc.location.lat === 0 && inc.location.lng === 0)).map((inc) => {
           const isSelected = inc.id === selectedIncidentId
           return (
             <Marker
@@ -438,6 +449,30 @@ export function TacticalMap({
           )
         })}
       </MapContainer>
+
+      {/* GPS acquisition status for terminals without a current fix */}
+      {(gpsStatusResponders ?? responders).some((r) => r.location.gpsFix === false) && (
+        <div className="absolute top-28 left-3 sm:left-5 z-[1000] flex flex-col gap-1.5 pointer-events-none">
+          {(gpsStatusResponders ?? responders)
+            .filter((r) => r.location.gpsFix === false)
+            .map((r) => (
+              <div
+                key={`gps-${r.id}`}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-mono font-bold border backdrop-blur-md shadow-md ${
+                  r.location.gpsModuleOk === false
+                    ? 'bg-red-500/20 text-red-400 border-red-500/40'
+                    : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                }`}
+              >
+                {r.id}:{' '}
+                {r.location.gpsModuleOk === false
+                  ? 'GPS MODULE NOT RESPONDING'
+                  : `GPS ACQUIRING (${r.location.satellitesInView ?? 0} satellites in view)`}
+                {!(r.location.lat === 0 && r.location.lng === 0) && ' - showing last known'}
+              </div>
+            ))}
+        </div>
+      )}
     </div>
   )
 }

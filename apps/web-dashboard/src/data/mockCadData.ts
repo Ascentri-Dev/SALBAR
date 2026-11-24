@@ -10,11 +10,13 @@ export const INITIAL_RESPONDERS: FieldResponder[] = [
     batteryPercent: 100,
     batteryVoltage: 4.12,
     fatigueScore: 0,
+    // No position until the terminal reports a real GPS fix (0,0 = not plotted)
     location: {
-      lat: 10.3157,
-      lng: 123.8854,
-      accuracyMeters: 2.0,
-      kalmanFiltered: true,
+      lat: 0,
+      lng: 0,
+      accuracyMeters: 0,
+      kalmanFiltered: false,
+      gpsFix: false,
     },
     lastSeen: 'Connecting to LoRa...',
     relayedReportsCount: 0,

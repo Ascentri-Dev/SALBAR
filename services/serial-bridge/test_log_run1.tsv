@@ -1,0 +1,21 @@
+#	Time sent	Report	Delay (s)	RSSI (dBm)	Position (lat, lng)	GPS +/- (m)	Distance (m)	On dashboard	Result	Location / notes
+1	2026-11-22 15:49:06	medical-emergency / CRITICAL	1.47	-37	10.299352, 123.876596	2.4	23.6	Yes	PASS	
+2	2026-11-22 15:49:56	trapped-persons / MODERATE	1.47	-59	10.299319, 123.876647	2.4	25.3	Yes	PASS	
+3	-	-						-	FAIL - not received	
+4	2026-11-22 15:55:44	relief-supplies / CRITICAL	1.49	-51	10.299279, 123.876867	2.4	46.1	Yes	PASS	
+5	2026-11-22 15:56:26	medical-emergency / LOW	1.38	-49	NO FIX			Yes	FAIL - no GPS fix	
+6	2026-11-22 15:56:34	medical-emergency / LOW	1.60	-46	10.299207, 123.874012	2.5	267.4	Yes	PASS	
+7	2026-11-22 15:56:51	medical-emergency / LOW	1.41	-43	10.299201, 123.874074	3.1	260.6	Yes	PASS	
+8	2026-11-22 15:59:19	flood-inundation / LOW	1.70	-51	10.299667, 123.876348	2.6	54.3	Yes	PASS	
+9	2026-11-22 15:59:49	flood-inundation / CRITICAL	1.76	-57	NO FIX			Yes	FAIL - no GPS fix	
+10	2026-11-22 16:00:00	flood-inundation / CRITICAL	1.39	-53	NO FIX			Yes	FAIL - no GPS fix	
+11	2026-11-22 16:00:43	trapped-persons / CRITICAL	1.50	-69	10.299666, 123.876681	3.6	58.3	Yes	PASS	
+
+Summary	Reports sent	11
+	Reports received	10
+	Packet delivery rate	91%
+	Average delay (s)	1.52
+	Max delay (s)	1.76
+	Average RSSI (dBm)	-52
+	Max distance (m)	267.4
+	Tests passed	7 / 11

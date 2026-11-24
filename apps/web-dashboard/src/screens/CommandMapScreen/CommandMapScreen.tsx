@@ -55,10 +55,15 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
             batteryVoltage: telemetry.batteryVoltage ?? 4.0,
             fatigueScore: telemetry.fatigueScore ?? 10,
             location: {
-              lat: telemetry.lat ?? 10.315,
-              lng: telemetry.lng ?? 123.885,
-              accuracyMeters: telemetry.accuracyMeters ?? 2.0,
-              kalmanFiltered: telemetry.kalmanFiltered ?? true,
+              // 0,0 = no fix yet; the map hides units that never had a fix
+              lat: telemetry.lat ?? 0,
+              lng: telemetry.lng ?? 0,
+              accuracyMeters: telemetry.accuracyMeters ?? 0,
+              kalmanFiltered: telemetry.kalmanFiltered ?? false,
+              gpsFix: telemetry.gpsFix ?? telemetry.lat !== undefined,
+              satellites: telemetry.satellites,
+              satellitesInView: telemetry.satellitesInView,
+              gpsModuleOk: telemetry.gpsModuleOk,
             },
             lastSeen: 'Just now',
             relayedReportsCount: telemetry.relayedReportsCount ?? 0,
@@ -80,6 +85,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                     kalmanFiltered: telemetry.kalmanFiltered ?? r.location.kalmanFiltered,
                   }
                 : {}),
+              gpsFix: telemetry.gpsFix ?? r.location.gpsFix,
+              satellites: telemetry.satellites ?? r.location.satellites,
+              satellitesInView: telemetry.satellitesInView ?? r.location.satellitesInView,
+              gpsModuleOk: telemetry.gpsModuleOk ?? r.location.gpsModuleOk,
             },
             lastSeen: 'Just now',
           }
@@ -260,6 +269,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
         <TacticalMap
           incidents={mapIncidents}
           responders={mapResponders}
+          gpsStatusResponders={responders}
           hazards={ROAD_HAZARDS}
           selectedIncidentId={selectedIncident ? selectedIncident.id : null}
           onSelectIncident={(incidentId) => {

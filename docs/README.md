@@ -9,6 +9,7 @@ This directory houses the academic manuscripts, technical specifications, hardwa
 
 ### 1. System & Hardware Guides
 - **[`increment-1-guide.md`](file:///c:/Users/JM/Documents/Programming/Thesis/SALBAR/docs/increment-1-guide.md)**: Comprehensive, unified technical reference and quickstart guide for Increment 1. Covers LILYGO T3-S3 SX1262 Gateway setup, TTGO T-Beam V1.2 SX1276 Field Terminal setup, 4-button menu navigation, Python Serial Bridge daemon, multi-terminal port assignment (`COM5`/`COM6`), and end-to-end verification milestones.
+- **[`commands-cheatsheet.md`](commands-cheatsheet.md)**: Quick reference for the terminal commands used day to day: running the bridge, dashboard, and T-Beam serial monitor, flashing both boards, T-Beam keys, GPS status meanings, and common fixes.
 - **[`web-dashboard-ui-plan.md`](file:///c:/Users/JM/Documents/Programming/Thesis/SALBAR/docs/web-dashboard-ui-plan.md)**: User interface specification, 3-view screen architecture (Command Map CAD, Responder Fleet Management, Incident Archive), design tokens, and high-contrast light/dark emergency dispatch color palette.
 
 ### 2. Academic Manuscripts & Evaluation

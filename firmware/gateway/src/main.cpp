@@ -211,10 +211,33 @@ static void processReceivedPacket() {
 
             JsonObject data = doc["data"].to<JsonObject>();
             data["id"] = String(header->src_node, 6);
-            data["lat"] = telem->lat_e7 / 10000000.0;
-            data["lng"] = telem->lng_e7 / 10000000.0;
-            data["accuracyMeters"] = telem->accuracy_cm / 100.0;
-            data["kalmanFiltered"] = (telem->flags & 0x01) != 0;
+            // flags: bit0 = GPS fix, bit1 = GPS module streaming, bits2-7 = satellites
+            bool gpsFix = (telem->flags & 0x01) != 0;
+            data["gpsFix"] = gpsFix;
+            data["gpsModuleOk"] = (telem->flags & 0x02) != 0;
+            data["satellites"] = (telem->flags >> 2) & 0x3F;
+            data["satellitesInView"] = telem->sats_in_view;
+            data["satellitesTracked"] = telem->sats_tracked;
+            data["satellitesStrong"] = telem->sats_strong;
+            data["maxSnr"] = telem->max_snr;
+            // Receiver's own fix report (bits 0-1 GSA mode, bit 2 RMC 'A', bits 3-5 GGA quality)
+            data["rxFixMode"] = telem->gps_receiver & 0x03;
+            data["rxRmcValid"] = (telem->gps_receiver & 0x04) != 0;
+            data["rxGgaQuality"] = (telem->gps_receiver >> 3) & 0x07;
+            if (telem->ubx_eph != 0xFF) {
+                data["ubxEphemeris"] = telem->ubx_eph;
+                data["ubxLocked"] = telem->ubx_locked;
+                data["ubxUsed"] = telem->ubx_used;
+            } else {
+                data["ubxReply"] = false;
+            }
+            if (gpsFix) {
+                // Coordinates are only emitted when the terminal has a real fix
+                data["lat"] = telem->lat_e7 / 10000000.0;
+                data["lng"] = telem->lng_e7 / 10000000.0;
+                data["accuracyMeters"] = telem->accuracy_cm / 100.0;
+            }
+            data["kalmanFiltered"] = gpsFix;
             data["batteryVoltage"] = telem->battery_mv / 1000.0;
             data["batteryPercent"] = telem->battery_pct;
             data["status"] = statusToString(telem->status);
@@ -249,8 +272,20 @@ static void processReceivedPacket() {
             data["category"] = categoryToString(inc->category);
             data["source"] = sourceToString(inc->source);
             data["victimCount"] = inc->victim_count;
-            data["lat"] = inc->lat_e7 / 10000000.0;
-            data["lng"] = inc->lng_e7 / 10000000.0;
+            // lat/lng = 0,0 means the terminal has no position at all.
+            // pos_age_s > 0 means a last-known position (fix lost), not a live one.
+            bool hasPos = (inc->lat_e7 != 0 || inc->lng_e7 != 0) && inc->pos_age_s != SALBAR_POS_NONE;
+            bool live = hasPos && inc->pos_age_s == 0;
+            data["gpsFix"] = live;
+            data["positionSource"] = live ? "live" : (hasPos ? "last-known" : "none");
+            if (hasPos) {
+                data["lat"] = inc->lat_e7 / 10000000.0;
+                data["lng"] = inc->lng_e7 / 10000000.0;
+                if (!live) data["positionAgeS"] = inc->pos_age_s;
+            }
+            if (inc->sent_utc_ms != SALBAR_NO_TIME) {
+                data["sentUtcMs"] = inc->sent_utc_ms;
+            }
             data["rawText"] = rawTextBuf;
 
             serializeJson(doc, Serial);

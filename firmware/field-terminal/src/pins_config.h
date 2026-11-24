@@ -36,7 +36,7 @@
 #define BTN_NAV_UP            13   // Button 1: Up / Previous Menu Item
 #define BTN_NAV_DOWN          14   // Button 2: Down / Next Menu Item
 #define BTN_NAV_SELECT        15   // Button 3: Select / Confirm Menu Item
-#define BTN_NAV_SEND          25   // Button 4: Transmit LoRa Incident Report
+#define BTN_NAV_SEND          25   // Button 4: Back (one menu level up)
 
 // Telemetry & Power Limits
 #define TELEMETRY_INTERVAL_MS  10000

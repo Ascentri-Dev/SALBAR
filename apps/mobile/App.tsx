@@ -1,148 +1,126 @@
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LORA_CONFIG } from '@salbar/protocol';
-import { getReportCounts } from './src/db/reportsRepository';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { AmbientHeader } from './src/components/AmbientHeader';
+import { BottomTabBar, MobileTab } from './src/components/BottomTabBar';
+import { SplashScreen } from './src/components/SplashScreen';
+import { getReportCounts, listReports } from './src/db/reportsRepository';
 import { useLocationStatus } from './src/hooks/useLocationStatus';
 import { useNetworkStatus } from './src/hooks/useNetworkStatus';
+import { GuideScreen } from './src/screens/GuideScreen';
+import { OutboxScreen } from './src/screens/OutboxScreen';
+import { ReportScreen } from './src/screens/ReportScreen';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeContext';
-import { EMERGENCY_COLORS, RADII } from './src/theme/tokens';
+import type { LocalReport, ReportCounts } from './src/types/report';
 
-function Phase2DiagnosticsScreen() {
-  const { colors, isDark, mode, toggleTheme } = useAppTheme();
-  const { reading } = useLocationStatus();
+const EMPTY_COUNTS: ReportCounts = {
+  pending: 0,
+  relayedBle: 0,
+  sentCloud: 0,
+  total: 0,
+};
+
+function SalbarMobileShell() {
+  const { colors, isDark } = useAppTheme();
+  const { reading: gps, refreshPermission } = useLocationStatus();
   const network = useNetworkStatus();
-  const [dbReady, setDbReady] = useState(false);
-  const [totalReports, setTotalReports] = useState(0);
 
-  useEffect(() => {
-    void getReportCounts().then((counts) => {
-      setTotalReports(counts.total);
-      setDbReady(true);
-    });
+  const [activeTab, setActiveTab] = useState<MobileTab>('report');
+  const [reports, setReports] = useState<LocalReport[]>([]);
+  const [counts, setCounts] = useState<ReportCounts>(EMPTY_COUNTS);
+  const [dbReady, setDbReady] = useState(false);
+  const [splashVisible, setSplashVisible] = useState(true);
+
+  const refreshOutbox = useCallback(async () => {
+    const [allReports, summary] = await Promise.all([listReports(), getReportCounts()]);
+    setReports(allReports);
+    setCounts(summary);
+    setDbReady(true);
   }, []);
 
+  useEffect(() => {
+    void refreshOutbox();
+  }, [refreshOutbox]);
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-        ]}
-      >
-        <Text style={[styles.title, { color: colors.textPrimary }]}>SALBAR Resident</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Phase 2 Core Data, Theme & Sensors Ready
-        </Text>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.bgSurface }]}
+      edges={['top', 'bottom']}
+    >
+      <StatusBar style={splashVisible || isDark ? 'light' : 'dark'} />
 
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Theme Mode</Text>
-          <Text style={[styles.monoValue, { color: colors.accentPrimary }]}>
-            {mode.toUpperCase()}
-          </Text>
+      <View style={[styles.appBody, { backgroundColor: colors.bgBase }]}>
+        <AmbientHeader
+          gps={gps}
+          canUseCloudRelay={network.canUseCloudRelay}
+          forceOffline={network.forceOffline}
+        />
+
+        <View style={styles.screenContainer}>
+          {activeTab === 'report' ? (
+            <ReportScreen
+              gps={gps}
+              onReportSaved={() => {
+                void refreshOutbox();
+              }}
+            />
+          ) : null}
+
+          {activeTab === 'outbox' ? (
+            <OutboxScreen
+              reports={reports}
+              counts={counts}
+              onRefresh={() => {
+                void refreshOutbox();
+              }}
+            />
+          ) : null}
+
+          {activeTab === 'guide' ? (
+            <GuideScreen
+              gps={gps}
+              forceOffline={network.forceOffline}
+              onToggleForceOffline={network.setForceOffline}
+              onRefreshLocation={() => {
+                void refreshPermission();
+              }}
+            />
+          ) : null}
         </View>
 
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>SQLite Store</Text>
-          <Text style={[styles.monoValue, { color: EMERGENCY_COLORS.success }]}>
-            {dbReady ? `READY (${totalReports} reports)` : 'INIT...'}
-          </Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>GPS Status</Text>
-          <Text style={[styles.monoValue, { color: EMERGENCY_COLORS.telemetry }]}>
-            {reading.fixState} ({reading.lat.toFixed(4)}, {reading.lng.toFixed(4)})
-          </Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Network Path</Text>
-          <Text
-            style={[
-              styles.monoValue,
-              {
-                color: network.canUseCloudRelay
-                  ? EMERGENCY_COLORS.success
-                  : EMERGENCY_COLORS.moderate,
-              },
-            ]}
-          >
-            {network.canUseCloudRelay ? 'CLOUD READY' : 'OFFLINE / BLE'}
-          </Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>LoRa Spec</Text>
-          <Text style={[styles.monoValue, { color: colors.textPrimary }]}>
-            {LORA_CONFIG.FREQUENCY_MHZ} MHz SF{LORA_CONFIG.SPREADING_FACTOR}
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={toggleTheme}
-          style={[styles.button, { backgroundColor: colors.accentPrimary }]}
-        >
-          <Text style={styles.buttonText}>Toggle Light / Dark Theme</Text>
-        </Pressable>
+        <BottomTabBar
+          activeTab={activeTab}
+          pendingCount={counts.pending}
+          onSelectTab={setActiveTab}
+        />
       </View>
-    </View>
+
+      {splashVisible ? (
+        <SplashScreen ready={dbReady} onFinish={() => setSplashVisible(false)} />
+      ) : null}
+    </SafeAreaView>
   );
 }
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <Phase2DiagnosticsScreen />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <SalbarMobileShell />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 20,
   },
-  card: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
-    padding: 20,
-    gap: 12,
+  appBody: {
+    flex: 1,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  subtitle: {
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  monoValue: {
-    fontSize: 12,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-  },
-  button: {
-    marginTop: 12,
-    borderRadius: RADII.control,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+  screenContainer: {
+    flex: 1,
   },
 });

@@ -55,7 +55,7 @@ export const EMERGENCY_COLORS = {
 } as const;
 
 export const RADII = {
-  card: 16,
-  control: 12,
+  card: 24,
+  control: 18,
   pill: 9999,
 } as const;

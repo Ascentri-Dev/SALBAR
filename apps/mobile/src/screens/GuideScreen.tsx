@@ -18,6 +18,9 @@ import type { GpsReading } from '../types/report';
 interface GuideScreenProps {
   gps: GpsReading;
   forceOffline: boolean;
+  bleAvailable: boolean;
+  relayUrl: string;
+  onChangeRelayUrl: (url: string) => void;
   onToggleForceOffline: (value: boolean) => void;
   onRefreshLocation: () => void;
 }
@@ -65,14 +68,14 @@ function hexToRgba(hex: string, alpha: number): string {
 export function GuideScreen({
   gps,
   forceOffline,
+  bleAvailable,
+  relayUrl,
+  onChangeRelayUrl,
   onToggleForceOffline,
   onRefreshLocation,
 }: GuideScreenProps) {
   const { colors, isDark, toggleTheme } = useAppTheme();
   const [lang, setLang] = useState<GuideLang>('EN');
-  const [relayUrl, setRelayUrl] = useState(
-    process.env.EXPO_PUBLIC_CLOUD_RELAY_URL ?? 'http://localhost:8000',
-  );
 
   const locationGranted = gps.fixState !== 'DENIED';
   const guideCopy = GUIDE_CONTENT[lang];
@@ -266,13 +269,26 @@ export function GuideScreen({
             style={[
               styles.softBadge,
               {
-                backgroundColor: hexToRgba(EMERGENCY_COLORS.telemetry, 0.14),
-                borderColor: hexToRgba(EMERGENCY_COLORS.telemetry, 0.32),
+                backgroundColor: hexToRgba(
+                  bleAvailable ? EMERGENCY_COLORS.success : EMERGENCY_COLORS.moderate,
+                  0.14,
+                ),
+                borderColor: hexToRgba(
+                  bleAvailable ? EMERGENCY_COLORS.success : EMERGENCY_COLORS.moderate,
+                  0.32,
+                ),
               },
             ]}
           >
-            <Text style={[styles.softBadgeText, { color: EMERGENCY_COLORS.telemetry }]}>
-              Phase 4
+            <Text
+              style={[
+                styles.softBadgeText,
+                {
+                  color: bleAvailable ? EMERGENCY_COLORS.success : EMERGENCY_COLORS.moderate,
+                },
+              ]}
+            >
+              {bleAvailable ? 'Ready' : 'APK Only'}
             </Text>
           </View>
         </View>
@@ -335,7 +351,7 @@ export function GuideScreen({
           </Text>
           <TextInput
             value={relayUrl}
-            onChangeText={setRelayUrl}
+            onChangeText={onChangeRelayUrl}
             autoCapitalize="none"
             autoCorrect={false}
             placeholderTextColor={colors.textMuted}

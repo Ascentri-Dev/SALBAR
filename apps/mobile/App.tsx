@@ -8,6 +8,7 @@ import { TacticalBackground } from './src/components/TacticalBackground';
 import { getReportCounts, listReports } from './src/db/reportsRepository';
 import { useLocationStatus } from './src/hooks/useLocationStatus';
 import { useNetworkStatus } from './src/hooks/useNetworkStatus';
+import { useSyncEngine } from './src/hooks/useSyncEngine';
 import { GuideScreen } from './src/screens/GuideScreen';
 import { OutboxScreen } from './src/screens/OutboxScreen';
 import { ReportScreen } from './src/screens/ReportScreen';
@@ -52,6 +53,11 @@ function SalbarMobileShell() {
   useEffect(() => {
     void refreshOutbox();
   }, [refreshOutbox]);
+
+  const sync = useSyncEngine({
+    canUseCloudRelay: network.canUseCloudRelay,
+    onSyncCompleted: refreshOutbox,
+  });
 
   const handleSelectTab = useCallback(
     (nextTab: MobileTab) => {
@@ -104,7 +110,11 @@ function SalbarMobileShell() {
             <ReportScreen
               gps={gps}
               onReportSaved={() => {
-                void refreshOutbox();
+                void refreshOutbox().then(() => {
+                  if (network.canUseCloudRelay) {
+                    void sync.syncPendingViaCloud();
+                  }
+                });
               }}
             />
           ) : null}
@@ -113,8 +123,14 @@ function SalbarMobileShell() {
             <OutboxScreen
               reports={reports}
               counts={counts}
-              canUseCloudRelay={network.canUseCloudRelay}
-              forceOffline={network.forceOffline}
+              isScanningBle={sync.isScanningBle}
+              isSyncing={sync.isSyncing}
+              bleError={sync.bleError}
+              terminals={sync.terminals}
+              onStartScan={sync.startBleScan}
+              onStopScan={sync.stopBleScan}
+              onRelayToTerminal={sync.relayPendingToTerminal}
+              onRetryReport={sync.retrySingleReport}
               onRefresh={() => {
                 void refreshOutbox();
               }}
@@ -126,6 +142,9 @@ function SalbarMobileShell() {
             <GuideScreen
               gps={gps}
               forceOffline={network.forceOffline}
+              bleAvailable={sync.bleAvailable}
+              relayUrl={sync.relayUrl}
+              onChangeRelayUrl={sync.setRelayUrl}
               onToggleForceOffline={network.setForceOffline}
               onRefreshLocation={() => {
                 void refreshPermission();

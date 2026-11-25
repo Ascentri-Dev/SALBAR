@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import type { DiscoveredTerminal } from '../ble/bleRelayService';
 import {
   getCategoryLabel,
   getCategoryOption,
@@ -26,8 +27,14 @@ import type { LocalReport, ReportCounts, SyncStatus } from '../types/report';
 interface OutboxScreenProps {
   reports: LocalReport[];
   counts: ReportCounts;
-  canUseCloudRelay: boolean;
-  forceOffline: boolean;
+  isScanningBle: boolean;
+  isSyncing: boolean;
+  bleError: string | null;
+  terminals: DiscoveredTerminal[];
+  onStartScan: () => void;
+  onStopScan: () => void;
+  onRelayToTerminal: (deviceId: string) => Promise<void>;
+  onRetryReport: (report: LocalReport) => Promise<{ ok: boolean; message: string }>;
   onRefresh: () => void;
   onGoToReport: () => void;
 }
@@ -198,13 +205,21 @@ function RadarBeacon({ scanning, color }: { scanning: boolean; color: string }) 
 export function OutboxScreen({
   reports,
   counts,
+  isScanningBle,
+  isSyncing,
+  bleError,
+  terminals,
+  onStartScan,
+  onStopScan,
+  onRelayToTerminal,
+  onRetryReport,
   onRefresh,
   onGoToReport,
 }: OutboxScreenProps) {
   const { colors } = useAppTheme();
   const [filter, setFilter] = useState<OutboxFilter>('ALL');
-  const [scanning, setScanning] = useState(false);
   const [selectedReport, setSelectedReport] = useState<LocalReport | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
   const filteredReports = useMemo(() => {
     switch (filter) {
@@ -224,17 +239,27 @@ export function OutboxScreen({
     setFilter((prev) => (prev === target ? 'ALL' : target));
   };
 
-  useEffect(() => {
-    if (!scanning) return;
-    const timer = setTimeout(() => {
-      setScanning(false);
-    }, 4500);
-    return () => clearTimeout(timer);
-  }, [scanning]);
-
   const handleScanToggle = () => {
     void Haptics.selectionAsync();
-    setScanning((prev) => !prev);
+    if (isScanningBle) {
+      onStopScan();
+    } else {
+      onStartScan();
+    }
+  };
+
+  const handleRetrySelected = async () => {
+    if (!selectedReport || retrying) return;
+    setRetrying(true);
+    try {
+      const result = await onRetryReport(selectedReport);
+      if (result.ok) {
+        setSelectedReport(null);
+      }
+      Alert.alert(result.ok ? 'Sync Complete' : 'Sync Pending', result.message);
+    } finally {
+      setRetrying(false);
+    }
   };
 
   const handleDeleteSelected = () => {
@@ -309,15 +334,17 @@ export function OutboxScreen({
           ]}
         >
           <View style={styles.bleRow}>
-            <RadarBeacon scanning={scanning} color={EMERGENCY_COLORS.telemetry} />
+            <RadarBeacon scanning={isScanningBle} color={EMERGENCY_COLORS.telemetry} />
             <View style={styles.bleTextCol}>
               <Text style={[styles.bleTitle, { color: colors.textPrimary }]}>
-                {scanning ? 'Scanning for Responder Terminals...' : 'Responder BLE Radar'}
+                {isScanningBle ? 'Scanning for Responder Terminals...' : 'Responder BLE Radar'}
               </Text>
               <Text style={[styles.bleSub, { color: colors.textSecondary }]}>
-                {scanning
-                  ? 'Listening for nearby SALBAR-* T-Beam units'
-                  : 'Relays pending reports offline when a T-Beam is near'}
+                {bleError
+                  ? bleError
+                  : isScanningBle
+                    ? 'Listening for nearby SALBAR-* T-Beam units'
+                    : 'Relays pending reports offline when a T-Beam is near'}
               </Text>
             </View>
             <Pressable
@@ -325,8 +352,8 @@ export function OutboxScreen({
               style={({ pressed }) => [
                 styles.scanBtn,
                 {
-                  backgroundColor: scanning ? colors.bgSurfaceElevated : colors.accentPrimary,
-                  borderColor: scanning ? colors.borderSubtle : colors.accentPrimary,
+                  backgroundColor: isScanningBle ? colors.bgSurfaceElevated : colors.accentPrimary,
+                  borderColor: isScanningBle ? colors.borderSubtle : colors.accentPrimary,
                   transform: [{ scale: pressed ? 0.94 : 1 }],
                 },
               ]}
@@ -334,13 +361,41 @@ export function OutboxScreen({
               <Text
                 style={[
                   styles.scanBtnText,
-                  { color: scanning ? colors.textPrimary : '#FFFFFF' },
+                  { color: isScanningBle ? colors.textPrimary : '#FFFFFF' },
                 ]}
               >
-                {scanning ? 'Stop' : 'Scan'}
+                {isScanningBle ? 'Stop' : 'Scan'}
               </Text>
             </Pressable>
           </View>
+
+          {terminals.length > 0 ? (
+            <View style={[styles.terminalList, { borderTopColor: colors.borderSubtle }]}>
+              {terminals.map((term) => (
+                <Pressable
+                  key={term.id}
+                  disabled={isSyncing}
+                  onPress={() => void onRelayToTerminal(term.id)}
+                  style={[
+                    styles.terminalRow,
+                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  <View>
+                    <Text style={[styles.terminalName, { color: colors.textPrimary }]}>
+                      {term.name}
+                    </Text>
+                    <Text style={[styles.terminalRssi, { color: EMERGENCY_COLORS.telemetry }]}>
+                      RSSI {term.rssi} dBm
+                    </Text>
+                  </View>
+                  <Text style={[styles.terminalAction, { color: colors.accentPrimary }]}>
+                    {isSyncing ? 'Relaying...' : 'Send Queued'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         {/* Feed Section Header */}
@@ -635,22 +690,21 @@ export function OutboxScreen({
                 </Pressable>
 
                 <Pressable
-                  onPress={() => {
-                    Alert.alert(
-                      'Sync Queued',
-                      'Automatic Cloud Relay & BLE transfer will be wired in Phase 4.',
-                    );
-                  }}
+                  onPress={() => void handleRetrySelected()}
+                  disabled={retrying}
                   style={({ pressed }) => [
                     styles.modalRetryBtn,
                     {
                       backgroundColor: colors.accentPrimary,
+                      opacity: retrying ? 0.7 : 1,
                       transform: [{ scale: pressed ? 0.97 : 1 }],
                     },
                   ]}
                 >
                   <Ionicons name="sync-outline" size={16} color="#FFFFFF" />
-                  <Text style={styles.modalRetryText}>Retry Sync</Text>
+                  <Text style={styles.modalRetryText}>
+                    {retrying ? 'Syncing...' : 'Retry Sync'}
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -759,6 +813,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   scanBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  terminalList: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    gap: 8,
+  },
+  terminalRow: {
+    borderRadius: RADII.control,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  terminalName: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  terminalRssi: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  terminalAction: {
     fontSize: 12,
     fontWeight: '800',
   },

@@ -41,83 +41,106 @@ function formatTimestamp(ms: number): string {
   return `${hh}:${mm}:${ss}`;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function getSyncMeta(status: SyncStatus): { label: string; color: string } {
   switch (status) {
     case 'PENDING_LOCAL':
-      return { label: 'PENDING LOCAL', color: EMERGENCY_COLORS.moderate };
+      return { label: 'Pending Local', color: EMERGENCY_COLORS.moderate };
     case 'SYNCING':
-      return { label: 'SYNCING...', color: EMERGENCY_COLORS.telemetry };
+      return { label: 'Syncing', color: EMERGENCY_COLORS.telemetry };
     case 'RELAYED_BLE':
-      return { label: 'RELAYED BLE', color: EMERGENCY_COLORS.telemetry };
+      return { label: 'Relayed BLE', color: EMERGENCY_COLORS.telemetry };
     case 'SENT_CLOUD':
-      return { label: 'SENT CLOUD', color: EMERGENCY_COLORS.success };
+      return { label: 'Sent Cloud', color: EMERGENCY_COLORS.success };
   }
 }
 
 /**
- * Interactive KPI Filter Card with smooth spotlight focus animation.
+ * 1-to-1 React Native port of web-dashboard KPIStrip metric pill with proportional fill bar.
  */
-function KpiFilterCard({
+function MetricPill({
   label,
   value,
-  accentColor,
-  activeFilter,
-  filterKey,
+  pct,
+  pctText,
+  toneColor,
+  selected,
   onPress,
 }: {
   label: string;
   value: number;
-  accentColor: string;
-  activeFilter: OutboxFilter;
-  filterKey: Exclude<OutboxFilter, 'ALL'>;
+  pct: number;
+  pctText: string;
+  toneColor: string;
+  selected: boolean;
   onPress: () => void;
 }) {
-  const { colors } = useAppTheme();
-  const focusAnim = useRef(new Animated.Value(0)).current;
-  const dimAnim = useRef(new Animated.Value(1)).current;
-
-  const isSelected = activeFilter === filterKey;
-  const isOtherSelected = activeFilter !== 'ALL' && !isSelected;
+  const { colors, isDark } = useAppTheme();
+  const fillAnim = useRef(new Animated.Value(pct / 100)).current;
 
   useEffect(() => {
-    Animated.spring(focusAnim, {
-      toValue: isSelected ? 1 : 0,
-      friction: 6,
-      tension: 150,
-      useNativeDriver: true,
+    Animated.timing(fillAnim, {
+      toValue: pct / 100,
+      duration: 450,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
     }).start();
-  }, [isSelected, focusAnim]);
+  }, [pct, fillAnim]);
 
-  useEffect(() => {
-    Animated.timing(dimAnim, {
-      toValue: isOtherSelected ? 0.42 : 1,
-      duration: 160,
-      useNativeDriver: true,
-    }).start();
-  }, [isOtherSelected, dimAnim]);
-
-  const scale = Animated.add(
-    focusAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }),
-    dimAnim.interpolate({ inputRange: [0.42, 1], outputRange: [-0.04, 0] }),
-  );
+  const barWidth = fillAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
-    <Pressable onPress={onPress} style={styles.kpiWrap}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.metricPill,
+        {
+          backgroundColor: selected
+            ? isDark
+              ? colors.bgSurfaceElevated
+              : colors.bgSurface
+            : colors.bgSurface,
+          borderColor: selected ? colors.accentPrimary : hexToRgba(toneColor, 0.35),
+          borderWidth: selected ? 2 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        },
+      ]}
+    >
+      {/* Proportional Occupancy Meter Fill Bar */}
       <Animated.View
+        pointerEvents="none"
         style={[
-          styles.kpiCard,
+          styles.metricFillBar,
           {
-            backgroundColor: colors.bgSurface,
-            borderColor: isSelected ? accentColor : colors.borderSubtle,
-            borderWidth: isSelected ? 2 : 1,
-            opacity: dimAnim,
-            transform: [{ scale }],
+            backgroundColor: hexToRgba(toneColor, isDark ? 0.24 : 0.16),
+            width: barWidth,
           },
         ]}
-      >
-        <Text style={[styles.kpiValue, { color: accentColor }]}>{value}</Text>
-        <Text style={[styles.kpiLabel, { color: colors.textSecondary }]}>{label}</Text>
-      </Animated.View>
+      />
+
+      <View style={styles.metricLeft}>
+        <Text
+          style={[
+            styles.metricPillLabel,
+            { color: selected ? colors.accentPrimary : colors.textPrimary },
+          ]}
+        >
+          {label}
+        </Text>
+        <Text style={[styles.metricPctText, { color: colors.textSecondary }]}>{pctText}</Text>
+      </View>
+
+      <Text style={[styles.metricCount, { color: toneColor }]}>{value}</Text>
     </Pressable>
   );
 }
@@ -169,8 +192,8 @@ function RadarBeacon({ scanning, color }: { scanning: boolean; color: string }) 
           ]}
         />
       ) : null}
-      <View style={[styles.radarCore, { backgroundColor: color }]}>
-        <Ionicons name="bluetooth" size={16} color="#FFFFFF" />
+      <View style={[styles.radarCore, { backgroundColor: hexToRgba(color, 0.18) }]}>
+        <Ionicons name="bluetooth" size={16} color={color} />
       </View>
     </View>
   );
@@ -179,15 +202,18 @@ function RadarBeacon({ scanning, color }: { scanning: boolean; color: string }) 
 export function OutboxScreen({
   reports,
   counts,
-  canUseCloudRelay,
-  forceOffline,
   onRefresh,
   onGoToReport,
 }: OutboxScreenProps) {
-  const { colors, isDark } = useAppTheme();
+  const { colors } = useAppTheme();
   const [filter, setFilter] = useState<OutboxFilter>('ALL');
   const [scanning, setScanning] = useState(false);
   const [selectedReport, setSelectedReport] = useState<LocalReport | null>(null);
+
+  const getPct = (val: number) => {
+    if (counts.total === 0) return 0;
+    return Math.round((val / counts.total) * 100);
+  };
 
   const filteredReports = useMemo(() => {
     switch (filter) {
@@ -202,9 +228,9 @@ export function OutboxScreen({
     }
   }, [reports, filter]);
 
-  const toggleFilter = (target: Exclude<OutboxFilter, 'ALL'>) => {
+  const selectFilter = (target: OutboxFilter) => {
     void Haptics.selectionAsync();
-    setFilter((prev) => (prev === target ? 'ALL' : target));
+    setFilter((prev) => (prev === target && target !== 'ALL' ? 'ALL' : target));
   };
 
   useEffect(() => {
@@ -241,13 +267,6 @@ export function OutboxScreen({
     );
   };
 
-  const pathLabel = forceOffline
-    ? 'TEST: BLE ONLY'
-    : canUseCloudRelay
-      ? 'CLOUD READY'
-      : 'OFFLINE: BLE RADAR';
-  const pathColor = canUseCloudRelay ? EMERGENCY_COLORS.success : EMERGENCY_COLORS.telemetry;
-
   return (
     <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
       <ScrollView
@@ -255,50 +274,55 @@ export function OutboxScreen({
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={styles.headerBlock}>
-            <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>Outbox & Sync</Text>
-            <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
-              Tap a status card to filter queued reports
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.pathPill,
-              { backgroundColor: colors.bgSurface, borderColor: pathColor },
-            ]}
-          >
-            <Text style={[styles.pathPillText, { color: pathColor }]}>{pathLabel}</Text>
-          </View>
+        {/* Clean Header (no Cloud Ready pill) */}
+        <View style={styles.headerBlock}>
+          <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>Outbox & Sync</Text>
+          <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
+            Offline storage queue and responder BLE handoff
+          </Text>
         </View>
 
-        {/* Interactive 3-KPI Spotlight Filter Strip */}
-        <View style={styles.kpiRow}>
-          <KpiFilterCard
-            label="Pending"
-            value={counts.pending}
-            accentColor={EMERGENCY_COLORS.moderate}
-            activeFilter={filter}
-            filterKey="PENDING"
-            onPress={() => toggleFilter('PENDING')}
-          />
-          <KpiFilterCard
-            label="BLE Relayed"
-            value={counts.relayedBle}
-            accentColor={EMERGENCY_COLORS.telemetry}
-            activeFilter={filter}
-            filterKey="BLE"
-            onPress={() => toggleFilter('BLE')}
-          />
-          <KpiFilterCard
-            label="Cloud Sent"
-            value={counts.sentCloud}
-            accentColor={EMERGENCY_COLORS.success}
-            activeFilter={filter}
-            filterKey="CLOUD"
-            onPress={() => toggleFilter('CLOUD')}
-          />
+        {/* Web-Dashboard Style METRICS Filter Stack */}
+        <View style={styles.metricsSection}>
+          <Text style={[styles.metricsEyebrow, { color: colors.accentPrimary }]}>METRICS</Text>
+          <View style={styles.metricsList}>
+            <MetricPill
+              label="TOTAL REPORTS"
+              value={counts.total}
+              pct={counts.total > 0 ? 100 : 0}
+              pctText="All Saved"
+              toneColor={colors.textPrimary}
+              selected={filter === 'ALL'}
+              onPress={() => selectFilter('ALL')}
+            />
+            <MetricPill
+              label="PENDING LOCAL"
+              value={counts.pending}
+              pct={getPct(counts.pending)}
+              pctText={`${getPct(counts.pending)}%`}
+              toneColor={EMERGENCY_COLORS.moderate}
+              selected={filter === 'PENDING'}
+              onPress={() => selectFilter('PENDING')}
+            />
+            <MetricPill
+              label="BLE RELAYED"
+              value={counts.relayedBle}
+              pct={getPct(counts.relayedBle)}
+              pctText={`${getPct(counts.relayedBle)}%`}
+              toneColor={EMERGENCY_COLORS.telemetry}
+              selected={filter === 'BLE'}
+              onPress={() => selectFilter('BLE')}
+            />
+            <MetricPill
+              label="CLOUD SENT"
+              value={counts.sentCloud}
+              pct={getPct(counts.sentCloud)}
+              pctText={`${getPct(counts.sentCloud)}%`}
+              toneColor={EMERGENCY_COLORS.success}
+              selected={filter === 'CLOUD'}
+              onPress={() => selectFilter('CLOUD')}
+            />
+          </View>
         </View>
 
         {/* Animated BLE Responder Radar Card */}
@@ -317,7 +341,7 @@ export function OutboxScreen({
               <Text style={[styles.bleSub, { color: colors.textSecondary }]}>
                 {scanning
                   ? 'Listening for nearby SALBAR-* T-Beam units'
-                  : 'Transfers pending reports offline when a T-Beam is near'}
+                  : 'Relays pending reports offline when a T-Beam is near'}
               </Text>
             </View>
             <Pressable
@@ -346,10 +370,12 @@ export function OutboxScreen({
         {/* Feed Section Header */}
         <View style={styles.feedHeaderRow}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            {filter === 'ALL' ? `All Reports (${filteredReports.length})` : `${filter} (${filteredReports.length})`}
+            {filter === 'ALL'
+              ? `Saved Reports (${filteredReports.length})`
+              : `${filter} (${filteredReports.length})`}
           </Text>
           {filter !== 'ALL' ? (
-            <Pressable onPress={() => setFilter('ALL')}>
+            <Pressable onPress={() => selectFilter('ALL')}>
               <Text style={[styles.clearFilterText, { color: colors.accentPrimary }]}>
                 Show All
               </Text>
@@ -357,7 +383,7 @@ export function OutboxScreen({
           ) : null}
         </View>
 
-        {/* Empty State or Category-Colored Report Cards */}
+        {/* Empty State or Web-Dashboard Style Left-Accent Report Cards */}
         {filteredReports.length === 0 ? (
           <View
             style={[
@@ -379,7 +405,7 @@ export function OutboxScreen({
                 : 'No reports match the selected filter.'}
             </Text>
             <Pressable
-              onPress={reports.length === 0 ? onGoToReport : () => setFilter('ALL')}
+              onPress={reports.length === 0 ? onGoToReport : () => selectFilter('ALL')}
               style={({ pressed }) => [
                 styles.emptyActionBtn,
                 {
@@ -398,7 +424,6 @@ export function OutboxScreen({
             const catOpt = getCategoryOption(report.category);
             const urgencyColor = getUrgencyColor(report.urgency);
             const syncMeta = getSyncMeta(report.syncStatus);
-            const tint = isDark ? catOpt.tintDark : catOpt.tintLight;
 
             return (
               <Pressable
@@ -411,19 +436,28 @@ export function OutboxScreen({
                   styles.reportCard,
                   {
                     backgroundColor: colors.bgSurface,
-                    borderColor: catOpt.accentColor,
+                    borderColor: colors.borderSubtle,
+                    borderLeftColor: catOpt.accentColor,
                     transform: [{ scale: pressed ? 0.98 : 1 }],
                   },
                 ]}
               >
-                <View style={[styles.cardTintOverlay, { backgroundColor: tint }]} />
-
                 <View style={styles.reportTop}>
                   <Text style={[styles.reportCategory, { color: colors.textPrimary }]}>
                     {getCategoryLabel(report.category)}
                   </Text>
-                  <View style={[styles.urgencyChip, { backgroundColor: urgencyColor }]}>
-                    <Text style={styles.urgencyChipText}>{report.urgency}</Text>
+                  <View
+                    style={[
+                      styles.softBadge,
+                      {
+                        backgroundColor: hexToRgba(urgencyColor, 0.14),
+                        borderColor: hexToRgba(urgencyColor, 0.32),
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.softBadgeText, { color: urgencyColor }]}>
+                      {report.urgency}
+                    </Text>
                   </View>
                 </View>
 
@@ -444,13 +478,21 @@ export function OutboxScreen({
                 ) : null}
 
                 <View style={styles.reportFooter}>
-                  <Text style={[styles.coords, { color: colors.textSecondary }]}>
+                  <Text style={[styles.coords, { color: colors.textMuted }]}>
                     {report.lat !== 0 || report.lng !== 0
                       ? `${report.lat.toFixed(4)}, ${report.lng.toFixed(4)}`
                       : 'NO GPS FIX'}
                   </Text>
-                  <View style={[styles.syncPill, { borderColor: syncMeta.color }]}>
-                    <Text style={[styles.syncPillText, { color: syncMeta.color }]}>
+                  <View
+                    style={[
+                      styles.softBadge,
+                      {
+                        backgroundColor: hexToRgba(syncMeta.color, 0.12),
+                        borderColor: hexToRgba(syncMeta.color, 0.3),
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.softBadgeText, { color: syncMeta.color }]}>
                       {syncMeta.label}
                     </Text>
                   </View>
@@ -488,11 +530,21 @@ export function OutboxScreen({
                 </View>
                 <View
                   style={[
-                    styles.urgencyChip,
-                    { backgroundColor: getUrgencyColor(selectedReport.urgency) },
+                    styles.softBadge,
+                    {
+                      backgroundColor: hexToRgba(getUrgencyColor(selectedReport.urgency), 0.15),
+                      borderColor: hexToRgba(getUrgencyColor(selectedReport.urgency), 0.35),
+                    },
                   ]}
                 >
-                  <Text style={styles.urgencyChipText}>{selectedReport.urgency}</Text>
+                  <Text
+                    style={[
+                      styles.softBadgeText,
+                      { color: getUrgencyColor(selectedReport.urgency) },
+                    ]}
+                  >
+                    {selectedReport.urgency}
+                  </Text>
                 </View>
               </View>
 
@@ -503,9 +555,7 @@ export function OutboxScreen({
                     { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
                   ]}
                 >
-                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                    STATUS
-                  </Text>
+                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>STATUS</Text>
                   <Text
                     style={[
                       styles.metricValue,
@@ -557,7 +607,7 @@ export function OutboxScreen({
                   onPress={handleDeleteSelected}
                   style={[
                     styles.modalDeleteBtn,
-                    { borderColor: EMERGENCY_COLORS.critical },
+                    { borderColor: hexToRgba(EMERGENCY_COLORS.critical, 0.5) },
                   ]}
                 >
                   <Ionicons name="trash-outline" size={16} color={EMERGENCY_COLORS.critical} />
@@ -610,14 +660,7 @@ const styles = StyleSheet.create({
     paddingBottom: 96,
     gap: 12,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
   headerBlock: {
-    flex: 1,
     gap: 2,
   },
   screenTitle: {
@@ -626,43 +669,53 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   screenSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
   },
-  pathPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-    marginTop: 4,
-  },
-  pathPillText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  kpiRow: {
-    flexDirection: 'row',
+  metricsSection: {
     gap: 8,
   },
-  kpiWrap: {
-    flex: 1,
+  metricsEyebrow: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.8,
+    paddingHorizontal: 4,
   },
-  kpiCard: {
-    borderRadius: RADII.card,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+  metricsList: {
+    gap: 8,
+  },
+  metricPill: {
+    height: 52,
+    borderRadius: RADII.pill,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
   },
-  kpiValue: {
-    fontSize: 22,
-    fontWeight: '800',
+  metricFillBar: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: RADII.pill,
+  },
+  metricLeft: {
+    gap: 1,
+  },
+  metricPillLabel: {
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  metricPctText: {
+    fontSize: 10,
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
-  kpiLabel: {
-    fontSize: 11,
-    fontWeight: '700',
+  metricCount: {
+    fontSize: 19,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
   },
   bleCard: {
     borderRadius: RADII.card,
@@ -760,17 +813,10 @@ const styles = StyleSheet.create({
   },
   reportCard: {
     borderRadius: RADII.card,
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderLeftWidth: 4,
     padding: 16,
     gap: 6,
-    overflow: 'hidden',
-  },
-  cardTintOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
   },
   reportTop: {
     flexDirection: 'row',
@@ -779,18 +825,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   reportCategory: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
   },
-  urgencyChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  softBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 3,
     borderRadius: RADII.pill,
+    borderWidth: 1,
   },
-  urgencyChipText: {
-    color: '#FFFFFF',
+  softBadgeText: {
     fontSize: 10,
     fontWeight: '800',
+    letterSpacing: 0.3,
   },
   reportMetaLine: {
     fontSize: 11,
@@ -812,16 +859,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
-  },
-  syncPill: {
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-  },
-  syncPillText: {
-    fontSize: 10,
-    fontWeight: '800',
   },
   modalBackdrop: {
     flex: 1,

@@ -61,8 +61,10 @@ export async function createReport(input: CreateReportInput): Promise<LocalRepor
   const id = Crypto.randomUUID();
   const incidentIdNum = generateIncidentIdNum();
   const createdAtUtc = Date.now();
-  const safeText = truncateToUtf8Bytes(input.rawText.trim(), MAX_RAW_TEXT_BYTES);
-  const safeVictims = Math.max(0, Math.min(99, Math.round(input.victimCount)));
+  // Strip control characters and enforce 128-byte UTF-8 LoRa payload limit
+  const cleanedText = input.rawText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ').trim();
+  const safeText = truncateToUtf8Bytes(cleanedText, MAX_RAW_TEXT_BYTES);
+  const safeVictims = Math.max(0, Math.min(999, Math.round(input.victimCount)));
 
   await db.runAsync(
     `INSERT INTO reports (

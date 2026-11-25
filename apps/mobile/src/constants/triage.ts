@@ -1,7 +1,7 @@
 import { EMERGENCY_COLORS } from '../theme/tokens';
 import type { IncidentCategory, IncidentUrgency } from '../types/report';
 
-export type TileTexture = 'stripes' | 'cross' | 'waves' | 'grid' | 'slope' | 'dots';
+export type TileTexture = 'diamond' | 'cross' | 'waves' | 'grid' | 'stripes' | 'dots';
 
 export interface CategoryOption {
   id: IncidentCategory;
@@ -19,18 +19,18 @@ export const TRIAGE_CATEGORIES: CategoryOption[] = [
     id: 'trapped-persons',
     label: 'Trapped Persons',
     localHint: 'Na-trap / Natabunan',
-    defaultUrgency: 'CRITICAL',
+    defaultUrgency: 'LOW',
     accentColor: '#EF4444', // Crimson Red
     tintDark: 'rgba(239, 68, 68, 0.14)',
     tintLight: 'rgba(239, 68, 68, 0.08)',
-    texture: 'stripes',
+    texture: 'diamond',
   },
   {
     id: 'medical-emergency',
     label: 'Medical Emerg.',
     localHint: 'Emerhensya Medikal',
-    defaultUrgency: 'CRITICAL',
-    accentColor: '#8B5CF6', // Violet (distinct from Red)
+    defaultUrgency: 'LOW',
+    accentColor: '#8B5CF6', // Violet
     tintDark: 'rgba(139, 92, 246, 0.15)',
     tintLight: 'rgba(139, 92, 246, 0.09)',
     texture: 'cross',
@@ -39,7 +39,7 @@ export const TRIAGE_CATEGORIES: CategoryOption[] = [
     id: 'flood-inundation',
     label: 'Flooding',
     localHint: 'Baha / Taas Tubig',
-    defaultUrgency: 'HIGH',
+    defaultUrgency: 'LOW',
     accentColor: '#06B6D4', // Cyan Blue
     tintDark: 'rgba(6, 182, 212, 0.14)',
     tintLight: 'rgba(6, 182, 212, 0.08)',
@@ -49,7 +49,7 @@ export const TRIAGE_CATEGORIES: CategoryOption[] = [
     id: 'structural-collapse',
     label: 'Structural Dmg',
     localHint: 'Guba nga Balay',
-    defaultUrgency: 'HIGH',
+    defaultUrgency: 'LOW',
     accentColor: '#F59E0B', // Amber Gold
     tintDark: 'rgba(245, 158, 11, 0.14)',
     tintLight: 'rgba(245, 158, 11, 0.08)',
@@ -59,17 +59,17 @@ export const TRIAGE_CATEGORIES: CategoryOption[] = [
     id: 'landslide-hazard',
     label: 'Landslide',
     localHint: 'Dahili sa Yuta',
-    defaultUrgency: 'HIGH',
+    defaultUrgency: 'LOW',
     accentColor: '#F97316', // Deep Orange
     tintDark: 'rgba(249, 115, 22, 0.14)',
     tintLight: 'rgba(249, 115, 22, 0.08)',
-    texture: 'slope',
+    texture: 'stripes',
   },
   {
     id: 'relief-supplies',
     label: 'Relief Supplies',
     localHint: 'Pagkaon / Tubig',
-    defaultUrgency: 'MODERATE',
+    defaultUrgency: 'LOW',
     accentColor: '#10B981', // Emerald Green
     tintDark: 'rgba(16, 185, 129, 0.14)',
     tintLight: 'rgba(16, 185, 129, 0.08)',
@@ -82,32 +82,42 @@ export interface UrgencyOption {
   label: string;
   subtitle: string;
   color: string;
+  tintDark: string;
+  tintLight: string;
 }
 
 export const URGENCY_OPTIONS: UrgencyOption[] = [
   {
-    id: 'CRITICAL',
-    label: 'CRITICAL',
-    subtitle: 'Immediate life threat',
-    color: EMERGENCY_COLORS.critical,
-  },
-  {
-    id: 'HIGH',
-    label: 'HIGH',
-    subtitle: 'Severe / escalating',
-    color: EMERGENCY_COLORS.high,
+    id: 'LOW',
+    label: 'LOW',
+    subtitle: 'Minor / supply check',
+    color: EMERGENCY_COLORS.low,
+    tintDark: 'rgba(2, 132, 199, 0.14)',
+    tintLight: 'rgba(2, 132, 199, 0.08)',
   },
   {
     id: 'MODERATE',
     label: 'MODERATE',
     subtitle: 'Needs assistance',
     color: EMERGENCY_COLORS.moderate,
+    tintDark: 'rgba(245, 158, 11, 0.14)',
+    tintLight: 'rgba(245, 158, 11, 0.08)',
   },
   {
-    id: 'LOW',
-    label: 'LOW',
-    subtitle: 'Minor / supply check',
-    color: EMERGENCY_COLORS.low,
+    id: 'HIGH',
+    label: 'HIGH',
+    subtitle: 'Severe / escalating',
+    color: EMERGENCY_COLORS.high,
+    tintDark: 'rgba(249, 115, 22, 0.14)',
+    tintLight: 'rgba(249, 115, 22, 0.08)',
+  },
+  {
+    id: 'CRITICAL',
+    label: 'CRITICAL',
+    subtitle: 'Immediate life threat',
+    color: EMERGENCY_COLORS.critical,
+    tintDark: 'rgba(239, 68, 68, 0.18)',
+    tintLight: 'rgba(239, 68, 68, 0.10)',
   },
 ];
 

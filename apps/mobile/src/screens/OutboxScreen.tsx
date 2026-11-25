@@ -146,7 +146,11 @@ export function OutboxScreen({ reports, counts, onRefresh }: OutboxScreenProps) 
               </Text>
 
               {report.rawText ? (
-                <Text style={[styles.reportBody, { color: colors.textSecondary }]}>
+                <Text
+                  style={[styles.reportBody, { color: colors.textSecondary }]}
+                  numberOfLines={3}
+                  ellipsizeMode="tail"
+                >
                   {report.rawText}
                 </Text>
               ) : null}

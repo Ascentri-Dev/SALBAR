@@ -42,26 +42,24 @@ const STAGE_LABELS: { step: ReportStage; title: string }[] = [
   { step: 3, title: 'Notes' },
 ];
 
-const VICTIM_PRESETS = [1, 5, 10, 20];
-
 /**
- * Renders subtle geometric background textures unique to each emergency type.
+ * Renders distinct subtle geometric background textures per emergency type.
  */
 function ContainerTexture({ texture, color }: { texture: TileTexture; color: string }) {
   switch (texture) {
-    case 'stripes':
+    case 'diamond':
       return (
         <View pointerEvents="none" style={styles.textureLayer}>
-          {[0, 1, 2, 3].map((i) => (
+          {[-20, 14, 48, 82].map((offset, i) => (
             <View
-              key={i}
-              style={[
-                styles.stripeLine,
-                {
-                  backgroundColor: color,
-                  right: -20 + i * 22,
-                },
-              ]}
+              key={`a-${i}`}
+              style={[styles.diamondLineA, { backgroundColor: color, left: offset }]}
+            />
+          ))}
+          {[-20, 14, 48, 82].map((offset, i) => (
+            <View
+              key={`b-${i}`}
+              style={[styles.diamondLineB, { backgroundColor: color, left: offset }]}
             />
           ))}
         </View>
@@ -77,6 +75,7 @@ function ContainerTexture({ texture, color }: { texture: TileTexture; color: str
       return (
         <View pointerEvents="none" style={styles.textureLayer}>
           <View style={[styles.waveRingLg, { borderColor: color }]} />
+          <View style={[styles.waveRingMd, { borderColor: color }]} />
           <View style={[styles.waveRingSm, { borderColor: color }]} />
         </View>
       );
@@ -89,11 +88,15 @@ function ContainerTexture({ texture, color }: { texture: TileTexture; color: str
           <View style={[styles.gridLineV2, { backgroundColor: color }]} />
         </View>
       );
-    case 'slope':
+    case 'stripes':
       return (
         <View pointerEvents="none" style={styles.textureLayer}>
-          <View style={[styles.slopeBand1, { backgroundColor: color }]} />
-          <View style={[styles.slopeBand2, { backgroundColor: color }]} />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <View
+              key={i}
+              style={[styles.stripeLine, { backgroundColor: color, right: -24 + i * 24 }]}
+            />
+          ))}
         </View>
       );
     case 'dots':
@@ -108,46 +111,55 @@ function ContainerTexture({ texture, color }: { texture: TileTexture; color: str
 }
 
 /**
- * Stage 1 Tile: Pure typography + unique color & geometric texture, zero pills/icons/arrows.
+ * Stage 1 Tile: Centered typography, unique texture, and spotlight focus on press/hold.
  */
-function EmergencyTile({ item, onPress }: { item: CategoryOption; onPress: () => void }) {
+function EmergencyTile({
+  item,
+  focusedId,
+  onPressInTile,
+  onPressOutTile,
+  onPress,
+}: {
+  item: CategoryOption;
+  focusedId: IncidentCategory | null;
+  onPressInTile: () => void;
+  onPressOutTile: () => void;
+  onPress: () => void;
+}) {
   const { colors, isDark } = useAppTheme();
-  const pressAnim = useRef(new Animated.Value(0)).current;
+  const focusAnim = useRef(new Animated.Value(0)).current;
+  const dimAnim = useRef(new Animated.Value(1)).current;
 
+  const isThisFocused = focusedId === item.id;
+  const isOtherFocused = focusedId !== null && !isThisFocused;
   const baseTint = isDark ? item.tintDark : item.tintLight;
 
-  const handlePressIn = () => {
-    Animated.spring(pressAnim, {
-      toValue: 1,
+  useEffect(() => {
+    Animated.spring(focusAnim, {
+      toValue: isThisFocused ? 1 : 0,
       friction: 6,
       tension: 160,
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start();
-  };
+  }, [isThisFocused, focusAnim]);
 
-  const handlePressOut = () => {
-    Animated.spring(pressAnim, {
-      toValue: 0,
-      friction: 7,
-      tension: 120,
-      useNativeDriver: false,
+  useEffect(() => {
+    Animated.timing(dimAnim, {
+      toValue: isOtherFocused ? 0.34 : 1,
+      duration: 140,
+      useNativeDriver: true,
     }).start();
-  };
+  }, [isOtherFocused, dimAnim]);
 
-  const scale = pressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0.94],
-  });
-
-  const borderColor = pressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [item.accentColor, colors.textPrimary],
-  });
+  const scale = Animated.add(
+    focusAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }),
+    dimAnim.interpolate({ inputRange: [0.34, 1], outputRange: [-0.04, 0] }),
+  );
 
   return (
     <Pressable
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPressIn={onPressInTile}
+      onPressOut={onPressOutTile}
       onPress={onPress}
       style={styles.gridTileWrapper}
     >
@@ -156,7 +168,9 @@ function EmergencyTile({ item, onPress }: { item: CategoryOption; onPress: () =>
           styles.gridTile,
           {
             backgroundColor: colors.bgSurface,
-            borderColor,
+            borderColor: isThisFocused ? colors.textPrimary : item.accentColor,
+            borderWidth: isThisFocused ? 2.5 : 1.5,
+            opacity: dimAnim,
             transform: [{ scale }],
           },
         ]}
@@ -178,7 +192,7 @@ function EmergencyTile({ item, onPress }: { item: CategoryOption; onPress: () =>
 }
 
 /**
- * 2x2 Urgency Grid Card with spring pop animation.
+ * 2x2 Urgency Card matching Stage 1 aesthetic; CRITICAL gets a unique hazard stripe container.
  */
 function UrgencyGridCard({
   opt,
@@ -189,8 +203,10 @@ function UrgencyGridCard({
   selected: boolean;
   onPress: () => void;
 }) {
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   const scale = useRef(new Animated.Value(selected ? 1.02 : 1)).current;
+  const isCritical = opt.id === 'CRITICAL';
+  const baseTint = isDark ? opt.tintDark : opt.tintLight;
 
   useEffect(() => {
     Animated.spring(scale, {
@@ -222,15 +238,35 @@ function UrgencyGridCard({
           styles.urgencyGridCard,
           {
             backgroundColor: selected ? opt.color : colors.bgSurface,
-            borderColor: selected ? opt.color : colors.borderSubtle,
+            borderColor: opt.color,
+            borderWidth: isCritical || selected ? 2.2 : 1.5,
             transform: [{ scale }],
           },
         ]}
       >
+        {!selected ? (
+          <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+        ) : null}
+
+        {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
+        {isCritical ? (
+          <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <View
+                key={i}
+                style={[
+                  styles.stripeLine,
+                  { backgroundColor: selected ? '#FFFFFF' : opt.color, right: -24 + i * 24 },
+                ]}
+              />
+            ))}
+          </View>
+        ) : null}
+
         <Text
           style={[
             styles.urgencyCardLabel,
-            { color: selected ? '#FFFFFF' : opt.color },
+            { color: selected ? '#FFFFFF' : colors.textPrimary },
           ]}
         >
           {opt.label}
@@ -238,7 +274,7 @@ function UrgencyGridCard({
         <Text
           style={[
             styles.urgencyCardSub,
-            { color: selected ? 'rgba(255,255,255,0.9)' : colors.textSecondary },
+            { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
           ]}
         >
           {opt.subtitle}
@@ -292,8 +328,9 @@ function ArrowConnector({ filled }: { filled: boolean }) {
 export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
   const { colors } = useAppTheme();
   const [stage, setStage] = useState<ReportStage>(1);
+  const [focusedTile, setFocusedTile] = useState<IncidentCategory | null>(null);
   const [category, setCategory] = useState<IncidentCategory>('trapped-persons');
-  const [urgency, setUrgency] = useState<IncidentUrgency>('CRITICAL');
+  const [urgency, setUrgency] = useState<IncidentUrgency>('LOW');
   const [victimCountText, setVictimCountText] = useState('1');
   const [rawText, setRawText] = useState('');
   const [notesFocused, setNotesFocused] = useState(false);
@@ -357,15 +394,18 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
     setVictimCountText(digitsOnly);
   };
 
-  const handleSelectCategory = (selected: IncidentCategory, defaultUrgency: IncidentUrgency) => {
+  const handleSelectCategory = (selected: IncidentCategory) => {
+    setFocusedTile(null);
     setCategory(selected);
-    setUrgency(defaultUrgency);
+    setUrgency('LOW');
     void Haptics.selectionAsync();
     goToStage(2);
   };
 
   const handleTextChange = (text: string) => {
-    setRawText(truncateToUtf8Bytes(text, MAX_RAW_TEXT_BYTES));
+    // Strip control characters and enforce UTF-8 128-byte cap in UI
+    const sanitized = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ');
+    setRawText(truncateToUtf8Bytes(sanitized, MAX_RAW_TEXT_BYTES));
   };
 
   const handleSubmit = async () => {
@@ -427,155 +467,125 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                 <EmergencyTile
                   key={item.id}
                   item={item}
-                  onPress={() => handleSelectCategory(item.id, item.defaultUrgency)}
+                  focusedId={focusedTile}
+                  onPressInTile={() => setFocusedTile(item.id)}
+                  onPressOutTile={() => setFocusedTile((prev) => (prev === item.id ? null : prev))}
+                  onPress={() => handleSelectCategory(item.id)}
                 />
               ))}
             </View>
           </View>
         ) : null}
 
-        {/* STAGE 2: Urgency Level (2x2 Grid) + Affected Persons */}
+        {/* STAGE 2: Full-Height Urgency Grid (LOW -> CRITICAL) + Symmetric People Stepper */}
         {stage === 2 ? (
-          <ScrollView
-            style={styles.scrollStage}
-            contentContainerStyle={styles.scrollFillContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.topSection}>
-              <View style={styles.headerBlock}>
-                <Text style={[styles.stageTitle, { color: colors.textPrimary }]}>
-                  Urgency & Impact
-                </Text>
-                <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
-                  Select priority level and people affected
-                </Text>
-              </View>
+          <View style={styles.stageContainer}>
+            <View style={styles.headerBlock}>
+              <Text style={[styles.stageTitle, { color: colors.textPrimary }]}>
+                Urgency & Impact
+              </Text>
+              <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
+                Select priority level and people affected
+              </Text>
+            </View>
 
-              {/* 2x2 Urgency Grid */}
-              <View style={styles.urgencyGrid}>
-                {URGENCY_OPTIONS.map((opt) => (
-                  <UrgencyGridCard
-                    key={opt.id}
-                    opt={opt}
-                    selected={opt.id === urgency}
-                    onPress={() => {
-                      setUrgency(opt.id);
-                      void Haptics.selectionAsync();
-                    }}
-                  />
-                ))}
-              </View>
+            {/* 2x2 Urgency Grid filling remaining vertical space */}
+            <View style={styles.urgencyGrid}>
+              {URGENCY_OPTIONS.map((opt) => (
+                <UrgencyGridCard
+                  key={opt.id}
+                  opt={opt}
+                  selected={opt.id === urgency}
+                  onPress={() => {
+                    setUrgency(opt.id);
+                    void Haptics.selectionAsync();
+                  }}
+                />
+              ))}
+            </View>
 
-              {/* UX-Friendly Affected Persons Card */}
-              <View
-                style={[
-                  styles.peopleCard,
-                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-                ]}
-              >
-                <View style={styles.peopleHeader}>
-                  <Text style={[styles.peopleTitle, { color: colors.textPrimary }]}>
-                    Affected Persons
-                  </Text>
-                  <Text style={[styles.peopleSub, { color: colors.textSecondary }]}>
-                    Type exact count or tap quick increments
-                  </Text>
-                </View>
+            {/* Symmetric Affected Persons Selector: -10  -1  [ 1 ]  +1  +10 */}
+            <View
+              style={[
+                styles.peopleCard,
+                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+              ]}
+            >
+              <Text style={[styles.peopleTitle, { color: colors.textPrimary }]}>
+                Affected Persons (Tap number to type)
+              </Text>
+              <View style={styles.peopleInputRow}>
+                <Pressable
+                  onPress={() => adjustVictimCount(-10)}
+                  style={({ pressed }) => [
+                    styles.adjBtn,
+                    {
+                      backgroundColor: colors.bgSurfaceElevated,
+                      borderColor: colors.borderSubtle,
+                      transform: [{ scale: pressed ? 0.9 : 1 }],
+                    },
+                  ]}
+                >
+                  <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>-10</Text>
+                </Pressable>
 
-                <View style={styles.peopleInputRow}>
-                  <Pressable
-                    onPress={() => adjustVictimCount(-1)}
-                    style={({ pressed }) => [
-                      styles.adjBtn,
-                      {
-                        backgroundColor: colors.bgSurfaceElevated,
-                        borderColor: colors.borderSubtle,
-                        transform: [{ scale: pressed ? 0.9 : 1 }],
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>-1</Text>
-                  </Pressable>
+                <Pressable
+                  onPress={() => adjustVictimCount(-1)}
+                  style={({ pressed }) => [
+                    styles.adjBtn,
+                    {
+                      backgroundColor: colors.bgSurfaceElevated,
+                      borderColor: colors.borderSubtle,
+                      transform: [{ scale: pressed ? 0.9 : 1 }],
+                    },
+                  ]}
+                >
+                  <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>-1</Text>
+                </Pressable>
 
-                  <TextInput
-                    value={victimCountText}
-                    onChangeText={handleVictimTextChange}
-                    keyboardType="number-pad"
-                    maxLength={3}
-                    selectTextOnFocus
-                    style={[
-                      styles.peopleInput,
-                      {
-                        backgroundColor: colors.bgBase,
-                        borderColor: colors.borderSubtle,
-                        color: colors.textPrimary,
-                      },
-                    ]}
-                  />
+                <TextInput
+                  value={victimCountText}
+                  onChangeText={handleVictimTextChange}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  selectTextOnFocus
+                  style={[
+                    styles.peopleInput,
+                    {
+                      backgroundColor: colors.bgBase,
+                      borderColor: colors.borderFocus,
+                      color: colors.textPrimary,
+                    },
+                  ]}
+                />
 
-                  <Pressable
-                    onPress={() => adjustVictimCount(1)}
-                    style={({ pressed }) => [
-                      styles.adjBtn,
-                      {
-                        backgroundColor: colors.bgSurfaceElevated,
-                        borderColor: colors.borderSubtle,
-                        transform: [{ scale: pressed ? 0.9 : 1 }],
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>+1</Text>
-                  </Pressable>
+                <Pressable
+                  onPress={() => adjustVictimCount(1)}
+                  style={({ pressed }) => [
+                    styles.adjBtn,
+                    {
+                      backgroundColor: colors.bgSurfaceElevated,
+                      borderColor: colors.borderSubtle,
+                      transform: [{ scale: pressed ? 0.9 : 1 }],
+                    },
+                  ]}
+                >
+                  <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>+1</Text>
+                </Pressable>
 
-                  <Pressable
-                    onPress={() => adjustVictimCount(10)}
-                    style={({ pressed }) => [
-                      styles.adjBtn,
-                      {
-                        backgroundColor: colors.accentSubtle,
-                        borderColor: colors.accentPrimary,
-                        transform: [{ scale: pressed ? 0.9 : 1 }],
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.adjBtnText, { color: colors.accentPrimary }]}>+10</Text>
-                  </Pressable>
-                </View>
-
-                <View style={styles.presetsRow}>
-                  {VICTIM_PRESETS.map((preset) => {
-                    const isPresetActive = parsedVictimCount === preset;
-                    return (
-                      <Pressable
-                        key={preset}
-                        onPress={() => {
-                          setVictimCountText(String(preset));
-                          void Haptics.selectionAsync();
-                        }}
-                        style={[
-                          styles.presetChip,
-                          {
-                            backgroundColor: isPresetActive
-                              ? colors.accentPrimary
-                              : colors.bgSurfaceElevated,
-                            borderColor: isPresetActive
-                              ? colors.accentPrimary
-                              : colors.borderSubtle,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.presetText,
-                            { color: isPresetActive ? '#FFFFFF' : colors.textSecondary },
-                          ]}
-                        >
-                          {preset === 20 ? '20+' : `${preset}`}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                <Pressable
+                  onPress={() => adjustVictimCount(10)}
+                  style={({ pressed }) => [
+                    styles.adjBtn,
+                    {
+                      backgroundColor: colors.accentSubtle,
+                      borderColor: colors.accentPrimary,
+                      transform: [{ scale: pressed ? 0.9 : 1 }],
+                    },
+                  ]}
+                >
+                  <Text style={[styles.adjBtnText, { color: colors.accentPrimary }]}>+10</Text>
+                </Pressable>
               </View>
             </View>
 
@@ -595,94 +605,86 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               <Text style={styles.primaryCtaText}>NEXT: SITUATION NOTES</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
             </Pressable>
-          </ScrollView>
+          </View>
         ) : null}
 
         {/* STAGE 3: Massive Notes Box + Voice Indicator */}
         {stage === 3 ? (
-          <ScrollView
-            style={styles.scrollStage}
-            contentContainerStyle={styles.scrollFillContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.topSection}>
-              <View style={styles.notesHeaderRow}>
-                <View style={styles.headerBlock}>
-                  <Text style={[styles.stageTitle, { color: colors.textPrimary }]}>
-                    Situation Notes
-                  </Text>
-                  <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
-                    Type in English, Tagalog, or Cebuano
-                  </Text>
-                </View>
-                <Text
-                  style={[
-                    styles.byteCounter,
-                    {
-                      color:
-                        byteCount >= MAX_RAW_TEXT_BYTES
-                          ? EMERGENCY_COLORS.critical
-                          : colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {byteCount}/{MAX_RAW_TEXT_BYTES}B
+          <View style={styles.stageContainer}>
+            <View style={styles.notesHeaderRow}>
+              <View style={styles.headerBlock}>
+                <Text style={[styles.stageTitle, { color: colors.textPrimary }]}>
+                  Situation Notes
+                </Text>
+                <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
+                  Type in English, Tagalog, or Cebuano
                 </Text>
               </View>
-
-              <Animated.View
+              <Text
                 style={[
-                  styles.massiveNotesBox,
+                  styles.byteCounter,
                   {
-                    backgroundColor: colors.bgSurface,
-                    borderColor: notesBorderColor,
+                    color:
+                      byteCount >= MAX_RAW_TEXT_BYTES
+                        ? EMERGENCY_COLORS.critical
+                        : colors.textSecondary,
                   },
                 ]}
               >
-                <TextInput
-                  multiline
-                  value={rawText}
-                  onChangeText={handleTextChange}
-                  onFocus={() => setNotesFocused(true)}
-                  onBlur={() => setNotesFocused(false)}
-                  placeholder="Describe landmarks, hazards, or urgent needs (e.g., Naay natabunan sa Sitio Riverside, tabang!)..."
-                  placeholderTextColor={colors.textMuted}
-                  style={[styles.massiveTextInput, { color: colors.textPrimary }]}
-                />
-
-                {/* Voice Input Indicator Bar (Upcoming Feature) */}
-                <Pressable
-                  onPress={() =>
-                    Alert.alert(
-                      'Voice Reporting',
-                      'Offline voice-to-text input is an upcoming feature for residents.',
-                    )
-                  }
-                  style={[
-                    styles.voiceBar,
-                    {
-                      backgroundColor: colors.bgSurfaceElevated,
-                      borderTopColor: colors.borderSubtle,
-                    },
-                  ]}
-                >
-                  <View style={[styles.micBadge, { backgroundColor: colors.accentSubtle }]}>
-                    <Ionicons name="mic-outline" size={18} color={colors.accentPrimary} />
-                  </View>
-                  <View style={styles.voiceTextCol}>
-                    <Text style={[styles.voiceTitle, { color: colors.textPrimary }]}>
-                      Type or Use Voice Input
-                    </Text>
-                    <Text style={[styles.voiceSub, { color: colors.textSecondary }]}>
-                      Voice-to-text transcription (Upcoming Feature)
-                    </Text>
-                  </View>
-                  <View style={[styles.soonBadge, { borderColor: colors.borderSubtle }]}>
-                    <Text style={[styles.soonText, { color: colors.textSecondary }]}>SOON</Text>
-                  </View>
-                </Pressable>
-              </Animated.View>
+                {byteCount}/{MAX_RAW_TEXT_BYTES}B
+              </Text>
             </View>
+
+            <Animated.View
+              style={[
+                styles.massiveNotesBox,
+                {
+                  backgroundColor: colors.bgSurface,
+                  borderColor: notesBorderColor,
+                },
+              ]}
+            >
+              <TextInput
+                multiline
+                maxLength={MAX_RAW_TEXT_BYTES}
+                value={rawText}
+                onChangeText={handleTextChange}
+                onFocus={() => setNotesFocused(true)}
+                onBlur={() => setNotesFocused(false)}
+                placeholder="Describe landmarks, hazards, or urgent needs (e.g., Naay natabunan sa Sitio Riverside, tabang!)..."
+                placeholderTextColor={colors.textMuted}
+                style={[styles.massiveTextInput, { color: colors.textPrimary }]}
+              />
+
+              {/* Voice Input Indicator Bar (Upcoming Feature) */}
+              <Pressable
+                onPress={() =>
+                  Alert.alert(
+                    'Voice Reporting',
+                    'Offline voice-to-text input is an upcoming feature for residents.',
+                  )
+                }
+                style={[
+                  styles.voiceBar,
+                  {
+                    backgroundColor: colors.bgSurfaceElevated,
+                    borderTopColor: colors.borderSubtle,
+                  },
+                ]}
+              >
+                <View style={[styles.micBadge, { backgroundColor: colors.accentSubtle }]}>
+                  <Ionicons name="mic-outline" size={18} color={colors.accentPrimary} />
+                </View>
+                <View style={styles.voiceTextCol}>
+                  <Text style={[styles.voiceTitle, { color: colors.textPrimary }]}>
+                    Type or Use Voice Input
+                  </Text>
+                  <Text style={[styles.voiceSub, { color: colors.textSecondary }]}>
+                    Voice-to-text transcription (Upcoming Feature)
+                  </Text>
+                </View>
+              </Pressable>
+            </Animated.View>
 
             <Pressable
               onPress={() => {
@@ -700,7 +702,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               <Text style={styles.primaryCtaText}>REVIEW & SEND</Text>
               <Ionicons name="checkmark-circle-outline" size={19} color="#FFFFFF" />
             </Pressable>
-          </ScrollView>
+          </View>
         ) : null}
       </Animated.View>
 
@@ -758,7 +760,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
         })}
       </View>
 
-      {/* Pop-up Confirmation Modal */}
+      {/* Tactical Dispatch Confirmation Modal */}
       <Modal
         visible={confirmOpen}
         transparent
@@ -772,99 +774,109 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
             ]}
           >
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              Confirm Emergency Report
-            </Text>
-            <Text style={[styles.modalSub, { color: colors.textSecondary }]}>
-              Saved offline immediately, then sent via Cloud Relay or BLE.
-            </Text>
-
+            {/* Top Category Color Strip */}
             <View
               style={[
-                styles.modalSummary,
-                { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                styles.modalAccentStrip,
+                { backgroundColor: selectedCategoryObj.accentColor },
               ]}
-            >
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>Type</Text>
-                <View style={styles.summaryCatRow}>
-                  <View
-                    style={[
-                      styles.catDot,
-                      { backgroundColor: selectedCategoryObj.accentColor },
-                    ]}
-                  />
-                  <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
+            />
+
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeroRow}>
+                <View style={styles.modalHeroLeft}>
+                  <Text style={[styles.modalEyebrow, { color: colors.textSecondary }]}>
+                    EMERGENCY DISPATCH REPORT
+                  </Text>
+                  <Text style={[styles.modalHeroTitle, { color: colors.textPrimary }]}>
                     {getCategoryLabel(category)}
                   </Text>
                 </View>
-              </View>
-
-              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
-
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>Urgency</Text>
                 <View style={[styles.urgencyBadge, { backgroundColor: getUrgencyColor(urgency) }]}>
                   <Text style={styles.urgencyBadgeText}>{urgency}</Text>
                 </View>
               </View>
 
-              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
+              {/* 2-up Telemetry Tiles */}
+              <View style={styles.modalMetricsRow}>
+                <View
+                  style={[
+                    styles.modalMetricBox,
+                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                    AFFECTED
+                  </Text>
+                  <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
+                    {parsedVictimCount} {parsedVictimCount === 1 ? 'person' : 'people'}
+                  </Text>
+                </View>
 
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>
-                  Affected Persons
-                </Text>
-                <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
-                  {parsedVictimCount}
-                </Text>
+                <View
+                  style={[
+                    styles.modalMetricBox,
+                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>GPS FIX</Text>
+                  <Text
+                    style={[styles.metricMono, { color: EMERGENCY_COLORS.telemetry }]}
+                    numberOfLines={1}
+                  >
+                    {gps.fixState === 'LOCKED' || gps.fixState === 'LAST_KNOWN'
+                      ? `${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}`
+                      : gps.fixState}
+                  </Text>
+                </View>
               </View>
 
-              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
-
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>GPS</Text>
-                <Text style={[styles.summaryMono, { color: EMERGENCY_COLORS.telemetry }]}>
-                  {gps.fixState === 'LOCKED' || gps.fixState === 'LAST_KNOWN'
-                    ? `${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}`
-                    : `${gps.fixState} (saved anyway)`}
-                </Text>
-              </View>
-
-              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
-
-              <View style={styles.notesPreview}>
-                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>Notes</Text>
-                <Text style={[styles.notesText, { color: colors.textPrimary }]}>
-                  {rawText.trim() ? rawText.trim() : 'No additional notes provided.'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.modalActions}>
-              <Pressable
-                onPress={() => setConfirmOpen(false)}
+              {/* Bounded Scrollable Notes Preview (edge-case safe for long text) */}
+              <View
                 style={[
-                  styles.modalCancelBtn,
-                  { backgroundColor: colors.bgSurfaceElevated, borderColor: colors.borderSubtle },
+                  styles.modalNotesBox,
+                  { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
                 ]}
               >
-                <Text style={[styles.modalCancelText, { color: colors.textPrimary }]}>Edit</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleSubmit}
-                disabled={submitting}
-                style={[
-                  styles.modalSendBtn,
-                  { backgroundColor: colors.accentPrimary, opacity: submitting ? 0.7 : 1 },
-                ]}
-              >
-                <Ionicons name="send" size={16} color="#FFFFFF" />
-                <Text style={styles.modalSendText}>
-                  {submitting ? 'SAVING...' : 'CONFIRM & SEND'}
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                  SITUATION NOTES
                 </Text>
-              </Pressable>
+                <ScrollView style={styles.modalNotesScroll} nestedScrollEnabled>
+                  <Text style={[styles.notesText, { color: colors.textPrimary }]}>
+                    {rawText.trim() ? rawText.trim() : 'No additional notes provided.'}
+                  </Text>
+                </ScrollView>
+              </View>
+
+              <Text style={[styles.modalHint, { color: colors.textSecondary }]}>
+                Stored locally on your device immediately, then routed via Cloud or BLE.
+              </Text>
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  onPress={() => setConfirmOpen(false)}
+                  style={[
+                    styles.modalCancelBtn,
+                    { backgroundColor: colors.bgSurfaceElevated, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  <Text style={[styles.modalCancelText, { color: colors.textPrimary }]}>Edit</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleSubmit}
+                  disabled={submitting}
+                  style={[
+                    styles.modalSendBtn,
+                    { backgroundColor: colors.accentPrimary, opacity: submitting ? 0.7 : 1 },
+                  ]}
+                >
+                  <Ionicons name="send" size={16} color="#FFFFFF" />
+                  <Text style={styles.modalSendText}>
+                    {submitting ? 'SAVING...' : 'CONFIRM & SEND'}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </View>
@@ -914,9 +926,9 @@ const styles = StyleSheet.create({
   gridTile: {
     flex: 1,
     borderRadius: RADII.card,
-    borderWidth: 1.5,
-    padding: 16,
-    justifyContent: 'flex-end',
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
   },
   tileTintOverlay: {
@@ -934,57 +946,73 @@ const styles = StyleSheet.create({
     left: 0,
     opacity: 0.14,
   },
-  stripeLine: {
+  diamondLineA: {
     position: 'absolute',
-    top: -30,
-    width: 10,
-    height: 180,
-    transform: [{ rotate: '28deg' }],
+    top: -40,
+    width: 3,
+    height: 240,
+    transform: [{ rotate: '35deg' }],
+  },
+  diamondLineB: {
+    position: 'absolute',
+    top: -40,
+    width: 3,
+    height: 240,
+    transform: [{ rotate: '-35deg' }],
   },
   crossVert: {
     position: 'absolute',
-    top: 14,
-    right: 26,
-    width: 14,
-    height: 46,
-    borderRadius: 4,
+    top: 16,
+    right: 34,
+    width: 22,
+    height: 76,
+    borderRadius: 6,
   },
   crossHoriz: {
     position: 'absolute',
-    top: 30,
-    right: 10,
-    width: 46,
-    height: 14,
-    borderRadius: 4,
+    top: 43,
+    right: 7,
+    width: 76,
+    height: 22,
+    borderRadius: 6,
   },
   waveRingLg: {
     position: 'absolute',
-    top: -24,
-    right: -24,
-    width: 94,
-    height: 94,
-    borderRadius: 47,
+    top: -28,
+    right: -28,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     borderWidth: 8,
+  },
+  waveRingMd: {
+    position: 'absolute',
+    top: -12,
+    right: -12,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 6,
   },
   waveRingSm: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    borderWidth: 6,
+    top: 4,
+    right: 4,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 5,
   },
   gridLineH1: {
     position: 'absolute',
-    top: 24,
+    top: 26,
     left: 0,
     right: 0,
     height: 2,
   },
   gridLineH2: {
     position: 'absolute',
-    top: 52,
+    top: 58,
     left: 0,
     right: 0,
     height: 2,
@@ -993,160 +1021,125 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     bottom: 0,
-    right: 28,
+    right: 30,
     width: 2,
   },
   gridLineV2: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    right: 60,
+    right: 64,
     width: 2,
   },
-  slopeBand1: {
+  stripeLine: {
     position: 'absolute',
-    top: -10,
-    right: -20,
-    width: 110,
-    height: 28,
-    transform: [{ rotate: '-22deg' }],
-  },
-  slopeBand2: {
-    position: 'absolute',
-    top: 30,
-    right: -30,
-    width: 110,
-    height: 18,
-    transform: [{ rotate: '-22deg' }],
+    top: -30,
+    width: 10,
+    height: 200,
+    transform: [{ rotate: '28deg' }],
   },
   dotsCluster: {
     top: 14,
     right: 14,
     left: undefined,
     bottom: undefined,
-    width: 42,
-    height: 42,
+    width: 66,
+    height: 66,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 10,
   },
   dotMatrixItem: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
   },
   tileTextBlock: {
-    gap: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
   tileLabel: {
     fontSize: 17,
     fontWeight: '800',
     letterSpacing: -0.3,
+    textAlign: 'center',
   },
   tileHint: {
     fontSize: 12,
     fontWeight: '600',
-  },
-  scrollStage: {
-    flex: 1,
-  },
-  scrollFillContent: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-    gap: 14,
-  },
-  topSection: {
-    flex: 1,
-    gap: 14,
+    textAlign: 'center',
   },
   urgencyGrid: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    alignContent: 'space-between',
     rowGap: 10,
   },
   urgencyGridWrap: {
     width: '48.3%',
+    height: '48.5%',
   },
   urgencyGridCard: {
-    minHeight: 102,
+    flex: 1,
     borderRadius: RADII.card,
-    borderWidth: 1.5,
-    padding: 16,
+    padding: 14,
+    alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    overflow: 'hidden',
   },
   urgencyCardLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '900',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   urgencyCardSub: {
     fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
   },
   peopleCard: {
     borderRadius: RADII.card,
     borderWidth: 1,
-    padding: 16,
-    gap: 12,
-  },
-  peopleHeader: {
-    gap: 2,
+    padding: 14,
+    gap: 10,
   },
   peopleTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
-  },
-  peopleSub: {
-    fontSize: 12,
+    textAlign: 'center',
   },
   peopleInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   adjBtn: {
-    minWidth: 48,
-    height: 46,
+    minWidth: 46,
+    height: 44,
     borderRadius: RADII.pill,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
   adjBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
   },
   peopleInput: {
     flex: 1,
-    height: 46,
+    height: 44,
     borderRadius: RADII.pill,
-    borderWidth: 1,
+    borderWidth: 1.5,
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
-  },
-  presetsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  presetChip: {
-    flex: 1,
-    height: 36,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  presetText: {
-    fontSize: 12,
-    fontWeight: '700',
   },
   notesHeaderRow: {
     flexDirection: 'row',
@@ -1160,7 +1153,6 @@ const styles = StyleSheet.create({
   },
   massiveNotesBox: {
     flex: 1,
-    minHeight: 240,
     borderRadius: RADII.card,
     borderWidth: 1.5,
     overflow: 'hidden',
@@ -1197,18 +1189,8 @@ const styles = StyleSheet.create({
   voiceSub: {
     fontSize: 11,
   },
-  soonBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-  },
-  soonText: {
-    fontSize: 10,
-    fontWeight: '800',
-  },
   primaryCta: {
-    minHeight: 56,
+    minHeight: 54,
     borderRadius: RADII.pill,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1270,83 +1252,98 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(2, 6, 23, 0.72)',
+    backgroundColor: 'rgba(2, 6, 23, 0.76)',
     justifyContent: 'center',
-    padding: 20,
+    padding: 18,
   },
   modalCard: {
     borderRadius: RADII.card,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  modalAccentStrip: {
+    height: 6,
+    width: '100%',
+  },
+  modalContent: {
     padding: 20,
     gap: 14,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  modalSub: {
-    fontSize: 12,
-    marginTop: -8,
-  },
-  modalSummary: {
-    borderRadius: RADII.control,
-    borderWidth: 1,
-    padding: 16,
-    gap: 12,
-  },
-  summaryRow: {
+  modalHeroRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
-  summaryKey: {
-    fontSize: 12,
-    fontWeight: '600',
+  modalHeroLeft: {
+    flex: 1,
+    gap: 2,
   },
-  summaryCatRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
+  modalEyebrow: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
-  catDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  summaryVal: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  summaryMono: {
-    fontSize: 12,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
+  modalHeroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   urgencyBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: RADII.pill,
   },
   urgencyBadgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
   },
-  divider: {
-    height: 1,
+  modalMetricsRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  notesPreview: {
+  modalMetricBox: {
+    flex: 1,
+    borderRadius: RADII.control,
+    borderWidth: 1,
+    padding: 12,
     gap: 4,
+  },
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  metricValue: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  metricMono: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  modalNotesBox: {
+    borderRadius: RADII.control,
+    borderWidth: 1,
+    padding: 12,
+    gap: 6,
+  },
+  modalNotesScroll: {
+    maxHeight: 100,
   },
   notesText: {
     fontSize: 13,
     lineHeight: 19,
   },
+  modalHint: {
+    fontSize: 11,
+    textAlign: 'center',
+  },
   modalActions: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 2,
   },
   modalCancelBtn: {
     flex: 1,

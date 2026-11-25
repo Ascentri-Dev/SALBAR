@@ -12,7 +12,6 @@ This directory houses the academic manuscripts, technical guides, UI specificati
 
 ### 2. Design & UI Specifications (`specs/`)
 - **[`specs/web-dashboard-ui-plan.md`](specs/web-dashboard-ui-plan.md)**: User interface specification, 3-view screen architecture (Command Map CAD, Responder Fleet Management, Incident Archive), design tokens, and high-contrast light/dark emergency dispatch color palette.
-- **[`specs/mobile-app-plan.md`](specs/mobile-app-plan.md)**: Resident Android application specification (Expo SDK 58 / TypeScript), 3-tab mobile architecture, Midnight Navy & Safety Orange design tokens, offline-first SQLite schema, dual-path Cloud Relay & BLE GATT protocol, and functional/non-functional requirements.
 
 ### 3. Academic Manuscripts & Evaluation (`manuscripts/`)
 - **`manuscripts/Chap1.pdf`**: Chapter 1 — Introduction, Problem Background, Research Objectives, Scope and Limitations, Theoretical Background, and Review of Related Literature.

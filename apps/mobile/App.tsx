@@ -51,11 +51,7 @@ function SalbarMobileShell() {
       <StatusBar style={splashVisible || isDark ? 'light' : 'dark'} />
 
       <View style={[styles.appBody, { backgroundColor: colors.bgBase }]}>
-        <AmbientHeader
-          gps={gps}
-          canUseCloudRelay={network.canUseCloudRelay}
-          forceOffline={network.forceOffline}
-        />
+        <AmbientHeader />
 
         <View style={styles.screenContainer}>
           {activeTab === 'report' ? (

@@ -223,7 +223,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { padding: 16, gap: 12, paddingBottom: 28 },
+  content: { padding: 16, gap: 12, paddingBottom: 96 },
   sectionTitle: { fontSize: 14, fontWeight: '700' },
   grid: {
     flexDirection: 'row',

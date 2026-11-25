@@ -169,7 +169,7 @@ export function OutboxScreen({ reports, counts, onRefresh }: OutboxScreenProps) 
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { padding: 16, gap: 12, paddingBottom: 28 },
+  content: { padding: 16, gap: 12, paddingBottom: 96 },
   kpiRow: { flexDirection: 'row', gap: 8 },
   kpiCard: {
     flex: 1,

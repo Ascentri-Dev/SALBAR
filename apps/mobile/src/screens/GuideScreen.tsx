@@ -26,7 +26,7 @@ export function GuideScreen({
   onToggleForceOffline,
   onRefreshLocation,
 }: GuideScreenProps) {
-  const { colors } = useAppTheme();
+  const { colors, isDark, toggleTheme } = useAppTheme();
   const [relayUrl, setRelayUrl] = useState(
     process.env.EXPO_PUBLIC_CLOUD_RELAY_URL ?? 'http://localhost:8000',
   );
@@ -119,7 +119,7 @@ export function GuideScreen({
       </View>
 
       <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-        Diagnostics & Field Trial Settings
+        Preferences & Field Trial Settings
       </Text>
       <View
         style={[
@@ -127,6 +127,22 @@ export function GuideScreen({
           { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
         ]}
       >
+        <View style={styles.checkRow}>
+          <View style={styles.flexOne}>
+            <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>Dark Mode</Text>
+            <Text style={[styles.itemSub, { color: colors.textSecondary }]}>
+              Switch between Midnight Navy and high-glare Light theme
+            </Text>
+          </View>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: colors.borderSubtle, true: colors.accentPrimary }}
+          />
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
+
         <View style={styles.checkRow}>
           <View style={styles.flexOne}>
             <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>
@@ -167,7 +183,7 @@ export function GuideScreen({
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { padding: 16, gap: 12, paddingBottom: 28 },
+  content: { padding: 16, gap: 12, paddingBottom: 96 },
   sectionTitle: { fontSize: 14, fontWeight: '700' },
   card: {
     borderRadius: RADII.card,

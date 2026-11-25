@@ -35,7 +35,7 @@ export function GuideScreen({
 
   return (
     <ScrollView
-      style={[styles.scroll, { backgroundColor: colors.bgBase }]}
+      style={styles.scroll}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >

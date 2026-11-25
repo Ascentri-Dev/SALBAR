@@ -437,7 +437,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
+    <View style={styles.root}>
       {/* Top Arrow Progress Bar: Type ---> Urgency ---> Notes */}
       <View style={styles.arrowBarContainer}>
         {STAGE_LABELS.map((s, idx) => {

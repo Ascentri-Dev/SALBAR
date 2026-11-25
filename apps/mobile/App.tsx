@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { BottomTabBar, MobileTab } from './src/components/BottomTabBar';
 import { SplashScreen } from './src/components/SplashScreen';
+import { TacticalBackground } from './src/components/TacticalBackground';
 import { getReportCounts, listReports } from './src/db/reportsRepository';
 import { useLocationStatus } from './src/hooks/useLocationStatus';
 import { useNetworkStatus } from './src/hooks/useNetworkStatus';
@@ -49,7 +50,9 @@ function SalbarMobileShell() {
     >
       <StatusBar style={splashVisible || isDark ? 'light' : 'dark'} />
 
-      <View style={[styles.appBody, { backgroundColor: colors.bgBase }]}>
+      <View style={styles.appBody}>
+        <TacticalBackground />
+
         <View style={styles.screenContainer}>
           {activeTab === 'report' ? (
             <ReportScreen

@@ -63,84 +63,69 @@ function getSyncMeta(status: SyncStatus): { label: string; color: string } {
 }
 
 /**
- * 1-to-1 React Native port of web-dashboard KPIStrip metric pill with proportional fill bar.
+ * Interactive 3-Card Spotlight KPI Filter.
  */
-function MetricPill({
+function KpiFilterCard({
   label,
   value,
-  pct,
-  pctText,
-  toneColor,
-  selected,
+  accentColor,
+  activeFilter,
+  filterKey,
   onPress,
 }: {
   label: string;
   value: number;
-  pct: number;
-  pctText: string;
-  toneColor: string;
-  selected: boolean;
+  accentColor: string;
+  activeFilter: OutboxFilter;
+  filterKey: Exclude<OutboxFilter, 'ALL'>;
   onPress: () => void;
 }) {
-  const { colors, isDark } = useAppTheme();
-  const fillAnim = useRef(new Animated.Value(pct / 100)).current;
+  const { colors } = useAppTheme();
+  const focusAnim = useRef(new Animated.Value(0)).current;
+  const dimAnim = useRef(new Animated.Value(1)).current;
+
+  const isSelected = activeFilter === filterKey;
+  const isOtherSelected = activeFilter !== 'ALL' && !isSelected;
 
   useEffect(() => {
-    Animated.timing(fillAnim, {
-      toValue: pct / 100,
-      duration: 450,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
+    Animated.spring(focusAnim, {
+      toValue: isSelected ? 1 : 0,
+      friction: 6,
+      tension: 150,
+      useNativeDriver: true,
     }).start();
-  }, [pct, fillAnim]);
+  }, [isSelected, focusAnim]);
 
-  const barWidth = fillAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
+  useEffect(() => {
+    Animated.timing(dimAnim, {
+      toValue: isOtherSelected ? 0.42 : 1,
+      duration: 160,
+      useNativeDriver: true,
+    }).start();
+  }, [isOtherSelected, dimAnim]);
+
+  const scale = Animated.add(
+    focusAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }),
+    dimAnim.interpolate({ inputRange: [0.42, 1], outputRange: [-0.04, 0] }),
+  );
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.metricPill,
-        {
-          backgroundColor: selected
-            ? isDark
-              ? colors.bgSurfaceElevated
-              : colors.bgSurface
-            : colors.bgSurface,
-          borderColor: selected ? colors.accentPrimary : hexToRgba(toneColor, 0.35),
-          borderWidth: selected ? 2 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }],
-        },
-      ]}
-    >
-      {/* Proportional Occupancy Meter Fill Bar */}
+    <Pressable onPress={onPress} style={styles.kpiWrap}>
       <Animated.View
-        pointerEvents="none"
         style={[
-          styles.metricFillBar,
+          styles.kpiCard,
           {
-            backgroundColor: hexToRgba(toneColor, isDark ? 0.24 : 0.16),
-            width: barWidth,
+            backgroundColor: colors.bgSurface,
+            borderColor: isSelected ? accentColor : colors.borderSubtle,
+            borderWidth: isSelected ? 2 : 1,
+            opacity: dimAnim,
+            transform: [{ scale }],
           },
         ]}
-      />
-
-      <View style={styles.metricLeft}>
-        <Text
-          style={[
-            styles.metricPillLabel,
-            { color: selected ? colors.accentPrimary : colors.textPrimary },
-          ]}
-        >
-          {label}
-        </Text>
-        <Text style={[styles.metricPctText, { color: colors.textSecondary }]}>{pctText}</Text>
-      </View>
-
-      <Text style={[styles.metricCount, { color: toneColor }]}>{value}</Text>
+      >
+        <Text style={[styles.kpiValue, { color: accentColor }]}>{value}</Text>
+        <Text style={[styles.kpiLabel, { color: colors.textSecondary }]}>{label}</Text>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -210,11 +195,6 @@ export function OutboxScreen({
   const [scanning, setScanning] = useState(false);
   const [selectedReport, setSelectedReport] = useState<LocalReport | null>(null);
 
-  const getPct = (val: number) => {
-    if (counts.total === 0) return 0;
-    return Math.round((val / counts.total) * 100);
-  };
-
   const filteredReports = useMemo(() => {
     switch (filter) {
       case 'PENDING':
@@ -228,9 +208,9 @@ export function OutboxScreen({
     }
   }, [reports, filter]);
 
-  const selectFilter = (target: OutboxFilter) => {
+  const toggleFilter = (target: Exclude<OutboxFilter, 'ALL'>) => {
     void Haptics.selectionAsync();
-    setFilter((prev) => (prev === target && target !== 'ALL' ? 'ALL' : target));
+    setFilter((prev) => (prev === target ? 'ALL' : target));
   };
 
   useEffect(() => {
@@ -268,61 +248,46 @@ export function OutboxScreen({
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
+    <View style={styles.root}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Clean Header (no Cloud Ready pill) */}
+        {/* Clean Header */}
         <View style={styles.headerBlock}>
           <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>Outbox & Sync</Text>
           <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
-            Offline storage queue and responder BLE handoff
+            Tap a status card to filter queued reports
           </Text>
         </View>
 
-        {/* Web-Dashboard Style METRICS Filter Stack */}
-        <View style={styles.metricsSection}>
-          <Text style={[styles.metricsEyebrow, { color: colors.accentPrimary }]}>METRICS</Text>
-          <View style={styles.metricsList}>
-            <MetricPill
-              label="TOTAL REPORTS"
-              value={counts.total}
-              pct={counts.total > 0 ? 100 : 0}
-              pctText="All Saved"
-              toneColor={colors.textPrimary}
-              selected={filter === 'ALL'}
-              onPress={() => selectFilter('ALL')}
-            />
-            <MetricPill
-              label="PENDING LOCAL"
-              value={counts.pending}
-              pct={getPct(counts.pending)}
-              pctText={`${getPct(counts.pending)}%`}
-              toneColor={EMERGENCY_COLORS.moderate}
-              selected={filter === 'PENDING'}
-              onPress={() => selectFilter('PENDING')}
-            />
-            <MetricPill
-              label="BLE RELAYED"
-              value={counts.relayedBle}
-              pct={getPct(counts.relayedBle)}
-              pctText={`${getPct(counts.relayedBle)}%`}
-              toneColor={EMERGENCY_COLORS.telemetry}
-              selected={filter === 'BLE'}
-              onPress={() => selectFilter('BLE')}
-            />
-            <MetricPill
-              label="CLOUD SENT"
-              value={counts.sentCloud}
-              pct={getPct(counts.sentCloud)}
-              pctText={`${getPct(counts.sentCloud)}%`}
-              toneColor={EMERGENCY_COLORS.success}
-              selected={filter === 'CLOUD'}
-              onPress={() => selectFilter('CLOUD')}
-            />
-          </View>
+        {/* Interactive 3-KPI Spotlight Filter Strip */}
+        <View style={styles.kpiRow}>
+          <KpiFilterCard
+            label="Pending"
+            value={counts.pending}
+            accentColor={EMERGENCY_COLORS.moderate}
+            activeFilter={filter}
+            filterKey="PENDING"
+            onPress={() => toggleFilter('PENDING')}
+          />
+          <KpiFilterCard
+            label="BLE Relayed"
+            value={counts.relayedBle}
+            accentColor={EMERGENCY_COLORS.telemetry}
+            activeFilter={filter}
+            filterKey="BLE"
+            onPress={() => toggleFilter('BLE')}
+          />
+          <KpiFilterCard
+            label="Cloud Sent"
+            value={counts.sentCloud}
+            accentColor={EMERGENCY_COLORS.success}
+            activeFilter={filter}
+            filterKey="CLOUD"
+            onPress={() => toggleFilter('CLOUD')}
+          />
         </View>
 
         {/* Animated BLE Responder Radar Card */}
@@ -375,7 +340,7 @@ export function OutboxScreen({
               : `${filter} (${filteredReports.length})`}
           </Text>
           {filter !== 'ALL' ? (
-            <Pressable onPress={() => selectFilter('ALL')}>
+            <Pressable onPress={() => setFilter('ALL')}>
               <Text style={[styles.clearFilterText, { color: colors.accentPrimary }]}>
                 Show All
               </Text>
@@ -405,7 +370,7 @@ export function OutboxScreen({
                 : 'No reports match the selected filter.'}
             </Text>
             <Pressable
-              onPress={reports.length === 0 ? onGoToReport : () => selectFilter('ALL')}
+              onPress={reports.length === 0 ? onGoToReport : () => setFilter('ALL')}
               style={({ pressed }) => [
                 styles.emptyActionBtn,
                 {
@@ -650,6 +615,7 @@ export function OutboxScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   scroll: {
     flex: 1,
@@ -671,51 +637,29 @@ const styles = StyleSheet.create({
   screenSubtitle: {
     fontSize: 13,
   },
-  metricsSection: {
-    gap: 8,
-  },
-  metricsEyebrow: {
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 1.8,
-    paddingHorizontal: 4,
-  },
-  metricsList: {
-    gap: 8,
-  },
-  metricPill: {
-    height: 52,
-    borderRadius: RADII.pill,
-    paddingHorizontal: 20,
+  kpiRow: {
     flexDirection: 'row',
+    gap: 8,
+  },
+  kpiWrap: {
+    flex: 1,
+  },
+  kpiCard: {
+    borderRadius: RADII.card,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    overflow: 'hidden',
+    justifyContent: 'center',
+    gap: 2,
   },
-  metricFillBar: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: RADII.pill,
+  kpiValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
-  metricLeft: {
-    gap: 1,
-  },
-  metricPillLabel: {
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.6,
-  },
-  metricPctText: {
-    fontSize: 10,
+  kpiLabel: {
+    fontSize: 11,
     fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-  },
-  metricCount: {
-    fontSize: 19,
-    fontWeight: '900',
-    fontVariant: ['tabular-nums'],
   },
   bleCard: {
     borderRadius: RADII.card,

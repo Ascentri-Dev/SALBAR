@@ -1,3 +1,4 @@
+import type { Ionicons } from '@expo/vector-icons';
 import { EMERGENCY_COLORS } from '../theme/tokens';
 import type { IncidentCategory, IncidentUrgency } from '../types/report';
 
@@ -6,6 +7,7 @@ export interface CategoryOption {
   label: string;
   localHint: string;
   defaultUrgency: IncidentUrgency;
+  icon: keyof typeof Ionicons.glyphMap;
 }
 
 export const TRIAGE_CATEGORIES: CategoryOption[] = [
@@ -14,36 +16,42 @@ export const TRIAGE_CATEGORIES: CategoryOption[] = [
     label: 'Trapped Persons',
     localHint: 'Na-trap / Natabunan',
     defaultUrgency: 'CRITICAL',
+    icon: 'people-outline',
   },
   {
     id: 'medical-emergency',
     label: 'Medical Emerg.',
     localHint: 'Emerhensya Medikal',
     defaultUrgency: 'CRITICAL',
+    icon: 'medkit-outline',
   },
   {
     id: 'flood-inundation',
     label: 'Flooding',
     localHint: 'Baha / Taas Tubig',
     defaultUrgency: 'HIGH',
+    icon: 'water-outline',
   },
   {
     id: 'structural-collapse',
     label: 'Structural Dmg',
     localHint: 'Guba nga Balay',
     defaultUrgency: 'HIGH',
+    icon: 'home-outline',
   },
   {
     id: 'landslide-hazard',
     label: 'Landslide',
     localHint: 'Dahili sa Yuta',
     defaultUrgency: 'HIGH',
+    icon: 'warning-outline',
   },
   {
     id: 'relief-supplies',
     label: 'Relief Supplies',
     localHint: 'Pagkaon / Tubig',
     defaultUrgency: 'MODERATE',
+    icon: 'cube-outline',
   },
 ];
 

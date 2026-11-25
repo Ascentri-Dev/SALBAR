@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { AmbientHeader } from './src/components/AmbientHeader';
 import { BottomTabBar, MobileTab } from './src/components/BottomTabBar';
 import { SplashScreen } from './src/components/SplashScreen';
 import { getReportCounts, listReports } from './src/db/reportsRepository';
@@ -45,14 +44,12 @@ function SalbarMobileShell() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.bgSurface }]}
+      style={[styles.safeArea, { backgroundColor: colors.bgBase }]}
       edges={['top', 'bottom']}
     >
       <StatusBar style={splashVisible || isDark ? 'light' : 'dark'} />
 
       <View style={[styles.appBody, { backgroundColor: colors.bgBase }]}>
-        <AmbientHeader />
-
         <View style={styles.screenContainer}>
           {activeTab === 'report' ? (
             <ReportScreen

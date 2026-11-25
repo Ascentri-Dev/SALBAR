@@ -1,4 +1,5 @@
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/ThemeContext';
 import { EMERGENCY_COLORS, RADII } from '../theme/tokens';
@@ -21,6 +22,98 @@ const TAB_ITEMS: {
   { id: 'guide', label: 'Guide', icon: 'book-outline' },
 ];
 
+const CHAR_HEIGHT = 16;
+
+interface StaggeredTextProps {
+  text: string;
+  isActive: boolean;
+  inactiveColor: string;
+  activeColor: string;
+}
+
+/**
+ * 1-to-1 React Native port of the web dashboard's StaggeredText letter-flip animation.
+ */
+function StaggeredText({ text, isActive, inactiveColor, activeColor }: StaggeredTextProps) {
+  const characters = text.split('');
+
+  return (
+    <View style={styles.staggerRow}>
+      {characters.map((char, index) => (
+        <StaggeredChar
+          key={`${text}-${index}`}
+          char={char}
+          index={index}
+          isActive={isActive}
+          inactiveColor={inactiveColor}
+          activeColor={activeColor}
+        />
+      ))}
+    </View>
+  );
+}
+
+function StaggeredChar({
+  char,
+  index,
+  isActive,
+  inactiveColor,
+  activeColor,
+}: {
+  char: string;
+  index: number;
+  isActive: boolean;
+  inactiveColor: string;
+  activeColor: string;
+}) {
+  const progress = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: isActive ? 1 : 0,
+      duration: 360,
+      delay: index * 22,
+      easing: Easing.bezier(0.76, 0, 0.24, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [isActive, index, progress]);
+
+  const topTranslateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -CHAR_HEIGHT],
+  });
+
+  const bottomTranslateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [CHAR_HEIGHT, 0],
+  });
+
+  const displayChar = char === ' ' ? '\u00A0' : char;
+
+  return (
+    <View style={styles.charBox}>
+      <Animated.Text
+        style={[
+          styles.charText,
+          { color: inactiveColor, transform: [{ translateY: topTranslateY }] },
+        ]}
+      >
+        {displayChar}
+      </Animated.Text>
+      <Animated.Text
+        style={[
+          styles.charText,
+          styles.charOverlay,
+          styles.charTextActive,
+          { color: activeColor, transform: [{ translateY: bottomTranslateY }] },
+        ]}
+      >
+        {displayChar}
+      </Animated.Text>
+    </View>
+  );
+}
+
 export function BottomTabBar({
   activeTab,
   pendingCount,
@@ -42,28 +135,25 @@ export function BottomTabBar({
       >
         {TAB_ITEMS.map((tab) => {
           const active = tab.id === activeTab;
-          const itemColor = active ? colors.accentPrimary : colors.textSecondary;
+          const iconColor = active ? colors.accentPrimary : colors.textSecondary;
           const showBadge = tab.id === 'outbox' && pendingCount > 0;
 
           return (
             <Pressable
               key={tab.id}
               onPress={() => onSelectTab(tab.id)}
-              style={[
+              style={({ pressed }) => [
                 styles.tabItem,
-                active && { backgroundColor: colors.accentSubtle },
+                pressed && styles.tabPressed,
               ]}
             >
-              <Ionicons name={tab.icon} size={16} color={itemColor} />
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: itemColor },
-                  active && styles.tabTextActive,
-                ]}
-              >
-                {tab.label}
-              </Text>
+              <Ionicons name={tab.icon} size={16} color={iconColor} />
+              <StaggeredText
+                text={tab.label}
+                isActive={active}
+                inactiveColor={colors.textPrimary}
+                activeColor={colors.accentPrimary}
+              />
               {showBadge ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{pendingCount}</Text>
@@ -92,8 +182,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: RADII.pill,
     borderWidth: 1,
-    padding: 6,
-    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    gap: 4,
     ...Platform.select({
       android: { elevation: 12 },
       ios: {
@@ -111,16 +202,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
+    gap: 7,
+    paddingHorizontal: 8,
   },
-  tabText: {
+  tabPressed: {
+    transform: [{ scale: 0.95 }],
+  },
+  staggerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  charBox: {
+    height: CHAR_HEIGHT,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  charText: {
     fontSize: 11,
+    lineHeight: CHAR_HEIGHT,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
-  tabTextActive: {
+  charOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  charTextActive: {
     fontWeight: '800',
   },
   badge: {

@@ -3,6 +3,7 @@ import {
   Alert,
   Animated,
   Easing,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -47,6 +48,16 @@ function hexToRgba(hex: string, alpha: number): string {
   const g = parseInt(clean.slice(2, 4), 16);
   const b = parseInt(clean.slice(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function formatFullDateTime(ms: number): string {
+  const d = new Date(ms);
+  const dateStr = d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  return `${dateStr} • ${formatTimestamp(ms)}`;
 }
 
 function getSyncMeta(status: SyncStatus): { label: string; color: string } {
@@ -411,19 +422,9 @@ export function OutboxScreen({
                   <Text style={[styles.reportCategory, { color: colors.textPrimary }]}>
                     {getCategoryLabel(report.category)}
                   </Text>
-                  <View
-                    style={[
-                      styles.softBadge,
-                      {
-                        backgroundColor: hexToRgba(urgencyColor, 0.14),
-                        borderColor: hexToRgba(urgencyColor, 0.32),
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.softBadgeText, { color: urgencyColor }]}>
-                      {report.urgency}
-                    </Text>
-                  </View>
+                  <Text style={[styles.severityText, { color: urgencyColor }]}>
+                    {report.urgency}
+                  </Text>
                 </View>
 
                 <Text style={[styles.reportMetaLine, { color: colors.textSecondary }]}>
@@ -448,19 +449,11 @@ export function OutboxScreen({
                       ? `${report.lat.toFixed(4)}, ${report.lng.toFixed(4)}`
                       : 'NO GPS FIX'}
                   </Text>
-                  <View
-                    style={[
-                      styles.softBadge,
-                      {
-                        backgroundColor: hexToRgba(syncMeta.color, 0.12),
-                        borderColor: hexToRgba(syncMeta.color, 0.3),
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.softBadgeText, { color: syncMeta.color }]}>
+                  {report.syncStatus !== 'PENDING_LOCAL' ? (
+                    <Text style={[styles.syncPlainText, { color: syncMeta.color }]}>
                       {syncMeta.label}
                     </Text>
-                  </View>
+                  ) : null}
                 </View>
               </Pressable>
             );
@@ -494,44 +487,40 @@ export function OutboxScreen({
                   </Text>
                 </View>
 
-                <View style={styles.modalTopRight}>
-                  <View
-                    style={[
-                      styles.softBadge,
-                      {
-                        backgroundColor: hexToRgba(getUrgencyColor(selectedReport.urgency), 0.15),
-                        borderColor: hexToRgba(getUrgencyColor(selectedReport.urgency), 0.35),
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.softBadgeText,
-                        { color: getUrgencyColor(selectedReport.urgency) },
-                      ]}
-                    >
-                      {selectedReport.urgency}
-                    </Text>
-                  </View>
-
-                  <Pressable
-                    onPress={() => setSelectedReport(null)}
-                    accessibilityLabel="Close report details"
-                    style={({ pressed }) => [
-                      styles.modalCloseIconBtn,
-                      {
-                        backgroundColor: colors.bgSurfaceElevated,
-                        borderColor: colors.borderSubtle,
-                        transform: [{ scale: pressed ? 0.92 : 1 }],
-                      },
-                    ]}
-                  >
-                    <Ionicons name="close" size={18} color={colors.textPrimary} />
-                  </Pressable>
-                </View>
+                <Pressable
+                  onPress={() => setSelectedReport(null)}
+                  accessibilityLabel="Close report details"
+                  style={({ pressed }) => [
+                    styles.modalCloseIconBtn,
+                    {
+                      backgroundColor: colors.bgSurfaceElevated,
+                      borderColor: colors.borderSubtle,
+                      transform: [{ scale: pressed ? 0.92 : 1 }],
+                    },
+                  ]}
+                >
+                  <Ionicons name="close" size={18} color={colors.textPrimary} />
+                </Pressable>
               </View>
 
               <View style={styles.modalMetricsRow}>
+                <View
+                  style={[
+                    styles.modalMetricBox,
+                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>SEVERITY</Text>
+                  <Text
+                    style={[
+                      styles.metricValue,
+                      { color: getUrgencyColor(selectedReport.urgency) },
+                    ]}
+                  >
+                    {selectedReport.urgency}
+                  </Text>
+                </View>
+
                 <View
                   style={[
                     styles.modalMetricBox,
@@ -548,22 +537,64 @@ export function OutboxScreen({
                     {getSyncMeta(selectedReport.syncStatus).label}
                   </Text>
                 </View>
+              </View>
 
-                <View
-                  style={[
-                    styles.modalMetricBox,
-                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-                  ]}
-                >
-                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                    GPS & TIME
-                  </Text>
-                  <Text style={[styles.metricMono, { color: colors.textPrimary }]} numberOfLines={1}>
-                    {formatTimestamp(selectedReport.createdAtUtc)} •{' '}
-                    {selectedReport.lat !== 0
-                      ? `${selectedReport.lat.toFixed(4)}, ${selectedReport.lng.toFixed(4)}`
-                      : 'NO FIX'}
-                  </Text>
+              <View
+                style={[
+                  styles.modalMetaCard,
+                  { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                ]}
+              >
+                <View style={styles.metaSplitRow}>
+                  <View style={styles.metaCol}>
+                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                      CAPTURED TIME
+                    </Text>
+                    <Text style={[styles.metricMono, { color: colors.textPrimary }]}>
+                      {formatFullDateTime(selectedReport.createdAtUtc)}
+                    </Text>
+                  </View>
+                  <View style={styles.metaColRight}>
+                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                      AFFECTED
+                    </Text>
+                    <Text style={[styles.metricMono, { color: colors.textPrimary }]}>
+                      {selectedReport.victimCount}{' '}
+                      {selectedReport.victimCount === 1 ? 'person' : 'people'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.metaDivider, { backgroundColor: colors.borderSubtle }]} />
+
+                <View style={styles.gpsRow}>
+                  <View style={styles.metaCol}>
+                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                      GPS COORDINATES
+                    </Text>
+                    <Text style={[styles.metricMono, { color: EMERGENCY_COLORS.telemetry }]}>
+                      {selectedReport.lat !== 0 || selectedReport.lng !== 0
+                        ? `${selectedReport.lat.toFixed(5)}, ${selectedReport.lng.toFixed(5)} (+/-${Math.round(selectedReport.accuracyMeters)}m)`
+                        : 'No GPS fix recorded'}
+                    </Text>
+                  </View>
+                  {selectedReport.lat !== 0 || selectedReport.lng !== 0 ? (
+                    <Pressable
+                      onPress={() => {
+                        const url = `geo:${selectedReport.lat},${selectedReport.lng}?q=${selectedReport.lat},${selectedReport.lng}`;
+                        void Linking.openURL(url);
+                      }}
+                      style={[
+                        styles.mapLinkBtn,
+                        { backgroundColor: colors.bgSurfaceElevated, borderColor: colors.borderSubtle },
+                      ]}
+                    >
+                      <Ionicons name="map-outline" size={14} color={colors.textPrimary} />
+                      <Text style={[styles.mapLinkText, { color: colors.textPrimary }]}>
+                        Maps
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               </View>
 
@@ -790,16 +821,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
   },
-  softBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
+  severityText: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.6,
   },
-  softBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+  syncPlainText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   reportMetaLine: {
     fontSize: 11,
@@ -829,10 +858,11 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   modalCard: {
+    maxHeight: '86%',
     borderRadius: RADII.card,
     borderWidth: 1,
     padding: 20,
-    gap: 14,
+    gap: 12,
   },
   modalHeroRow: {
     flexDirection: 'row',
@@ -892,13 +922,55 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   modalNotesBox: {
+    flexShrink: 1,
     borderRadius: RADII.control,
     borderWidth: 1,
     padding: 12,
     gap: 6,
   },
   modalNotesScroll: {
-    maxHeight: 110,
+    maxHeight: 150,
+  },
+  modalMetaCard: {
+    borderRadius: RADII.control,
+    borderWidth: 1,
+    padding: 12,
+    gap: 10,
+  },
+  metaSplitRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  metaCol: {
+    flex: 1,
+    gap: 3,
+  },
+  metaColRight: {
+    alignItems: 'flex-end',
+    gap: 3,
+  },
+  metaDivider: {
+    height: 1,
+  },
+  gpsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  mapLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
+  },
+  mapLinkText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   modalNotesText: {
     fontSize: 13,

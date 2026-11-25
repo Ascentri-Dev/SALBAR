@@ -15,9 +15,11 @@ import * as Haptics from 'expo-haptics';
 import {
   CategoryOption,
   getCategoryLabel,
+  getCategoryOption,
   getUrgencyColor,
   TRIAGE_CATEGORIES,
   URGENCY_OPTIONS,
+  UrgencyOption,
 } from '../constants/triage';
 import { createReport } from '../db/reportsRepository';
 import { useAppTheme } from '../theme/ThemeContext';
@@ -38,20 +40,21 @@ const STAGE_LABELS: { step: ReportStage; title: string }[] = [
   { step: 3, title: 'Confirm' },
 ];
 
-interface EmergencyTileProps {
-  item: CategoryOption;
-  onPress: () => void;
-}
-
-function EmergencyTile({ item, onPress }: EmergencyTileProps) {
-  const { colors } = useAppTheme();
+/**
+ * Stage 1 Tile: Unique color-coded identity container (no icon), crisp header + subheading,
+ * and tactile spring scale + zoom-in press feedback.
+ */
+function EmergencyTile({ item, onPress }: { item: CategoryOption; onPress: () => void }) {
+  const { colors, isDark } = useAppTheme();
   const pressAnim = useRef(new Animated.Value(0)).current;
+
+  const baseTint = isDark ? item.tintDark : item.tintLight;
 
   const handlePressIn = () => {
     Animated.spring(pressAnim, {
       toValue: 1,
-      friction: 7,
-      tension: 140,
+      friction: 6,
+      tension: 160,
       useNativeDriver: false,
     }).start();
   };
@@ -67,22 +70,17 @@ function EmergencyTile({ item, onPress }: EmergencyTileProps) {
 
   const scale = pressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 0.94],
+    outputRange: [1, 0.93],
   });
 
   const borderColor = pressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.borderSubtle, colors.accentPrimary],
+    outputRange: [item.accentColor, colors.textPrimary],
   });
 
-  const backgroundColor = pressAnim.interpolate({
+  const barWidth = pressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.bgSurface, colors.accentSubtle],
-  });
-
-  const iconScale = pressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.12],
+    outputRange: ['28%', '100%'],
   });
 
   return (
@@ -96,27 +94,152 @@ function EmergencyTile({ item, onPress }: EmergencyTileProps) {
         style={[
           styles.gridTile,
           {
-            backgroundColor,
+            backgroundColor: colors.bgSurface,
             borderColor,
             transform: [{ scale }],
           },
         ]}
       >
-        <Animated.View
-          style={[
-            styles.iconCircle,
-            {
-              backgroundColor: colors.bgSurfaceElevated,
-              transform: [{ scale: iconScale }],
-            },
-          ]}
-        >
-          <Ionicons name={item.icon} size={26} color={colors.accentPrimary} />
-        </Animated.View>
-        <Text style={[styles.tileLabel, { color: colors.textPrimary }]}>{item.label}</Text>
-        <Text style={[styles.tileHint, { color: colors.textSecondary }]}>{item.localHint}</Text>
+        {/* Subtle category identity tint layer */}
+        <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+
+        {/* Top Tag Pill */}
+        <View style={styles.tileTopRow}>
+          <View style={[styles.tagPill, { backgroundColor: item.accentColor }]}>
+            <Text style={styles.tagPillText}>{item.tag}</Text>
+          </View>
+          <Ionicons name="arrow-forward" size={16} color={item.accentColor} />
+        </View>
+
+        {/* Crisp Header & Subheading */}
+        <View style={styles.tileTextBlock}>
+          <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
+            {item.label}
+          </Text>
+          <Text style={[styles.tileHint, { color: colors.textSecondary }]} numberOfLines={1}>
+            {item.localHint}
+          </Text>
+        </View>
+
+        {/* Bottom Identity Accent Bar */}
+        <View style={[styles.tileAccentTrack, { backgroundColor: colors.borderSubtle }]}>
+          <Animated.View
+            style={[
+              styles.tileAccentBar,
+              { backgroundColor: item.accentColor, width: barWidth },
+            ]}
+          />
+        </View>
       </Animated.View>
     </Pressable>
+  );
+}
+
+/**
+ * Animated Urgency Pill with spring pop on select.
+ */
+function AnimatedUrgencyPill({
+  opt,
+  selected,
+  onPress,
+}: {
+  opt: UrgencyOption;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const { colors } = useAppTheme();
+  const scale = useRef(new Animated.Value(selected ? 1.03 : 1)).current;
+
+  useEffect(() => {
+    Animated.spring(scale, {
+      toValue: selected ? 1.04 : 1,
+      friction: 5,
+      tension: 160,
+      useNativeDriver: true,
+    }).start();
+  }, [selected, scale]);
+
+  return (
+    <Pressable
+      onPress={() => {
+        Animated.sequence([
+          Animated.timing(scale, {
+            toValue: 0.9,
+            duration: 70,
+            useNativeDriver: true,
+          }),
+          Animated.spring(scale, {
+            toValue: 1.04,
+            friction: 5,
+            tension: 160,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        onPress();
+      }}
+      style={styles.urgencyPillWrap}
+    >
+      <Animated.View
+        style={[
+          styles.urgencyPill,
+          {
+            backgroundColor: selected ? opt.color : colors.bgSurface,
+            borderColor: selected ? opt.color : colors.borderSubtle,
+            transform: [{ scale }],
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.urgencyText,
+            { color: selected ? '#FFFFFF' : colors.textSecondary },
+          ]}
+        >
+          {opt.label}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+/**
+ * Animated Arrow Connector between progress stages (Type ---> Details ---> Confirm)
+ */
+function ArrowConnector({ filled }: { filled: boolean }) {
+  const { colors } = useAppTheme();
+  const fillAnim = useRef(new Animated.Value(filled ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(fillAnim, {
+      toValue: filled ? 1 : 0,
+      duration: 360,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      useNativeDriver: false,
+    }).start();
+  }, [filled, fillAnim]);
+
+  const shaftWidth = fillAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
+  return (
+    <View style={styles.arrowConnector}>
+      <View style={[styles.arrowShaftTrack, { backgroundColor: colors.borderSubtle }]}>
+        <Animated.View
+          style={[
+            styles.arrowShaftFill,
+            { backgroundColor: colors.accentPrimary, width: shaftWidth },
+          ]}
+        />
+      </View>
+      <Ionicons
+        name="chevron-forward"
+        size={15}
+        color={filled ? colors.accentPrimary : colors.textMuted}
+        style={styles.arrowHead}
+      />
+    </View>
   );
 }
 
@@ -128,22 +251,25 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
   const [victimCount, setVictimCount] = useState(1);
   const [rawText, setRawText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [notesFocused, setNotesFocused] = useState(false);
 
   const prevStageRef = useRef<ReportStage>(1);
   const stageFade = useRef(new Animated.Value(1)).current;
-  const stageSlide = useRef(new Animated.Value(0)).current;
-  const progressAnim = useRef(new Animated.Value(1 / 3)).current;
+  const stageScale = useRef(new Animated.Value(1)).current;
+  const countBounce = useRef(new Animated.Value(1)).current;
+  const notesBorderAnim = useRef(new Animated.Value(0)).current;
 
   const byteCount = getUtf8ByteLength(rawText);
-  const selectedCategoryObj = TRIAGE_CATEGORIES.find((c) => c.id === category);
+  const selectedCategoryObj = getCategoryOption(category);
 
   const goToStage = (nextStage: ReportStage) => {
-    const direction = nextStage >= prevStageRef.current ? 1 : -1;
+    const isForward = nextStage >= prevStageRef.current;
     prevStageRef.current = nextStage;
     setStage(nextStage);
 
+    // Dynamic "door-open / zoom-in" transition
     stageFade.setValue(0);
-    stageSlide.setValue(direction * 28);
+    stageScale.setValue(isForward ? 0.86 : 1.08);
 
     Animated.parallel([
       Animated.timing(stageFade, {
@@ -152,24 +278,39 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(stageSlide, {
-        toValue: 0,
-        duration: 260,
-        easing: Easing.out(Easing.cubic),
+      Animated.spring(stageScale, {
+        toValue: 1,
+        friction: 7,
+        tension: 95,
         useNativeDriver: true,
-      }),
-      Animated.timing(progressAnim, {
-        toValue: nextStage / 3,
-        duration: 380,
-        easing: Easing.bezier(0.22, 1, 0.36, 1),
-        useNativeDriver: false,
       }),
     ]).start();
   };
 
+  const bumpVictimCount = (delta: number) => {
+    setVictimCount((v) => Math.max(0, Math.min(99, v + delta)));
+    void Haptics.selectionAsync();
+    countBounce.setValue(1.3);
+    Animated.spring(countBounce, {
+      toValue: 1,
+      friction: 5,
+      tension: 180,
+      useNativeDriver: true,
+    }).start();
+  };
+
   useEffect(() => {
-    progressAnim.setValue(stage / 3);
-  }, []);
+    Animated.timing(notesBorderAnim, {
+      toValue: notesFocused ? 1 : 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [notesFocused, notesBorderAnim]);
+
+  const notesBorderColor = notesBorderAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.borderSubtle, colors.accentPrimary],
+  });
 
   const handleSelectCategory = (selected: IncidentCategory, defaultUrgency: IncidentUrgency) => {
     setCategory(selected);
@@ -212,11 +353,6 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
     }
   };
 
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
-
   return (
     <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
       <Animated.View
@@ -224,11 +360,11 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
           styles.stageAnimatedBody,
           {
             opacity: stageFade,
-            transform: [{ translateX: stageSlide }],
+            transform: [{ scale: stageScale }],
           },
         ]}
       >
-        {/* STAGE 1: 3x2 Emergency Type Grid */}
+        {/* STAGE 1: 3x2 Unique Identity Emergency Type Grid */}
         {stage === 1 ? (
           <View style={styles.stageOneContainer}>
             <View style={styles.headerBlock}>
@@ -236,7 +372,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                 Emergency Type
               </Text>
               <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
-                Tap and hold or press a hazard to begin
+                Select a hazard card to open report details
               </Text>
             </View>
 
@@ -252,7 +388,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
           </View>
         ) : null}
 
-        {/* STAGE 2: Urgency Level + Situation Details (fills full height) */}
+        {/* STAGE 2: Urgency Level + Situation Details */}
         {stage === 2 ? (
           <ScrollView
             style={styles.scrollStage}
@@ -263,18 +399,25 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               <View style={styles.stageHeaderRow}>
                 <Pressable
                   onPress={() => goToStage(1)}
-                  style={[
+                  style={({ pressed }) => [
                     styles.backBtn,
-                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    {
+                      backgroundColor: colors.bgSurface,
+                      borderColor: colors.borderSubtle,
+                      transform: [{ scale: pressed ? 0.94 : 1 }],
+                    },
                   ]}
                 >
                   <Ionicons name="arrow-back" size={16} color={colors.textPrimary} />
                   <Text style={[styles.backText, { color: colors.textPrimary }]}>Back</Text>
                 </Pressable>
-                <View style={[styles.selectedChip, { backgroundColor: colors.accentSubtle }]}>
-                  <Text style={[styles.selectedChipText, { color: colors.accentPrimary }]}>
-                    {getCategoryLabel(category)}
-                  </Text>
+                <View
+                  style={[
+                    styles.selectedChip,
+                    { backgroundColor: selectedCategoryObj.accentColor },
+                  ]}
+                >
+                  <Text style={styles.selectedChipText}>{selectedCategoryObj.label}</Text>
                 </View>
               </View>
 
@@ -289,34 +432,17 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
 
               <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>Urgency Level</Text>
               <View style={styles.urgencyRow}>
-                {URGENCY_OPTIONS.map((opt) => {
-                  const selected = opt.id === urgency;
-                  return (
-                    <Pressable
-                      key={opt.id}
-                      onPress={() => {
-                        setUrgency(opt.id);
-                        void Haptics.selectionAsync();
-                      }}
-                      style={[
-                        styles.urgencyPill,
-                        {
-                          backgroundColor: selected ? opt.color : colors.bgSurface,
-                          borderColor: selected ? opt.color : colors.borderSubtle,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.urgencyText,
-                          { color: selected ? '#FFFFFF' : colors.textSecondary },
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+                {URGENCY_OPTIONS.map((opt) => (
+                  <AnimatedUrgencyPill
+                    key={opt.id}
+                    opt={opt}
+                    selected={opt.id === urgency}
+                    onPress={() => {
+                      setUrgency(opt.id);
+                      void Haptics.selectionAsync();
+                    }}
+                  />
+                ))}
               </View>
 
               <View
@@ -335,27 +461,34 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                 </View>
                 <View style={styles.stepperControls}>
                   <Pressable
-                    onPress={() => setVictimCount((v) => Math.max(0, v - 1))}
-                    style={[
+                    onPress={() => bumpVictimCount(-1)}
+                    style={({ pressed }) => [
                       styles.stepBtn,
                       {
                         backgroundColor: colors.bgSurfaceElevated,
                         borderColor: colors.borderSubtle,
+                        transform: [{ scale: pressed ? 0.88 : 1 }],
                       },
                     ]}
                   >
                     <Text style={[styles.stepBtnText, { color: colors.textPrimary }]}>-</Text>
                   </Pressable>
-                  <Text style={[styles.stepValue, { color: colors.textPrimary }]}>
-                    {victimCount}
-                  </Text>
-                  <Pressable
-                    onPress={() => setVictimCount((v) => Math.min(99, v + 1))}
+                  <Animated.Text
                     style={[
+                      styles.stepValue,
+                      { color: colors.textPrimary, transform: [{ scale: countBounce }] },
+                    ]}
+                  >
+                    {victimCount}
+                  </Animated.Text>
+                  <Pressable
+                    onPress={() => bumpVictimCount(1)}
+                    style={({ pressed }) => [
                       styles.stepBtn,
                       {
                         backgroundColor: colors.bgSurfaceElevated,
                         borderColor: colors.borderSubtle,
+                        transform: [{ scale: pressed ? 0.88 : 1 }],
                       },
                     ]}
                   >
@@ -384,27 +517,41 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                   </Text>
                 </View>
 
-                <TextInput
-                  multiline
-                  value={rawText}
-                  onChangeText={handleTextChange}
-                  placeholder="Describe landmark or urgent need (e.g., Naay natabunan sa Sitio Riverside)..."
-                  placeholderTextColor={colors.textMuted}
+                <Animated.View
                   style={[
-                    styles.textAreaFill,
+                    styles.textAreaContainer,
                     {
                       backgroundColor: colors.bgSurface,
-                      borderColor: colors.borderSubtle,
-                      color: colors.textPrimary,
+                      borderColor: notesBorderColor,
                     },
                   ]}
-                />
+                >
+                  <TextInput
+                    multiline
+                    value={rawText}
+                    onChangeText={handleTextChange}
+                    onFocus={() => setNotesFocused(true)}
+                    onBlur={() => setNotesFocused(false)}
+                    placeholder="Describe landmark or urgent need (e.g., Naay natabunan sa Sitio Riverside)..."
+                    placeholderTextColor={colors.textMuted}
+                    style={[styles.textAreaFill, { color: colors.textPrimary }]}
+                  />
+                </Animated.View>
               </View>
             </View>
 
             <Pressable
-              onPress={() => goToStage(3)}
-              style={[styles.primaryCta, { backgroundColor: colors.accentPrimary }]}
+              onPress={() => {
+                void Haptics.selectionAsync();
+                goToStage(3);
+              }}
+              style={({ pressed }) => [
+                styles.primaryCta,
+                {
+                  backgroundColor: colors.accentPrimary,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                },
+              ]}
             >
               <Text style={styles.primaryCtaText}>REVIEW & CONFIRM</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
@@ -412,16 +559,20 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
           </ScrollView>
         ) : null}
 
-        {/* STAGE 3: Confirmation (fills full height) */}
+        {/* STAGE 3: Confirmation */}
         {stage === 3 ? (
           <ScrollView style={styles.scrollStage} contentContainerStyle={styles.scrollFillContent}>
             <View style={styles.topSection}>
               <View style={styles.stageHeaderRow}>
                 <Pressable
                   onPress={() => goToStage(2)}
-                  style={[
+                  style={({ pressed }) => [
                     styles.backBtn,
-                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    {
+                      backgroundColor: colors.bgSurface,
+                      borderColor: colors.borderSubtle,
+                      transform: [{ scale: pressed ? 0.94 : 1 }],
+                    },
                   ]}
                 >
                   <Ionicons name="arrow-back" size={16} color={colors.textPrimary} />
@@ -448,17 +599,13 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                   <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>
                     Emergency Type
                   </Text>
-                  <View style={styles.summaryValueRow}>
-                    {selectedCategoryObj ? (
-                      <Ionicons
-                        name={selectedCategoryObj.icon}
-                        size={17}
-                        color={colors.accentPrimary}
-                      />
-                    ) : null}
-                    <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
-                      {getCategoryLabel(category)}
-                    </Text>
+                  <View
+                    style={[
+                      styles.summaryCatPill,
+                      { backgroundColor: selectedCategoryObj.accentColor },
+                    ]}
+                  >
+                    <Text style={styles.summaryCatText}>{getCategoryLabel(category)}</Text>
                   </View>
                 </View>
 
@@ -515,7 +662,11 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                   { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
                 ]}
               >
-                <Ionicons name="shield-checkmark-outline" size={18} color={EMERGENCY_COLORS.success} />
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={18}
+                  color={EMERGENCY_COLORS.success}
+                />
                 <Text style={[styles.offlineNoticeText, { color: colors.textSecondary }]}>
                   Saved safely to your phone immediately, then sent via Cloud Relay or BLE when a
                   responder is nearby.
@@ -526,9 +677,13 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
             <Pressable
               onPress={handleSubmit}
               disabled={submitting}
-              style={[
+              style={({ pressed }) => [
                 styles.primaryCta,
-                { backgroundColor: colors.accentPrimary, opacity: submitting ? 0.7 : 1 },
+                {
+                  backgroundColor: colors.accentPrimary,
+                  opacity: submitting ? 0.7 : 1,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                },
               ]}
             >
               <Ionicons name="send" size={17} color="#FFFFFF" />
@@ -540,65 +695,57 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
         ) : null}
       </Animated.View>
 
-      {/* Smoothly Animated Bottom 3-Stage Progress Indicator */}
-      <View style={styles.progressContainer}>
-        <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
-          <Animated.View
-            style={[
-              styles.progressFill,
-              {
-                backgroundColor: colors.accentPrimary,
-                width: progressWidth,
-              },
-            ]}
-          />
-        </View>
-        <View style={styles.stepsRow}>
-          {STAGE_LABELS.map((s) => {
-            const active = s.step === stage;
-            const completed = s.step < stage;
-            return (
+      {/* Animated Arrow Flow Progress Bar: Type ---> Details ---> Confirm */}
+      <View style={styles.arrowBarContainer}>
+        {STAGE_LABELS.map((s, idx) => {
+          const active = s.step === stage;
+          const completed = s.step < stage;
+          const highlighted = active || completed;
+          const isLast = idx === STAGE_LABELS.length - 1;
+          return (
+            <View
+              key={s.step}
+              style={isLast ? styles.arrowBarSegmentEnd : styles.arrowBarSegment}
+            >
               <Pressable
-                key={s.step}
                 disabled={s.step > stage}
                 onPress={() => {
                   if (s.step < stage) goToStage(s.step);
                 }}
-                style={styles.stepIndicator}
+                style={[
+                  styles.stagePill,
+                  {
+                    backgroundColor: active
+                      ? colors.accentPrimary
+                      : completed
+                        ? colors.accentSubtle
+                        : colors.bgSurface,
+                    borderColor: highlighted ? colors.accentPrimary : colors.borderSubtle,
+                  },
+                ]}
               >
-                <View
-                  style={[
-                    styles.stepDot,
-                    {
-                      backgroundColor:
-                        active || completed ? colors.accentPrimary : colors.borderSubtle,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepDotText,
-                      { color: active || completed ? '#FFFFFF' : colors.textSecondary },
-                    ]}
-                  >
-                    {s.step}
-                  </Text>
-                </View>
                 <Text
                   style={[
-                    styles.stepLabel,
+                    styles.stagePillText,
                     {
-                      color: active ? colors.accentPrimary : colors.textSecondary,
-                      fontWeight: active ? '800' : '600',
+                      color: active
+                        ? '#FFFFFF'
+                        : completed
+                          ? colors.accentPrimary
+                          : colors.textSecondary,
                     },
                   ]}
                 >
-                  {s.title}
+                  {completed ? `✓ ${s.title}` : s.title}
                 </Text>
               </Pressable>
-            );
-          })}
-        </View>
+
+              {idx < STAGE_LABELS.length - 1 ? (
+                <ArrowConnector filled={stage > s.step} />
+              ) : null}
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -647,27 +794,52 @@ const styles = StyleSheet.create({
     borderRadius: RADII.card,
     borderWidth: 1.5,
     padding: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
   },
-  iconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  tileTintOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
+  tileTopRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
+    justifyContent: 'space-between',
+  },
+  tagPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADII.pill,
+  },
+  tagPillText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.7,
+  },
+  tileTextBlock: {
+    gap: 3,
   },
   tileLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
   tileHint: {
-    fontSize: 11,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  tileAccentTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  tileAccentBar: {
+    height: '100%',
+    borderRadius: 2,
   },
   scrollStage: {
     flex: 1,
@@ -708,6 +880,7 @@ const styles = StyleSheet.create({
     borderRadius: RADII.pill,
   },
   selectedChipText: {
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -720,8 +893,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  urgencyPill: {
+  urgencyPillWrap: {
     flex: 1,
+  },
+  urgencyPill: {
     minHeight: 46,
     borderRadius: RADII.pill,
     borderWidth: 1,
@@ -766,9 +941,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   stepValue: {
-    minWidth: 24,
+    minWidth: 26,
     textAlign: 'center',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
@@ -786,11 +961,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
-  textAreaFill: {
+  textAreaContainer: {
     flex: 1,
     minHeight: 110,
     borderRadius: RADII.card,
-    borderWidth: 1,
+    borderWidth: 1.5,
+  },
+  textAreaFill: {
+    flex: 1,
     padding: 16,
     fontSize: 14,
     textAlignVertical: 'top',
@@ -811,10 +989,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  summaryValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  summaryCatPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: RADII.pill,
+  },
+  summaryCatText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
   },
   summaryVal: {
     fontSize: 14,
@@ -872,44 +1055,51 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.7,
   },
-  progressContainer: {
-    paddingHorizontal: 20,
+  arrowBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
     paddingTop: 6,
     paddingBottom: 6,
-    gap: 8,
   },
-  progressTrack: {
-    height: 5,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  stepsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  stepIndicator: {
+  arrowBarSegment: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
   },
-  stepDot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  arrowBarSegmentEnd: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  stepDotText: {
+  stagePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
+  },
+  stagePillText: {
     fontSize: 11,
     fontWeight: '800',
-  },
-  stepLabel: {
-    fontSize: 11,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+  },
+  arrowConnector: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  arrowShaftTrack: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  arrowShaftFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  arrowHead: {
+    marginLeft: -4,
   },
 });

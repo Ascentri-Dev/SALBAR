@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { BottomTabBar, MobileTab } from './src/components/BottomTabBar';
@@ -21,6 +21,12 @@ const EMPTY_COUNTS: ReportCounts = {
   total: 0,
 };
 
+const TAB_ORDER: Record<MobileTab, number> = {
+  report: 0,
+  outbox: 1,
+  guide: 2,
+};
+
 function SalbarMobileShell() {
   const { colors, isDark } = useAppTheme();
   const { reading: gps, refreshPermission } = useLocationStatus();
@@ -31,6 +37,10 @@ function SalbarMobileShell() {
   const [counts, setCounts] = useState<ReportCounts>(EMPTY_COUNTS);
   const [dbReady, setDbReady] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
+
+  const prevTabRef = useRef<MobileTab>('report');
+  const tabFade = useRef(new Animated.Value(1)).current;
+  const tabSlide = useRef(new Animated.Value(0)).current;
 
   const refreshOutbox = useCallback(async () => {
     const [allReports, summary] = await Promise.all([listReports(), getReportCounts()]);
@@ -43,6 +53,34 @@ function SalbarMobileShell() {
     void refreshOutbox();
   }, [refreshOutbox]);
 
+  const handleSelectTab = useCallback(
+    (nextTab: MobileTab) => {
+      if (nextTab === activeTab) return;
+      const direction = TAB_ORDER[nextTab] > TAB_ORDER[activeTab] ? 1 : -1;
+      prevTabRef.current = nextTab;
+      setActiveTab(nextTab);
+
+      tabFade.setValue(0);
+      tabSlide.setValue(direction * 24);
+
+      Animated.parallel([
+        Animated.timing(tabFade, {
+          toValue: 1,
+          duration: 210,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(tabSlide, {
+          toValue: 0,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    },
+    [activeTab, tabFade, tabSlide],
+  );
+
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.bgBase }]}
@@ -53,7 +91,15 @@ function SalbarMobileShell() {
       <View style={styles.appBody}>
         <TacticalBackground />
 
-        <View style={styles.screenContainer}>
+        <Animated.View
+          style={[
+            styles.screenContainer,
+            {
+              opacity: tabFade,
+              transform: [{ translateX: tabSlide }],
+            },
+          ]}
+        >
           {activeTab === 'report' ? (
             <ReportScreen
               gps={gps}
@@ -72,7 +118,7 @@ function SalbarMobileShell() {
               onRefresh={() => {
                 void refreshOutbox();
               }}
-              onGoToReport={() => setActiveTab('report')}
+              onGoToReport={() => handleSelectTab('report')}
             />
           ) : null}
 
@@ -86,12 +132,12 @@ function SalbarMobileShell() {
               }}
             />
           ) : null}
-        </View>
+        </Animated.View>
 
         <BottomTabBar
           activeTab={activeTab}
           pendingCount={counts.pending}
-          onSelectTab={setActiveTab}
+          onSelectTab={handleSelectTab}
         />
       </View>
 

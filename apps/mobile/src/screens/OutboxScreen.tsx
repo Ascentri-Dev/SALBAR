@@ -493,23 +493,41 @@ export function OutboxScreen({
                     {getCategoryLabel(selectedReport.category)}
                   </Text>
                 </View>
-                <View
-                  style={[
-                    styles.softBadge,
-                    {
-                      backgroundColor: hexToRgba(getUrgencyColor(selectedReport.urgency), 0.15),
-                      borderColor: hexToRgba(getUrgencyColor(selectedReport.urgency), 0.35),
-                    },
-                  ]}
-                >
-                  <Text
+
+                <View style={styles.modalTopRight}>
+                  <View
                     style={[
-                      styles.softBadgeText,
-                      { color: getUrgencyColor(selectedReport.urgency) },
+                      styles.softBadge,
+                      {
+                        backgroundColor: hexToRgba(getUrgencyColor(selectedReport.urgency), 0.15),
+                        borderColor: hexToRgba(getUrgencyColor(selectedReport.urgency), 0.35),
+                      },
                     ]}
                   >
-                    {selectedReport.urgency}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.softBadgeText,
+                        { color: getUrgencyColor(selectedReport.urgency) },
+                      ]}
+                    >
+                      {selectedReport.urgency}
+                    </Text>
+                  </View>
+
+                  <Pressable
+                    onPress={() => setSelectedReport(null)}
+                    accessibilityLabel="Close report details"
+                    style={({ pressed }) => [
+                      styles.modalCloseIconBtn,
+                      {
+                        backgroundColor: colors.bgSurfaceElevated,
+                        borderColor: colors.borderSubtle,
+                        transform: [{ scale: pressed ? 0.92 : 1 }],
+                      },
+                    ]}
+                  >
+                    <Ionicons name="close" size={18} color={colors.textPrimary} />
+                  </Pressable>
                 </View>
               </View>
 
@@ -570,9 +588,13 @@ export function OutboxScreen({
               <View style={styles.modalActions}>
                 <Pressable
                   onPress={handleDeleteSelected}
-                  style={[
+                  style={({ pressed }) => [
                     styles.modalDeleteBtn,
-                    { borderColor: hexToRgba(EMERGENCY_COLORS.critical, 0.5) },
+                    {
+                      backgroundColor: hexToRgba(EMERGENCY_COLORS.critical, 0.1),
+                      borderColor: hexToRgba(EMERGENCY_COLORS.critical, 0.4),
+                      transform: [{ scale: pressed ? 0.96 : 1 }],
+                    },
                   ]}
                 >
                   <Ionicons name="trash-outline" size={16} color={EMERGENCY_COLORS.critical} />
@@ -588,20 +610,16 @@ export function OutboxScreen({
                       'Automatic Cloud Relay & BLE transfer will be wired in Phase 4.',
                     );
                   }}
-                  style={[styles.modalRetryBtn, { backgroundColor: colors.accentPrimary }]}
+                  style={({ pressed }) => [
+                    styles.modalRetryBtn,
+                    {
+                      backgroundColor: colors.accentPrimary,
+                      transform: [{ scale: pressed ? 0.97 : 1 }],
+                    },
+                  ]}
                 >
                   <Ionicons name="sync-outline" size={16} color="#FFFFFF" />
                   <Text style={styles.modalRetryText}>Retry Sync</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => setSelectedReport(null)}
-                  style={[
-                    styles.modalCloseBtn,
-                    { backgroundColor: colors.bgSurfaceElevated, borderColor: colors.borderSubtle },
-                  ]}
-                >
-                  <Text style={[styles.modalCloseText, { color: colors.textPrimary }]}>Close</Text>
                 </Pressable>
               </View>
             </View>
@@ -826,6 +844,19 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  modalTopRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalCloseIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   modalEyebrow: {
     fontSize: 10,
     fontWeight: '800',
@@ -875,25 +906,26 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
+    marginTop: 2,
   },
   modalDeleteBtn: {
-    minHeight: 46,
-    paddingHorizontal: 14,
+    flex: 1,
+    minHeight: 50,
     borderRadius: RADII.pill,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 6,
   },
   modalDeleteText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   modalRetryBtn: {
-    flex: 1,
-    minHeight: 46,
+    flex: 2,
+    minHeight: 50,
     borderRadius: RADII.pill,
     flexDirection: 'row',
     alignItems: 'center',
@@ -902,19 +934,7 @@ const styles = StyleSheet.create({
   },
   modalRetryText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
-  },
-  modalCloseBtn: {
-    minHeight: 46,
-    paddingHorizontal: 16,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCloseText: {
-    fontSize: 12,
-    fontWeight: '700',
   },
 });

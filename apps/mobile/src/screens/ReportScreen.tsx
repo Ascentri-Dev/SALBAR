@@ -178,16 +178,7 @@ function EmergencyTile({
         <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
         <ContainerTexture texture={item.texture} color={item.accentColor} />
 
-        <View
-          style={[
-            styles.tileTextBlock,
-            {
-              backgroundColor: isDark
-                ? 'rgba(10, 15, 29, 0.60)'
-                : 'rgba(255, 255, 255, 0.76)',
-            },
-          ]}
-        >
+        <View style={styles.tileTextBlock}>
           <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
             {item.label}
           </Text>
@@ -256,7 +247,7 @@ function UrgencyGridCard({
 
         {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
         {isCritical ? (
-          <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.14 : 0.08 }]}>
+          <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
             {[0, 1, 2, 3, 4].map((i) => (
               <View
                 key={i}
@@ -269,33 +260,22 @@ function UrgencyGridCard({
           </View>
         ) : null}
 
-        <View
+        <Text
           style={[
-            styles.urgencyTextScrim,
-            !selected && {
-              backgroundColor: isDark
-                ? 'rgba(10, 15, 29, 0.58)'
-                : 'rgba(255, 255, 255, 0.75)',
-            },
+            styles.urgencyCardLabel,
+            { color: selected ? '#FFFFFF' : colors.textPrimary },
           ]}
         >
-          <Text
-            style={[
-              styles.urgencyCardLabel,
-              { color: selected ? '#FFFFFF' : colors.textPrimary },
-            ]}
-          >
-            {opt.label}
-          </Text>
-          <Text
-            style={[
-              styles.urgencyCardSub,
-              { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
-            ]}
-          >
-            {opt.subtitle}
-          </Text>
-        </View>
+          {opt.label}
+        </Text>
+        <Text
+          style={[
+            styles.urgencyCardSub,
+            { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
+          ]}
+        >
+          {opt.subtitle}
+        </Text>
       </Animated.View>
     </Pressable>
   );
@@ -924,7 +904,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    opacity: 0.08,
+    opacity: 0.14,
   },
   diamondLineA: {
     position: 'absolute',
@@ -1038,17 +1018,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
-  },
-  urgencyTextScrim: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
   },
   tileLabel: {
     fontSize: 17,

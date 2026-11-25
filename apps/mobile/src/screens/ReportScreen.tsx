@@ -3,6 +3,7 @@ import {
   Alert,
   Animated,
   Easing,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +18,7 @@ import {
   getCategoryLabel,
   getCategoryOption,
   getUrgencyColor,
+  TileTexture,
   TRIAGE_CATEGORIES,
   URGENCY_OPTIONS,
   UrgencyOption,
@@ -36,13 +38,77 @@ type ReportStage = 1 | 2 | 3;
 
 const STAGE_LABELS: { step: ReportStage; title: string }[] = [
   { step: 1, title: 'Type' },
-  { step: 2, title: 'Details' },
-  { step: 3, title: 'Confirm' },
+  { step: 2, title: 'Urgency' },
+  { step: 3, title: 'Notes' },
 ];
 
+const VICTIM_PRESETS = [1, 5, 10, 20];
+
 /**
- * Stage 1 Tile: Unique color-coded identity container (no icon), crisp header + subheading,
- * and tactile spring scale + zoom-in press feedback.
+ * Renders subtle geometric background textures unique to each emergency type.
+ */
+function ContainerTexture({ texture, color }: { texture: TileTexture; color: string }) {
+  switch (texture) {
+    case 'stripes':
+      return (
+        <View pointerEvents="none" style={styles.textureLayer}>
+          {[0, 1, 2, 3].map((i) => (
+            <View
+              key={i}
+              style={[
+                styles.stripeLine,
+                {
+                  backgroundColor: color,
+                  right: -20 + i * 22,
+                },
+              ]}
+            />
+          ))}
+        </View>
+      );
+    case 'cross':
+      return (
+        <View pointerEvents="none" style={styles.textureLayer}>
+          <View style={[styles.crossVert, { backgroundColor: color }]} />
+          <View style={[styles.crossHoriz, { backgroundColor: color }]} />
+        </View>
+      );
+    case 'waves':
+      return (
+        <View pointerEvents="none" style={styles.textureLayer}>
+          <View style={[styles.waveRingLg, { borderColor: color }]} />
+          <View style={[styles.waveRingSm, { borderColor: color }]} />
+        </View>
+      );
+    case 'grid':
+      return (
+        <View pointerEvents="none" style={styles.textureLayer}>
+          <View style={[styles.gridLineH1, { backgroundColor: color }]} />
+          <View style={[styles.gridLineH2, { backgroundColor: color }]} />
+          <View style={[styles.gridLineV1, { backgroundColor: color }]} />
+          <View style={[styles.gridLineV2, { backgroundColor: color }]} />
+        </View>
+      );
+    case 'slope':
+      return (
+        <View pointerEvents="none" style={styles.textureLayer}>
+          <View style={[styles.slopeBand1, { backgroundColor: color }]} />
+          <View style={[styles.slopeBand2, { backgroundColor: color }]} />
+        </View>
+      );
+    case 'dots':
+      return (
+        <View pointerEvents="none" style={[styles.textureLayer, styles.dotsCluster]}>
+          {Array.from({ length: 9 }).map((_, idx) => (
+            <View key={idx} style={[styles.dotMatrixItem, { backgroundColor: color }]} />
+          ))}
+        </View>
+      );
+  }
+}
+
+/**
+ * Stage 1 Tile: Pure typography + unique color & geometric texture, zero pills/icons/arrows.
  */
 function EmergencyTile({ item, onPress }: { item: CategoryOption; onPress: () => void }) {
   const { colors, isDark } = useAppTheme();
@@ -70,17 +136,12 @@ function EmergencyTile({ item, onPress }: { item: CategoryOption; onPress: () =>
 
   const scale = pressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 0.93],
+    outputRange: [1, 0.94],
   });
 
   const borderColor = pressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [item.accentColor, colors.textPrimary],
-  });
-
-  const barWidth = pressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['28%', '100%'],
   });
 
   return (
@@ -100,18 +161,9 @@ function EmergencyTile({ item, onPress }: { item: CategoryOption; onPress: () =>
           },
         ]}
       >
-        {/* Subtle category identity tint layer */}
         <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+        <ContainerTexture texture={item.texture} color={item.accentColor} />
 
-        {/* Top Tag Pill */}
-        <View style={styles.tileTopRow}>
-          <View style={[styles.tagPill, { backgroundColor: item.accentColor }]}>
-            <Text style={styles.tagPillText}>{item.tag}</Text>
-          </View>
-          <Ionicons name="arrow-forward" size={16} color={item.accentColor} />
-        </View>
-
-        {/* Crisp Header & Subheading */}
         <View style={styles.tileTextBlock}>
           <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
             {item.label}
@@ -120,25 +172,15 @@ function EmergencyTile({ item, onPress }: { item: CategoryOption; onPress: () =>
             {item.localHint}
           </Text>
         </View>
-
-        {/* Bottom Identity Accent Bar */}
-        <View style={[styles.tileAccentTrack, { backgroundColor: colors.borderSubtle }]}>
-          <Animated.View
-            style={[
-              styles.tileAccentBar,
-              { backgroundColor: item.accentColor, width: barWidth },
-            ]}
-          />
-        </View>
       </Animated.View>
     </Pressable>
   );
 }
 
 /**
- * Animated Urgency Pill with spring pop on select.
+ * 2x2 Urgency Grid Card with spring pop animation.
  */
-function AnimatedUrgencyPill({
+function UrgencyGridCard({
   opt,
   selected,
   onPress,
@@ -148,13 +190,13 @@ function AnimatedUrgencyPill({
   onPress: () => void;
 }) {
   const { colors } = useAppTheme();
-  const scale = useRef(new Animated.Value(selected ? 1.03 : 1)).current;
+  const scale = useRef(new Animated.Value(selected ? 1.02 : 1)).current;
 
   useEffect(() => {
     Animated.spring(scale, {
-      toValue: selected ? 1.04 : 1,
-      friction: 5,
-      tension: 160,
+      toValue: selected ? 1.02 : 1,
+      friction: 6,
+      tension: 150,
       useNativeDriver: true,
     }).start();
   }, [selected, scale]);
@@ -163,13 +205,9 @@ function AnimatedUrgencyPill({
     <Pressable
       onPress={() => {
         Animated.sequence([
-          Animated.timing(scale, {
-            toValue: 0.9,
-            duration: 70,
-            useNativeDriver: true,
-          }),
+          Animated.timing(scale, { toValue: 0.93, duration: 70, useNativeDriver: true }),
           Animated.spring(scale, {
-            toValue: 1.04,
+            toValue: 1.02,
             friction: 5,
             tension: 160,
             useNativeDriver: true,
@@ -177,11 +215,11 @@ function AnimatedUrgencyPill({
         ]).start();
         onPress();
       }}
-      style={styles.urgencyPillWrap}
+      style={styles.urgencyGridWrap}
     >
       <Animated.View
         style={[
-          styles.urgencyPill,
+          styles.urgencyGridCard,
           {
             backgroundColor: selected ? opt.color : colors.bgSurface,
             borderColor: selected ? opt.color : colors.borderSubtle,
@@ -191,11 +229,19 @@ function AnimatedUrgencyPill({
       >
         <Text
           style={[
-            styles.urgencyText,
-            { color: selected ? '#FFFFFF' : colors.textSecondary },
+            styles.urgencyCardLabel,
+            { color: selected ? '#FFFFFF' : opt.color },
           ]}
         >
           {opt.label}
+        </Text>
+        <Text
+          style={[
+            styles.urgencyCardSub,
+            { color: selected ? 'rgba(255,255,255,0.9)' : colors.textSecondary },
+          ]}
+        >
+          {opt.subtitle}
         </Text>
       </Animated.View>
     </Pressable>
@@ -203,7 +249,7 @@ function AnimatedUrgencyPill({
 }
 
 /**
- * Animated Arrow Connector between progress stages (Type ---> Details ---> Confirm)
+ * Animated Arrow Connector: Type ---> Urgency ---> Notes
  */
 function ArrowConnector({ filled }: { filled: boolean }) {
   const { colors } = useAppTheme();
@@ -248,17 +294,18 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
   const [stage, setStage] = useState<ReportStage>(1);
   const [category, setCategory] = useState<IncidentCategory>('trapped-persons');
   const [urgency, setUrgency] = useState<IncidentUrgency>('CRITICAL');
-  const [victimCount, setVictimCount] = useState(1);
+  const [victimCountText, setVictimCountText] = useState('1');
   const [rawText, setRawText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [notesFocused, setNotesFocused] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const prevStageRef = useRef<ReportStage>(1);
   const stageFade = useRef(new Animated.Value(1)).current;
   const stageScale = useRef(new Animated.Value(1)).current;
-  const countBounce = useRef(new Animated.Value(1)).current;
   const notesBorderAnim = useRef(new Animated.Value(0)).current;
 
+  const parsedVictimCount = Math.max(0, Math.min(999, parseInt(victimCountText || '0', 10) || 0));
   const byteCount = getUtf8ByteLength(rawText);
   const selectedCategoryObj = getCategoryOption(category);
 
@@ -267,7 +314,6 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
     prevStageRef.current = nextStage;
     setStage(nextStage);
 
-    // Dynamic "door-open / zoom-in" transition
     stageFade.setValue(0);
     stageScale.setValue(isForward ? 0.86 : 1.08);
 
@@ -287,18 +333,6 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
     ]).start();
   };
 
-  const bumpVictimCount = (delta: number) => {
-    setVictimCount((v) => Math.max(0, Math.min(99, v + delta)));
-    void Haptics.selectionAsync();
-    countBounce.setValue(1.3);
-    Animated.spring(countBounce, {
-      toValue: 1,
-      friction: 5,
-      tension: 180,
-      useNativeDriver: true,
-    }).start();
-  };
-
   useEffect(() => {
     Animated.timing(notesBorderAnim, {
       toValue: notesFocused ? 1 : 0,
@@ -311,6 +345,17 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
     inputRange: [0, 1],
     outputRange: [colors.borderSubtle, colors.accentPrimary],
   });
+
+  const adjustVictimCount = (delta: number) => {
+    const next = Math.max(0, Math.min(999, parsedVictimCount + delta));
+    setVictimCountText(String(next));
+    void Haptics.selectionAsync();
+  };
+
+  const handleVictimTextChange = (value: string) => {
+    const digitsOnly = value.replace(/[^0-9]/g, '').slice(0, 3);
+    setVictimCountText(digitsOnly);
+  };
 
   const handleSelectCategory = (selected: IncidentCategory, defaultUrgency: IncidentUrgency) => {
     setCategory(selected);
@@ -330,7 +375,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
       const saved = await createReport({
         category,
         urgency,
-        victimCount,
+        victimCount: parsedVictimCount,
         rawText,
         lat: gps.lat,
         lng: gps.lng,
@@ -338,8 +383,9 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
         posAgeS: gps.posAgeS,
       });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setConfirmOpen(false);
       setRawText('');
-      setVictimCount(1);
+      setVictimCountText('1');
       goToStage(1);
       onReportSaved();
       Alert.alert(
@@ -364,15 +410,15 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
           },
         ]}
       >
-        {/* STAGE 1: 3x2 Unique Identity Emergency Type Grid */}
+        {/* STAGE 1: Emergency Type (3x2 Textured Identity Grid) */}
         {stage === 1 ? (
-          <View style={styles.stageOneContainer}>
+          <View style={styles.stageContainer}>
             <View style={styles.headerBlock}>
               <Text style={[styles.stageTitle, { color: colors.textPrimary }]}>
                 Emergency Type
               </Text>
               <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
-                Select a hazard card to open report details
+                Tap the hazard that matches the emergency
               </Text>
             </View>
 
@@ -388,7 +434,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
           </View>
         ) : null}
 
-        {/* STAGE 2: Urgency Level + Situation Details */}
+        {/* STAGE 2: Urgency Level (2x2 Grid) + Affected Persons */}
         {stage === 2 ? (
           <ScrollView
             style={styles.scrollStage}
@@ -396,44 +442,19 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.topSection}>
-              <View style={styles.stageHeaderRow}>
-                <Pressable
-                  onPress={() => goToStage(1)}
-                  style={({ pressed }) => [
-                    styles.backBtn,
-                    {
-                      backgroundColor: colors.bgSurface,
-                      borderColor: colors.borderSubtle,
-                      transform: [{ scale: pressed ? 0.94 : 1 }],
-                    },
-                  ]}
-                >
-                  <Ionicons name="arrow-back" size={16} color={colors.textPrimary} />
-                  <Text style={[styles.backText, { color: colors.textPrimary }]}>Back</Text>
-                </Pressable>
-                <View
-                  style={[
-                    styles.selectedChip,
-                    { backgroundColor: selectedCategoryObj.accentColor },
-                  ]}
-                >
-                  <Text style={styles.selectedChipText}>{selectedCategoryObj.label}</Text>
-                </View>
-              </View>
-
               <View style={styles.headerBlock}>
                 <Text style={[styles.stageTitle, { color: colors.textPrimary }]}>
-                  Urgency & Details
+                  Urgency & Impact
                 </Text>
                 <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
-                  Set priority and describe the situation
+                  Select priority level and people affected
                 </Text>
               </View>
 
-              <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>Urgency Level</Text>
-              <View style={styles.urgencyRow}>
+              {/* 2x2 Urgency Grid */}
+              <View style={styles.urgencyGrid}>
                 {URGENCY_OPTIONS.map((opt) => (
-                  <AnimatedUrgencyPill
+                  <UrgencyGridCard
                     key={opt.id}
                     opt={opt}
                     selected={opt.id === urgency}
@@ -445,98 +466,116 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                 ))}
               </View>
 
+              {/* UX-Friendly Affected Persons Card */}
               <View
                 style={[
-                  styles.stepperCard,
+                  styles.peopleCard,
                   { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
                 ]}
               >
-                <View>
-                  <Text style={[styles.stepperTitle, { color: colors.textPrimary }]}>
+                <View style={styles.peopleHeader}>
+                  <Text style={[styles.peopleTitle, { color: colors.textPrimary }]}>
                     Affected Persons
                   </Text>
-                  <Text style={[styles.stepperSub, { color: colors.textSecondary }]}>
-                    Estimated count needing assistance
-                  </Text>
-                </View>
-                <View style={styles.stepperControls}>
-                  <Pressable
-                    onPress={() => bumpVictimCount(-1)}
-                    style={({ pressed }) => [
-                      styles.stepBtn,
-                      {
-                        backgroundColor: colors.bgSurfaceElevated,
-                        borderColor: colors.borderSubtle,
-                        transform: [{ scale: pressed ? 0.88 : 1 }],
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.stepBtnText, { color: colors.textPrimary }]}>-</Text>
-                  </Pressable>
-                  <Animated.Text
-                    style={[
-                      styles.stepValue,
-                      { color: colors.textPrimary, transform: [{ scale: countBounce }] },
-                    ]}
-                  >
-                    {victimCount}
-                  </Animated.Text>
-                  <Pressable
-                    onPress={() => bumpVictimCount(1)}
-                    style={({ pressed }) => [
-                      styles.stepBtn,
-                      {
-                        backgroundColor: colors.bgSurfaceElevated,
-                        borderColor: colors.borderSubtle,
-                        transform: [{ scale: pressed ? 0.88 : 1 }],
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.stepBtnText, { color: colors.textPrimary }]}>+</Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              <View style={styles.notesFlexBlock}>
-                <View style={styles.labelRow}>
-                  <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>
-                    Situation Notes (EN / TL / CEB)
-                  </Text>
-                  <Text
-                    style={[
-                      styles.byteCounter,
-                      {
-                        color:
-                          byteCount >= MAX_RAW_TEXT_BYTES
-                            ? EMERGENCY_COLORS.critical
-                            : colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {byteCount} / {MAX_RAW_TEXT_BYTES} bytes
+                  <Text style={[styles.peopleSub, { color: colors.textSecondary }]}>
+                    Type exact count or tap quick increments
                   </Text>
                 </View>
 
-                <Animated.View
-                  style={[
-                    styles.textAreaContainer,
-                    {
-                      backgroundColor: colors.bgSurface,
-                      borderColor: notesBorderColor,
-                    },
-                  ]}
-                >
+                <View style={styles.peopleInputRow}>
+                  <Pressable
+                    onPress={() => adjustVictimCount(-1)}
+                    style={({ pressed }) => [
+                      styles.adjBtn,
+                      {
+                        backgroundColor: colors.bgSurfaceElevated,
+                        borderColor: colors.borderSubtle,
+                        transform: [{ scale: pressed ? 0.9 : 1 }],
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>-1</Text>
+                  </Pressable>
+
                   <TextInput
-                    multiline
-                    value={rawText}
-                    onChangeText={handleTextChange}
-                    onFocus={() => setNotesFocused(true)}
-                    onBlur={() => setNotesFocused(false)}
-                    placeholder="Describe landmark or urgent need (e.g., Naay natabunan sa Sitio Riverside)..."
-                    placeholderTextColor={colors.textMuted}
-                    style={[styles.textAreaFill, { color: colors.textPrimary }]}
+                    value={victimCountText}
+                    onChangeText={handleVictimTextChange}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                    selectTextOnFocus
+                    style={[
+                      styles.peopleInput,
+                      {
+                        backgroundColor: colors.bgBase,
+                        borderColor: colors.borderSubtle,
+                        color: colors.textPrimary,
+                      },
+                    ]}
                   />
-                </Animated.View>
+
+                  <Pressable
+                    onPress={() => adjustVictimCount(1)}
+                    style={({ pressed }) => [
+                      styles.adjBtn,
+                      {
+                        backgroundColor: colors.bgSurfaceElevated,
+                        borderColor: colors.borderSubtle,
+                        transform: [{ scale: pressed ? 0.9 : 1 }],
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>+1</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => adjustVictimCount(10)}
+                    style={({ pressed }) => [
+                      styles.adjBtn,
+                      {
+                        backgroundColor: colors.accentSubtle,
+                        borderColor: colors.accentPrimary,
+                        transform: [{ scale: pressed ? 0.9 : 1 }],
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.adjBtnText, { color: colors.accentPrimary }]}>+10</Text>
+                  </Pressable>
+                </View>
+
+                <View style={styles.presetsRow}>
+                  {VICTIM_PRESETS.map((preset) => {
+                    const isPresetActive = parsedVictimCount === preset;
+                    return (
+                      <Pressable
+                        key={preset}
+                        onPress={() => {
+                          setVictimCountText(String(preset));
+                          void Haptics.selectionAsync();
+                        }}
+                        style={[
+                          styles.presetChip,
+                          {
+                            backgroundColor: isPresetActive
+                              ? colors.accentPrimary
+                              : colors.bgSurfaceElevated,
+                            borderColor: isPresetActive
+                              ? colors.accentPrimary
+                              : colors.borderSubtle,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.presetText,
+                            { color: isPresetActive ? '#FFFFFF' : colors.textSecondary },
+                          ]}
+                        >
+                          {preset === 20 ? '20+' : `${preset}`}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
             </View>
 
@@ -553,149 +592,119 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                 },
               ]}
             >
-              <Text style={styles.primaryCtaText}>REVIEW & CONFIRM</Text>
+              <Text style={styles.primaryCtaText}>NEXT: SITUATION NOTES</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
             </Pressable>
           </ScrollView>
         ) : null}
 
-        {/* STAGE 3: Confirmation */}
+        {/* STAGE 3: Massive Notes Box + Voice Indicator */}
         {stage === 3 ? (
-          <ScrollView style={styles.scrollStage} contentContainerStyle={styles.scrollFillContent}>
+          <ScrollView
+            style={styles.scrollStage}
+            contentContainerStyle={styles.scrollFillContent}
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.topSection}>
-              <View style={styles.stageHeaderRow}>
-                <Pressable
-                  onPress={() => goToStage(2)}
-                  style={({ pressed }) => [
-                    styles.backBtn,
+              <View style={styles.notesHeaderRow}>
+                <View style={styles.headerBlock}>
+                  <Text style={[styles.stageTitle, { color: colors.textPrimary }]}>
+                    Situation Notes
+                  </Text>
+                  <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
+                    Type in English, Tagalog, or Cebuano
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.byteCounter,
                     {
-                      backgroundColor: colors.bgSurface,
-                      borderColor: colors.borderSubtle,
-                      transform: [{ scale: pressed ? 0.94 : 1 }],
+                      color:
+                        byteCount >= MAX_RAW_TEXT_BYTES
+                          ? EMERGENCY_COLORS.critical
+                          : colors.textSecondary,
                     },
                   ]}
                 >
-                  <Ionicons name="arrow-back" size={16} color={colors.textPrimary} />
-                  <Text style={[styles.backText, { color: colors.textPrimary }]}>Edit Details</Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.headerBlock}>
-                <Text style={[styles.stageTitle, { color: colors.textPrimary }]}>
-                  Confirm Report
-                </Text>
-                <Text style={[styles.stageSubtitle, { color: colors.textSecondary }]}>
-                  Verify details before saving and sending
+                  {byteCount}/{MAX_RAW_TEXT_BYTES}B
                 </Text>
               </View>
 
-              <View
+              <Animated.View
                 style={[
-                  styles.summaryCard,
-                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  styles.massiveNotesBox,
+                  {
+                    backgroundColor: colors.bgSurface,
+                    borderColor: notesBorderColor,
+                  },
                 ]}
               >
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>
-                    Emergency Type
-                  </Text>
-                  <View
-                    style={[
-                      styles.summaryCatPill,
-                      { backgroundColor: selectedCategoryObj.accentColor },
-                    ]}
-                  >
-                    <Text style={styles.summaryCatText}>{getCategoryLabel(category)}</Text>
-                  </View>
-                </View>
-
-                <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
-
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>Urgency</Text>
-                  <View
-                    style={[styles.urgencyBadge, { backgroundColor: getUrgencyColor(urgency) }]}
-                  >
-                    <Text style={styles.urgencyBadgeText}>{urgency}</Text>
-                  </View>
-                </View>
-
-                <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
-
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>
-                    Affected Persons
-                  </Text>
-                  <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
-                    {victimCount}
-                  </Text>
-                </View>
-
-                <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
-
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>
-                    GPS Location
-                  </Text>
-                  <Text style={[styles.summaryMono, { color: EMERGENCY_COLORS.telemetry }]}>
-                    {gps.fixState === 'LOCKED' || gps.fixState === 'LAST_KNOWN'
-                      ? `${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}`
-                      : `${gps.fixState} (will still save)`}
-                  </Text>
-                </View>
-
-                <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
-
-                <View style={styles.notesPreview}>
-                  <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>
-                    Situation Notes
-                  </Text>
-                  <Text style={[styles.notesText, { color: colors.textPrimary }]}>
-                    {rawText.trim() ? rawText.trim() : 'No additional notes provided.'}
-                  </Text>
-                </View>
-              </View>
-
-              <View
-                style={[
-                  styles.offlineNoticeCard,
-                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-                ]}
-              >
-                <Ionicons
-                  name="shield-checkmark-outline"
-                  size={18}
-                  color={EMERGENCY_COLORS.success}
+                <TextInput
+                  multiline
+                  value={rawText}
+                  onChangeText={handleTextChange}
+                  onFocus={() => setNotesFocused(true)}
+                  onBlur={() => setNotesFocused(false)}
+                  placeholder="Describe landmarks, hazards, or urgent needs (e.g., Naay natabunan sa Sitio Riverside, tabang!)..."
+                  placeholderTextColor={colors.textMuted}
+                  style={[styles.massiveTextInput, { color: colors.textPrimary }]}
                 />
-                <Text style={[styles.offlineNoticeText, { color: colors.textSecondary }]}>
-                  Saved safely to your phone immediately, then sent via Cloud Relay or BLE when a
-                  responder is nearby.
-                </Text>
-              </View>
+
+                {/* Voice Input Indicator Bar (Upcoming Feature) */}
+                <Pressable
+                  onPress={() =>
+                    Alert.alert(
+                      'Voice Reporting',
+                      'Offline voice-to-text input is an upcoming feature for residents.',
+                    )
+                  }
+                  style={[
+                    styles.voiceBar,
+                    {
+                      backgroundColor: colors.bgSurfaceElevated,
+                      borderTopColor: colors.borderSubtle,
+                    },
+                  ]}
+                >
+                  <View style={[styles.micBadge, { backgroundColor: colors.accentSubtle }]}>
+                    <Ionicons name="mic-outline" size={18} color={colors.accentPrimary} />
+                  </View>
+                  <View style={styles.voiceTextCol}>
+                    <Text style={[styles.voiceTitle, { color: colors.textPrimary }]}>
+                      Type or Use Voice Input
+                    </Text>
+                    <Text style={[styles.voiceSub, { color: colors.textSecondary }]}>
+                      Voice-to-text transcription (Upcoming Feature)
+                    </Text>
+                  </View>
+                  <View style={[styles.soonBadge, { borderColor: colors.borderSubtle }]}>
+                    <Text style={[styles.soonText, { color: colors.textSecondary }]}>SOON</Text>
+                  </View>
+                </Pressable>
+              </Animated.View>
             </View>
 
             <Pressable
-              onPress={handleSubmit}
-              disabled={submitting}
+              onPress={() => {
+                void Haptics.selectionAsync();
+                setConfirmOpen(true);
+              }}
               style={({ pressed }) => [
                 styles.primaryCta,
                 {
                   backgroundColor: colors.accentPrimary,
-                  opacity: submitting ? 0.7 : 1,
                   transform: [{ scale: pressed ? 0.97 : 1 }],
                 },
               ]}
             >
-              <Ionicons name="send" size={17} color="#FFFFFF" />
-              <Text style={styles.primaryCtaText}>
-                {submitting ? 'SAVING LOCALLY...' : 'SEND EMERGENCY REPORT'}
-              </Text>
+              <Text style={styles.primaryCtaText}>REVIEW & SEND</Text>
+              <Ionicons name="checkmark-circle-outline" size={19} color="#FFFFFF" />
             </Pressable>
           </ScrollView>
         ) : null}
       </Animated.View>
 
-      {/* Animated Arrow Flow Progress Bar: Type ---> Details ---> Confirm */}
+      {/* Bottom Arrow Progress Bar: Type ---> Urgency ---> Notes */}
       <View style={styles.arrowBarContainer}>
         {STAGE_LABELS.map((s, idx) => {
           const active = s.step === stage;
@@ -710,7 +719,10 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               <Pressable
                 disabled={s.step > stage}
                 onPress={() => {
-                  if (s.step < stage) goToStage(s.step);
+                  if (s.step < stage) {
+                    void Haptics.selectionAsync();
+                    goToStage(s.step);
+                  }
                 }}
                 style={[
                   styles.stagePill,
@@ -736,17 +748,127 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                     },
                   ]}
                 >
-                  {completed ? `✓ ${s.title}` : s.title}
+                  {s.title}
                 </Text>
               </Pressable>
 
-              {idx < STAGE_LABELS.length - 1 ? (
-                <ArrowConnector filled={stage > s.step} />
-              ) : null}
+              {!isLast ? <ArrowConnector filled={stage > s.step} /> : null}
             </View>
           );
         })}
       </View>
+
+      {/* Pop-up Confirmation Modal */}
+      <Modal
+        visible={confirmOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View
+            style={[
+              styles.modalCard,
+              { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+            ]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+              Confirm Emergency Report
+            </Text>
+            <Text style={[styles.modalSub, { color: colors.textSecondary }]}>
+              Saved offline immediately, then sent via Cloud Relay or BLE.
+            </Text>
+
+            <View
+              style={[
+                styles.modalSummary,
+                { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+              ]}
+            >
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>Type</Text>
+                <View style={styles.summaryCatRow}>
+                  <View
+                    style={[
+                      styles.catDot,
+                      { backgroundColor: selectedCategoryObj.accentColor },
+                    ]}
+                  />
+                  <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
+                    {getCategoryLabel(category)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
+
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>Urgency</Text>
+                <View style={[styles.urgencyBadge, { backgroundColor: getUrgencyColor(urgency) }]}>
+                  <Text style={styles.urgencyBadgeText}>{urgency}</Text>
+                </View>
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
+
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>
+                  Affected Persons
+                </Text>
+                <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
+                  {parsedVictimCount}
+                </Text>
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
+
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>GPS</Text>
+                <Text style={[styles.summaryMono, { color: EMERGENCY_COLORS.telemetry }]}>
+                  {gps.fixState === 'LOCKED' || gps.fixState === 'LAST_KNOWN'
+                    ? `${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}`
+                    : `${gps.fixState} (saved anyway)`}
+                </Text>
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
+
+              <View style={styles.notesPreview}>
+                <Text style={[styles.summaryKey, { color: colors.textSecondary }]}>Notes</Text>
+                <Text style={[styles.notesText, { color: colors.textPrimary }]}>
+                  {rawText.trim() ? rawText.trim() : 'No additional notes provided.'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <Pressable
+                onPress={() => setConfirmOpen(false)}
+                style={[
+                  styles.modalCancelBtn,
+                  { backgroundColor: colors.bgSurfaceElevated, borderColor: colors.borderSubtle },
+                ]}
+              >
+                <Text style={[styles.modalCancelText, { color: colors.textPrimary }]}>Edit</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSubmit}
+                disabled={submitting}
+                style={[
+                  styles.modalSendBtn,
+                  { backgroundColor: colors.accentPrimary, opacity: submitting ? 0.7 : 1 },
+                ]}
+              >
+                <Ionicons name="send" size={16} color="#FFFFFF" />
+                <Text style={styles.modalSendText}>
+                  {submitting ? 'SAVING...' : 'CONFIRM & SEND'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -759,7 +881,7 @@ const styles = StyleSheet.create({
   stageAnimatedBody: {
     flex: 1,
   },
-  stageOneContainer: {
+  stageContainer: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 14,
@@ -793,8 +915,8 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: RADII.card,
     borderWidth: 1.5,
-    padding: 14,
-    justifyContent: 'space-between',
+    padding: 16,
+    justifyContent: 'flex-end',
     overflow: 'hidden',
   },
   tileTintOverlay: {
@@ -804,42 +926,126 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
   },
-  tileTopRow: {
+  textureLayer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    opacity: 0.14,
+  },
+  stripeLine: {
+    position: 'absolute',
+    top: -30,
+    width: 10,
+    height: 180,
+    transform: [{ rotate: '28deg' }],
+  },
+  crossVert: {
+    position: 'absolute',
+    top: 14,
+    right: 26,
+    width: 14,
+    height: 46,
+    borderRadius: 4,
+  },
+  crossHoriz: {
+    position: 'absolute',
+    top: 30,
+    right: 10,
+    width: 46,
+    height: 14,
+    borderRadius: 4,
+  },
+  waveRingLg: {
+    position: 'absolute',
+    top: -24,
+    right: -24,
+    width: 94,
+    height: 94,
+    borderRadius: 47,
+    borderWidth: 8,
+  },
+  waveRingSm: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 6,
+  },
+  gridLineH1: {
+    position: 'absolute',
+    top: 24,
+    left: 0,
+    right: 0,
+    height: 2,
+  },
+  gridLineH2: {
+    position: 'absolute',
+    top: 52,
+    left: 0,
+    right: 0,
+    height: 2,
+  },
+  gridLineV1: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 28,
+    width: 2,
+  },
+  gridLineV2: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 60,
+    width: 2,
+  },
+  slopeBand1: {
+    position: 'absolute',
+    top: -10,
+    right: -20,
+    width: 110,
+    height: 28,
+    transform: [{ rotate: '-22deg' }],
+  },
+  slopeBand2: {
+    position: 'absolute',
+    top: 30,
+    right: -30,
+    width: 110,
+    height: 18,
+    transform: [{ rotate: '-22deg' }],
+  },
+  dotsCluster: {
+    top: 14,
+    right: 14,
+    left: undefined,
+    bottom: undefined,
+    width: 42,
+    height: 42,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  tagPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADII.pill,
-  },
-  tagPillText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.7,
+  dotMatrixItem: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   tileTextBlock: {
     gap: 3,
   },
   tileLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   tileHint: {
     fontSize: 12,
     fontWeight: '600',
-  },
-  tileAccentTrack: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  tileAccentBar: {
-    height: '100%',
-    borderRadius: 2,
   },
   scrollStage: {
     flex: 1,
@@ -854,192 +1060,152 @@ const styles = StyleSheet.create({
   },
   topSection: {
     flex: 1,
-    gap: 12,
+    gap: 14,
   },
-  stageHeaderRow: {
+  urgencyGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
+    rowGap: 10,
   },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
+  urgencyGridWrap: {
+    width: '48.3%',
   },
-  backText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  selectedChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: RADII.pill,
-  },
-  selectedChipText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  urgencyRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  urgencyPillWrap: {
-    flex: 1,
-  },
-  urgencyPill: {
-    minHeight: 46,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-    alignItems: 'center',
+  urgencyGridCard: {
+    minHeight: 102,
+    borderRadius: RADII.card,
+    borderWidth: 1.5,
+    padding: 16,
     justifyContent: 'center',
+    gap: 4,
   },
-  urgencyText: {
-    fontSize: 11,
-    fontWeight: '800',
+  urgencyCardLabel: {
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 0.4,
   },
-  stepperCard: {
+  urgencyCardSub: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  peopleCard: {
     borderRadius: RADII.card,
     borderWidth: 1,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  stepperTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  stepperSub: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  stepperControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
   },
-  stepBtn: {
-    width: 42,
-    height: 42,
+  peopleHeader: {
+    gap: 2,
+  },
+  peopleTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  peopleSub: {
+    fontSize: 12,
+  },
+  peopleInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  adjBtn: {
+    minWidth: 48,
+    height: 46,
     borderRadius: RADII.pill,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 12,
   },
-  stepBtnText: {
-    fontSize: 18,
-    fontWeight: '700',
+  adjBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
   },
-  stepValue: {
-    minWidth: 26,
+  peopleInput: {
+    flex: 1,
+    height: 46,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
-  notesFlexBlock: {
-    flex: 1,
+  presetsRow: {
+    flexDirection: 'row',
     gap: 8,
   },
-  labelRow: {
+  presetChip: {
+    flex: 1,
+    height: 36,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  presetText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  notesHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   byteCounter: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
-  textAreaContainer: {
+  massiveNotesBox: {
     flex: 1,
-    minHeight: 110,
+    minHeight: 240,
     borderRadius: RADII.card,
     borderWidth: 1.5,
+    overflow: 'hidden',
   },
-  textAreaFill: {
+  massiveTextInput: {
     flex: 1,
-    padding: 16,
-    fontSize: 14,
+    padding: 18,
+    fontSize: 16,
+    lineHeight: 23,
     textAlignVertical: 'top',
   },
-  summaryCard: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
-    padding: 18,
-    gap: 14,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-  },
-  summaryKey: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  summaryCatPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: RADII.pill,
-  },
-  summaryCatText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  summaryVal: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  summaryMono: {
-    fontSize: 12,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-  },
-  urgencyBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: RADII.pill,
-  },
-  urgencyBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  divider: {
-    height: 1,
-  },
-  notesPreview: {
-    gap: 6,
-  },
-  notesText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  offlineNoticeCard: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
-    padding: 14,
+  voiceBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderTopWidth: 1,
   },
-  offlineNoticeText: {
+  micBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceTextCol: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
+  },
+  voiceTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  voiceSub: {
+    fontSize: 11,
+  },
+  soonBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
+  },
+  soonText: {
+    fontSize: 10,
+    fontWeight: '800',
   },
   primaryCta: {
     minHeight: 56,
@@ -1072,7 +1238,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stagePill: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: RADII.pill,
     borderWidth: 1,
@@ -1101,5 +1267,112 @@ const styles = StyleSheet.create({
   },
   arrowHead: {
     marginLeft: -4,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(2, 6, 23, 0.72)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    borderRadius: RADII.card,
+    borderWidth: 1,
+    padding: 20,
+    gap: 14,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  modalSub: {
+    fontSize: 12,
+    marginTop: -8,
+  },
+  modalSummary: {
+    borderRadius: RADII.control,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
+  summaryKey: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  summaryCatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  catDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  summaryVal: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  summaryMono: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  urgencyBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADII.pill,
+  },
+  urgencyBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  divider: {
+    height: 1,
+  },
+  notesPreview: {
+    gap: 4,
+  },
+  notesText: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 2,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    minHeight: 50,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalSendBtn: {
+    flex: 2,
+    minHeight: 50,
+    borderRadius: RADII.pill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  modalSendText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });

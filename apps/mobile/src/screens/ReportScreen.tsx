@@ -178,7 +178,16 @@ function EmergencyTile({
         <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
         <ContainerTexture texture={item.texture} color={item.accentColor} />
 
-        <View style={styles.tileTextBlock}>
+        <View
+          style={[
+            styles.tileTextBlock,
+            {
+              backgroundColor: isDark
+                ? 'rgba(10, 15, 29, 0.60)'
+                : 'rgba(255, 255, 255, 0.76)',
+            },
+          ]}
+        >
           <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
             {item.label}
           </Text>
@@ -192,7 +201,7 @@ function EmergencyTile({
 }
 
 /**
- * 2x2 Urgency Card matching Stage 1 aesthetic; CRITICAL gets a unique hazard stripe container.
+ * 2x2 Urgency Card with spotlight focus (unselected cards dim smoothly) and high-contrast text scrim.
  */
 function UrgencyGridCard({
   opt,
@@ -204,42 +213,39 @@ function UrgencyGridCard({
   onPress: () => void;
 }) {
   const { colors, isDark } = useAppTheme();
-  const scale = useRef(new Animated.Value(selected ? 1.02 : 1)).current;
+  const focusAnim = useRef(new Animated.Value(selected ? 1 : 0)).current;
   const isCritical = opt.id === 'CRITICAL';
   const baseTint = isDark ? opt.tintDark : opt.tintLight;
 
   useEffect(() => {
-    Animated.spring(scale, {
-      toValue: selected ? 1.02 : 1,
+    Animated.spring(focusAnim, {
+      toValue: selected ? 1 : 0,
       friction: 6,
       tension: 150,
       useNativeDriver: true,
     }).start();
-  }, [selected, scale]);
+  }, [selected, focusAnim]);
+
+  const scale = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.96, 1.03],
+  });
+
+  const opacity = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.42, 1],
+  });
 
   return (
-    <Pressable
-      onPress={() => {
-        Animated.sequence([
-          Animated.timing(scale, { toValue: 0.93, duration: 70, useNativeDriver: true }),
-          Animated.spring(scale, {
-            toValue: 1.02,
-            friction: 5,
-            tension: 160,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        onPress();
-      }}
-      style={styles.urgencyGridWrap}
-    >
+    <Pressable onPress={onPress} style={styles.urgencyGridWrap}>
       <Animated.View
         style={[
           styles.urgencyGridCard,
           {
             backgroundColor: selected ? opt.color : colors.bgSurface,
-            borderColor: opt.color,
-            borderWidth: isCritical || selected ? 2.2 : 1.5,
+            borderColor: selected ? colors.textPrimary : opt.color,
+            borderWidth: selected || isCritical ? 2.2 : 1.5,
+            opacity,
             transform: [{ scale }],
           },
         ]}
@@ -250,7 +256,7 @@ function UrgencyGridCard({
 
         {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
         {isCritical ? (
-          <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
+          <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.14 : 0.08 }]}>
             {[0, 1, 2, 3, 4].map((i) => (
               <View
                 key={i}
@@ -263,22 +269,33 @@ function UrgencyGridCard({
           </View>
         ) : null}
 
-        <Text
+        <View
           style={[
-            styles.urgencyCardLabel,
-            { color: selected ? '#FFFFFF' : colors.textPrimary },
+            styles.urgencyTextScrim,
+            !selected && {
+              backgroundColor: isDark
+                ? 'rgba(10, 15, 29, 0.58)'
+                : 'rgba(255, 255, 255, 0.75)',
+            },
           ]}
         >
-          {opt.label}
-        </Text>
-        <Text
-          style={[
-            styles.urgencyCardSub,
-            { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
-          ]}
-        >
-          {opt.subtitle}
-        </Text>
+          <Text
+            style={[
+              styles.urgencyCardLabel,
+              { color: selected ? '#FFFFFF' : colors.textPrimary },
+            ]}
+          >
+            {opt.label}
+          </Text>
+          <Text
+            style={[
+              styles.urgencyCardSub,
+              { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
+            ]}
+          >
+            {opt.subtitle}
+          </Text>
+        </View>
       </Animated.View>
     </Pressable>
   );
@@ -441,6 +458,60 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
+      {/* Top Arrow Progress Bar: Type ---> Urgency ---> Notes */}
+      <View style={styles.arrowBarContainer}>
+        {STAGE_LABELS.map((s, idx) => {
+          const active = s.step === stage;
+          const completed = s.step < stage;
+          const highlighted = active || completed;
+          const isLast = idx === STAGE_LABELS.length - 1;
+          return (
+            <View
+              key={s.step}
+              style={isLast ? styles.arrowBarSegmentEnd : styles.arrowBarSegment}
+            >
+              <Pressable
+                disabled={s.step > stage}
+                onPress={() => {
+                  if (s.step < stage) {
+                    void Haptics.selectionAsync();
+                    goToStage(s.step);
+                  }
+                }}
+                style={[
+                  styles.stagePill,
+                  {
+                    backgroundColor: active
+                      ? colors.accentPrimary
+                      : completed
+                        ? colors.accentSubtle
+                        : colors.bgSurface,
+                    borderColor: highlighted ? colors.accentPrimary : colors.borderSubtle,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.stagePillText,
+                    {
+                      color: active
+                        ? '#FFFFFF'
+                        : completed
+                          ? colors.accentPrimary
+                          : colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {s.title}
+                </Text>
+              </Pressable>
+
+              {!isLast ? <ArrowConnector filled={stage > s.step} /> : null}
+            </View>
+          );
+        })}
+      </View>
+
       <Animated.View
         style={[
           styles.stageAnimatedBody,
@@ -655,35 +726,6 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                 placeholderTextColor={colors.textMuted}
                 style={[styles.massiveTextInput, { color: colors.textPrimary }]}
               />
-
-              {/* Voice Input Indicator Bar (Upcoming Feature) */}
-              <Pressable
-                onPress={() =>
-                  Alert.alert(
-                    'Voice Reporting',
-                    'Offline voice-to-text input is an upcoming feature for residents.',
-                  )
-                }
-                style={[
-                  styles.voiceBar,
-                  {
-                    backgroundColor: colors.bgSurfaceElevated,
-                    borderTopColor: colors.borderSubtle,
-                  },
-                ]}
-              >
-                <View style={[styles.micBadge, { backgroundColor: colors.accentSubtle }]}>
-                  <Ionicons name="mic-outline" size={18} color={colors.accentPrimary} />
-                </View>
-                <View style={styles.voiceTextCol}>
-                  <Text style={[styles.voiceTitle, { color: colors.textPrimary }]}>
-                    Type or Use Voice Input
-                  </Text>
-                  <Text style={[styles.voiceSub, { color: colors.textSecondary }]}>
-                    Voice-to-text transcription (Upcoming Feature)
-                  </Text>
-                </View>
-              </Pressable>
             </Animated.View>
 
             <Pressable
@@ -706,60 +748,6 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
         ) : null}
       </Animated.View>
 
-      {/* Bottom Arrow Progress Bar: Type ---> Urgency ---> Notes */}
-      <View style={styles.arrowBarContainer}>
-        {STAGE_LABELS.map((s, idx) => {
-          const active = s.step === stage;
-          const completed = s.step < stage;
-          const highlighted = active || completed;
-          const isLast = idx === STAGE_LABELS.length - 1;
-          return (
-            <View
-              key={s.step}
-              style={isLast ? styles.arrowBarSegmentEnd : styles.arrowBarSegment}
-            >
-              <Pressable
-                disabled={s.step > stage}
-                onPress={() => {
-                  if (s.step < stage) {
-                    void Haptics.selectionAsync();
-                    goToStage(s.step);
-                  }
-                }}
-                style={[
-                  styles.stagePill,
-                  {
-                    backgroundColor: active
-                      ? colors.accentPrimary
-                      : completed
-                        ? colors.accentSubtle
-                        : colors.bgSurface,
-                    borderColor: highlighted ? colors.accentPrimary : colors.borderSubtle,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.stagePillText,
-                    {
-                      color: active
-                        ? '#FFFFFF'
-                        : completed
-                          ? colors.accentPrimary
-                          : colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {s.title}
-                </Text>
-              </Pressable>
-
-              {!isLast ? <ArrowConnector filled={stage > s.step} /> : null}
-            </View>
-          );
-        })}
-      </View>
-
       {/* Tactical Dispatch Confirmation Modal */}
       <Modal
         visible={confirmOpen}
@@ -774,14 +762,6 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
             ]}
           >
-            {/* Top Category Color Strip */}
-            <View
-              style={[
-                styles.modalAccentStrip,
-                { backgroundColor: selectedCategoryObj.accentColor },
-              ]}
-            />
-
             <View style={styles.modalContent}>
               <View style={styles.modalHeroRow}>
                 <View style={styles.modalHeroLeft}>
@@ -944,7 +924,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    opacity: 0.14,
+    opacity: 0.08,
   },
   diamondLineA: {
     position: 'absolute',
@@ -1058,6 +1038,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
+  },
+  urgencyTextScrim: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
   },
   tileLabel: {
     fontSize: 17,
@@ -1207,8 +1198,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 6,
+    paddingTop: 14,
+    paddingBottom: 4,
   },
   arrowBarSegment: {
     flex: 1,

@@ -64,9 +64,12 @@ function SalbarMobileShell() {
             <OutboxScreen
               reports={reports}
               counts={counts}
+              canUseCloudRelay={network.canUseCloudRelay}
+              forceOffline={network.forceOffline}
               onRefresh={() => {
                 void refreshOutbox();
               }}
+              onGoToReport={() => setActiveTab('report')}
             />
           ) : null}
 

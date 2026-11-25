@@ -629,13 +629,13 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                   style={({ pressed }) => [
                     styles.adjBtn,
                     {
-                      backgroundColor: colors.accentSubtle,
-                      borderColor: colors.accentPrimary,
+                      backgroundColor: colors.bgSurfaceElevated,
+                      borderColor: colors.borderSubtle,
                       transform: [{ scale: pressed ? 0.9 : 1 }],
                     },
                   ]}
                 >
-                  <Text style={[styles.adjBtnText, { color: colors.accentPrimary }]}>+10</Text>
+                  <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>+10</Text>
                 </Pressable>
               </View>
             </View>

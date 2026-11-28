@@ -100,40 +100,25 @@ function KpiFilterCard({
   onPress: () => void;
 }) {
   const { colors } = useAppTheme();
-  const focusAnim = useRef(new Animated.Value(0)).current;
   const dimAnim = useRef(new Animated.Value(1)).current;
 
   const isSelected = activeFilter === filterKey;
   const isOtherSelected = activeFilter !== 'ALL' && !isSelected;
 
   useEffect(() => {
-    Animated.spring(focusAnim, {
-      toValue: isSelected ? 1 : 0,
-      friction: 6,
-      tension: 150,
-      useNativeDriver: true,
-    }).start();
-  }, [isSelected, focusAnim]);
-
-  useEffect(() => {
     Animated.timing(dimAnim, {
-      toValue: isOtherSelected ? 0.42 : 1,
+      toValue: isOtherSelected ? 0.45 : 1,
       duration: 160,
       useNativeDriver: true,
     }).start();
   }, [isOtherSelected, dimAnim]);
-
-  const scale = Animated.add(
-    focusAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }),
-    dimAnim.interpolate({ inputRange: [0.42, 1], outputRange: [-0.04, 0] }),
-  );
 
   return (
     <Pressable onPress={onPress} style={styles.kpiWrap}>
       <Animated.View
         style={[
           styles.kpiOuter,
-          { opacity: dimAnim, transform: [{ scale }] },
+          { opacity: dimAnim },
         ]}
       >
         <View
@@ -145,7 +130,7 @@ function KpiFilterCard({
             styles.kpiCard,
             {
               backgroundColor: colors.bgSurface,
-              borderColor: isSelected ? accentColor : colors.borderSubtle,
+              borderColor: isSelected ? accentColor : colors.tactileBorder,
               borderWidth: 2,
             },
           ]}
@@ -356,7 +341,7 @@ export function OutboxScreen({
               onPress={handleScanToggle}
               offset={3}
               backgroundColor={isScanningBle ? colors.bgSurfaceElevated : colors.accentPrimary}
-              borderColor={isScanningBle ? colors.borderSubtle : colors.textPrimary}
+              borderColor={colors.tactileBorder}
               contentStyle={styles.scanBtnInner}
             >
               <Text
@@ -379,7 +364,7 @@ export function OutboxScreen({
                   onPress={() => void onRelayToTerminal(term.id)}
                   style={[
                     styles.terminalRow,
-                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                    { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
                   ]}
                 >
                   <View>
@@ -417,12 +402,7 @@ export function OutboxScreen({
 
         {/* Empty State or Web-Dashboard Style Left-Accent Report Cards */}
         {filteredReports.length === 0 ? (
-          <View
-            style={[
-              styles.emptyCard,
-              { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-            ]}
-          >
+          <Tactile3DCard offset={4} revealDelayMs={90} contentStyle={styles.emptyCard}>
             <Ionicons
               name={reports.length === 0 ? 'shield-checkmark-outline' : 'filter-outline'}
               size={28}
@@ -436,21 +416,18 @@ export function OutboxScreen({
                 ? 'Emergency reports you submit are saved locally here first so nothing is lost during blackouts.'
                 : 'No reports match the selected filter.'}
             </Text>
-            <Pressable
+            <Tactile3DButton
               onPress={reports.length === 0 ? onGoToReport : () => setFilter('ALL')}
-              style={({ pressed }) => [
-                styles.emptyActionBtn,
-                {
-                  backgroundColor: colors.accentPrimary,
-                  transform: [{ scale: pressed ? 0.96 : 1 }],
-                },
-              ]}
+              offset={3}
+              borderColor={colors.tactileBorder}
+              style={styles.emptyActionBtnWrap}
+              contentStyle={styles.emptyActionBtn}
             >
               <Text style={styles.emptyActionText}>
                 {reports.length === 0 ? 'CREATE EMERGENCY REPORT' : 'SHOW ALL REPORTS'}
               </Text>
-            </Pressable>
-          </View>
+            </Tactile3DButton>
+          </Tactile3DCard>
         ) : (
           filteredReports.map((report) => {
             const catOpt = getCategoryOption(report.category);
@@ -458,22 +435,26 @@ export function OutboxScreen({
             const syncMeta = getSyncMeta(report.syncStatus);
 
             return (
-              <Pressable
-                key={report.id}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  setSelectedReport(report);
-                }}
-                style={({ pressed }) => [
-                  styles.reportCard,
-                  {
-                    backgroundColor: colors.bgSurface,
-                    borderColor: colors.borderSubtle,
-                    borderLeftColor: catOpt.accentColor,
-                    transform: [{ scale: pressed ? 0.98 : 1 }],
-                  },
-                ]}
-              >
+              <View key={report.id} style={styles.reportCardOuter}>
+                <View
+                  pointerEvents="none"
+                  style={[styles.cardShadowBacking, { backgroundColor: colors.tactileShadow }]}
+                />
+                <Pressable
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    setSelectedReport(report);
+                  }}
+                  style={({ pressed }) => [
+                    styles.reportCard,
+                    {
+                      backgroundColor: colors.bgSurface,
+                      borderColor: colors.tactileBorder,
+                      borderLeftColor: catOpt.accentColor,
+                      transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
+                    },
+                  ]}
+                >
                 <View style={styles.reportTop}>
                   <Text style={[styles.reportCategory, { color: colors.textPrimary }]}>
                     {getCategoryLabel(report.category)}
@@ -511,7 +492,8 @@ export function OutboxScreen({
                     </Text>
                   ) : null}
                 </View>
-              </Pressable>
+                </Pressable>
+              </View>
             );
           })
         )}
@@ -526,187 +508,188 @@ export function OutboxScreen({
       >
         {selectedReport ? (
           <View style={styles.modalBackdrop}>
-            <View
-              style={[
-                styles.modalCard,
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-              ]}
-            >
-              <View style={styles.modalHeroRow}>
-                <View style={styles.modalHeroLeft}>
-                  <Text style={[styles.modalEyebrow, { color: colors.textSecondary }]}>
-                    REPORT #{selectedReport.incidentIdNum} •{' '}
-                    {selectedReport.id.slice(0, 8).toUpperCase()}
-                  </Text>
-                  <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                    {getCategoryLabel(selectedReport.category)}
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={() => setSelectedReport(null)}
-                  accessibilityLabel="Close report details"
-                  style={({ pressed }) => [
-                    styles.modalCloseIconBtn,
-                    {
-                      backgroundColor: colors.bgSurfaceElevated,
-                      borderColor: colors.borderSubtle,
-                      transform: [{ scale: pressed ? 0.92 : 1 }],
-                    },
-                  ]}
-                >
-                  <Ionicons name="close" size={18} color={colors.textPrimary} />
-                </Pressable>
-              </View>
-
-              <View style={styles.modalMetricsRow}>
-                <View
-                  style={[
-                    styles.modalMetricBox,
-                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-                  ]}
-                >
-                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>SEVERITY</Text>
-                  <Text
-                    style={[
-                      styles.metricValue,
-                      { color: getUrgencyColor(selectedReport.urgency) },
-                    ]}
-                  >
-                    {selectedReport.urgency}
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.modalMetricBox,
-                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-                  ]}
-                >
-                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>STATUS</Text>
-                  <Text
-                    style={[
-                      styles.metricValue,
-                      { color: getSyncMeta(selectedReport.syncStatus).color },
-                    ]}
-                  >
-                    {getSyncMeta(selectedReport.syncStatus).label}
-                  </Text>
-                </View>
-              </View>
-
+            <View style={styles.modalOuter}>
+              <View
+                pointerEvents="none"
+                style={[styles.cardShadowBacking, { backgroundColor: colors.tactileShadow }]}
+              />
               <View
                 style={[
-                  styles.modalMetaCard,
-                  { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                  styles.modalCard,
+                  { backgroundColor: colors.bgSurface, borderColor: colors.tactileBorder },
                 ]}
               >
-                <View style={styles.metaSplitRow}>
-                  <View style={styles.metaCol}>
-                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                      CAPTURED TIME
+                <View style={styles.modalHeroRow}>
+                  <View style={styles.modalHeroLeft}>
+                    <Text style={[styles.modalEyebrow, { color: colors.textSecondary }]}>
+                      REPORT #{selectedReport.incidentIdNum} •{' '}
+                      {selectedReport.id.slice(0, 8).toUpperCase()}
                     </Text>
-                    <Text style={[styles.metricMono, { color: colors.textPrimary }]}>
-                      {formatFullDateTime(selectedReport.createdAtUtc)}
-                    </Text>
-                  </View>
-                  <View style={styles.metaColRight}>
-                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                      AFFECTED
-                    </Text>
-                    <Text style={[styles.metricMono, { color: colors.textPrimary }]}>
-                      {selectedReport.victimCount}{' '}
-                      {selectedReport.victimCount === 1 ? 'person' : 'people'}
+                    <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                      {getCategoryLabel(selectedReport.category)}
                     </Text>
                   </View>
+
+                  <Tactile3DButton
+                    onPress={() => setSelectedReport(null)}
+                    offset={2}
+                    radius={17}
+                    backgroundColor={colors.bgSurfaceElevated}
+                    borderColor={colors.tactileBorder}
+                    contentStyle={styles.modalCloseIconBtn}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={18}
+                      color={colors.textPrimary}
+                      accessibilityLabel="Close report details"
+                    />
+                  </Tactile3DButton>
                 </View>
 
-                <View style={[styles.metaDivider, { backgroundColor: colors.borderSubtle }]} />
-
-                <View style={styles.gpsRow}>
-                  <View style={styles.metaCol}>
-                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                      GPS COORDINATES
-                    </Text>
-                    <Text style={[styles.metricMono, { color: EMERGENCY_COLORS.telemetry }]}>
-                      {selectedReport.lat !== 0 || selectedReport.lng !== 0
-                        ? `${selectedReport.lat.toFixed(5)}, ${selectedReport.lng.toFixed(5)} (+/-${Math.round(selectedReport.accuracyMeters)}m)`
-                        : 'No GPS fix recorded'}
-                    </Text>
-                  </View>
-                  {selectedReport.lat !== 0 || selectedReport.lng !== 0 ? (
-                    <Pressable
-                      onPress={() => {
-                        const url = `geo:${selectedReport.lat},${selectedReport.lng}?q=${selectedReport.lat},${selectedReport.lng}`;
-                        void Linking.openURL(url);
-                      }}
+                <View style={styles.modalMetricsRow}>
+                  <View
+                    style={[
+                      styles.modalMetricBox,
+                      { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
+                    ]}
+                  >
+                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>SEVERITY</Text>
+                    <Text
                       style={[
-                        styles.mapLinkBtn,
-                        { backgroundColor: colors.bgSurfaceElevated, borderColor: colors.borderSubtle },
+                        styles.metricValue,
+                        { color: getUrgencyColor(selectedReport.urgency) },
                       ]}
                     >
-                      <Ionicons name="map-outline" size={14} color={colors.textPrimary} />
-                      <Text style={[styles.mapLinkText, { color: colors.textPrimary }]}>
-                        Maps
-                      </Text>
-                    </Pressable>
-                  ) : null}
+                      {selectedReport.urgency}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.modalMetricBox,
+                      { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
+                    ]}
+                  >
+                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>STATUS</Text>
+                    <Text
+                      style={[
+                        styles.metricValue,
+                        { color: getSyncMeta(selectedReport.syncStatus).color },
+                      ]}
+                    >
+                      {getSyncMeta(selectedReport.syncStatus).label}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              <View
-                style={[
-                  styles.modalNotesBox,
-                  { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-                ]}
-              >
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                  SITUATION NOTES
-                </Text>
-                <ScrollView style={styles.modalNotesScroll} nestedScrollEnabled>
-                  <Text style={[styles.modalNotesText, { color: colors.textPrimary }]}>
-                    {selectedReport.rawText
-                      ? selectedReport.rawText
-                      : 'No additional notes provided.'}
-                  </Text>
-                </ScrollView>
-              </View>
-
-              <View style={styles.modalActions}>
-                <Pressable
-                  onPress={handleDeleteSelected}
-                  style={({ pressed }) => [
-                    styles.modalDeleteBtn,
-                    {
-                      backgroundColor: hexToRgba(EMERGENCY_COLORS.critical, 0.1),
-                      borderColor: hexToRgba(EMERGENCY_COLORS.critical, 0.4),
-                      transform: [{ scale: pressed ? 0.96 : 1 }],
-                    },
+                <View
+                  style={[
+                    styles.modalMetaCard,
+                    { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
                   ]}
                 >
-                  <Ionicons name="trash-outline" size={16} color={EMERGENCY_COLORS.critical} />
-                  <Text style={[styles.modalDeleteText, { color: EMERGENCY_COLORS.critical }]}>
-                    Delete
-                  </Text>
-                </Pressable>
+                  <View style={styles.metaSplitRow}>
+                    <View style={styles.metaCol}>
+                      <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                        CAPTURED TIME
+                      </Text>
+                      <Text style={[styles.metricMono, { color: colors.textPrimary }]}>
+                        {formatFullDateTime(selectedReport.createdAtUtc)}
+                      </Text>
+                    </View>
+                    <View style={styles.metaColRight}>
+                      <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                        AFFECTED
+                      </Text>
+                      <Text style={[styles.metricMono, { color: colors.textPrimary }]}>
+                        {selectedReport.victimCount}{' '}
+                        {selectedReport.victimCount === 1 ? 'person' : 'people'}
+                      </Text>
+                    </View>
+                  </View>
 
-                <Pressable
-                  onPress={() => void handleRetrySelected()}
-                  disabled={retrying}
-                  style={({ pressed }) => [
-                    styles.modalRetryBtn,
-                    {
-                      backgroundColor: colors.accentPrimary,
-                      opacity: retrying ? 0.7 : 1,
-                      transform: [{ scale: pressed ? 0.97 : 1 }],
-                    },
+                  <View style={[styles.metaDivider, { backgroundColor: colors.borderSubtle }]} />
+
+                  <View style={styles.gpsRow}>
+                    <View style={styles.metaCol}>
+                      <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                        GPS COORDINATES
+                      </Text>
+                      <Text style={[styles.metricMono, { color: EMERGENCY_COLORS.telemetry }]}>
+                        {selectedReport.lat !== 0 || selectedReport.lng !== 0
+                          ? `${selectedReport.lat.toFixed(5)}, ${selectedReport.lng.toFixed(5)} (+/-${Math.round(selectedReport.accuracyMeters)}m)`
+                          : 'No GPS fix recorded'}
+                      </Text>
+                    </View>
+                    {selectedReport.lat !== 0 || selectedReport.lng !== 0 ? (
+                      <Tactile3DButton
+                        onPress={() => {
+                          const url = `geo:${selectedReport.lat},${selectedReport.lng}?q=${selectedReport.lat},${selectedReport.lng}`;
+                          void Linking.openURL(url);
+                        }}
+                        offset={2}
+                        backgroundColor={colors.bgSurfaceElevated}
+                        borderColor={colors.tactileBorder}
+                        contentStyle={styles.mapLinkBtn}
+                      >
+                        <Ionicons name="map-outline" size={14} color={colors.textPrimary} />
+                        <Text style={[styles.mapLinkText, { color: colors.textPrimary }]}>
+                          Maps
+                        </Text>
+                      </Tactile3DButton>
+                    ) : null}
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    styles.modalNotesBox,
+                    { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
                   ]}
                 >
-                  <Ionicons name="sync-outline" size={16} color="#FFFFFF" />
-                  <Text style={styles.modalRetryText}>
-                    {retrying ? 'Syncing...' : 'Retry Sync'}
+                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                    SITUATION NOTES
                   </Text>
-                </Pressable>
+                  <ScrollView style={styles.modalNotesScroll} nestedScrollEnabled>
+                    <Text style={[styles.modalNotesText, { color: colors.textPrimary }]}>
+                      {selectedReport.rawText
+                        ? selectedReport.rawText
+                        : 'No additional notes provided.'}
+                    </Text>
+                  </ScrollView>
+                </View>
+
+                <View style={styles.modalActions}>
+                  <Tactile3DButton
+                    onPress={handleDeleteSelected}
+                    offset={3}
+                    backgroundColor={colors.bgSurfaceElevated}
+                    borderColor={colors.tactileBorder}
+                    style={styles.modalDeleteBtnWrap}
+                    contentStyle={styles.modalDeleteBtn}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={EMERGENCY_COLORS.critical} />
+                    <Text style={[styles.modalDeleteText, { color: EMERGENCY_COLORS.critical }]}>
+                      Delete
+                    </Text>
+                  </Tactile3DButton>
+
+                  <Tactile3DButton
+                    onPress={() => void handleRetrySelected()}
+                    disabled={retrying}
+                    offset={3}
+                    backgroundColor={colors.accentPrimary}
+                    borderColor={colors.tactileBorder}
+                    style={styles.modalRetryBtnWrap}
+                    contentStyle={styles.modalRetryBtn}
+                  >
+                    <Ionicons name="sync-outline" size={16} color="#FFFFFF" />
+                    <Text style={styles.modalRetryText}>
+                      {retrying ? 'Syncing...' : 'Retry Sync'}
+                    </Text>
+                  </Tactile3DButton>
+                </View>
               </View>
             </View>
           </View>
@@ -812,6 +795,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bleTitle: {
+    fontFamily: FONTS.displayBold,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -836,7 +820,7 @@ const styles = StyleSheet.create({
   },
   terminalRow: {
     borderRadius: RADII.control,
-    borderWidth: 1,
+    borderWidth: 2,
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: 'row',
@@ -844,17 +828,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   terminalName: {
+    fontFamily: FONTS.displayBold,
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   terminalRssi: {
+    fontFamily: FONTS.monoBold,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   terminalAction: {
+    fontFamily: FONTS.displayBold,
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   feedHeaderRow: {
     flexDirection: 'row',
@@ -863,40 +850,54 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   sectionTitle: {
+    fontFamily: FONTS.displayBold,
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   clearFilterText: {
+    fontFamily: FONTS.displaySemi,
     fontSize: 12,
     fontWeight: '700',
   },
   emptyCard: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
     padding: 24,
     alignItems: 'center',
     gap: 10,
   },
   emptyTitle: {
+    fontFamily: FONTS.displayBold,
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   emptySub: {
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
   },
-  emptyActionBtn: {
+  emptyActionBtnWrap: {
     marginTop: 4,
+  },
+  emptyActionBtn: {
     paddingHorizontal: 18,
     paddingVertical: 12,
-    borderRadius: RADII.pill,
   },
   emptyActionText: {
+    fontFamily: FONTS.displayBold,
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  reportCardOuter: {
+    position: 'relative',
+  },
+  cardShadowBacking: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: -4,
+    bottom: -4,
+    borderRadius: RADII.card,
   },
   reportCard: {
     borderRadius: RADII.card,
@@ -917,15 +918,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   severityText: {
+    fontFamily: FONTS.monoBold,
     fontSize: 11,
-    fontWeight: '900',
+    fontWeight: '700',
     letterSpacing: 0.6,
   },
   syncPlainText: {
+    fontFamily: FONTS.monoBold,
     fontSize: 11,
     fontWeight: '700',
   },
   reportMetaLine: {
+    fontFamily: FONTS.monoReg,
     fontSize: 11,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
@@ -942,6 +946,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   coords: {
+    fontFamily: FONTS.monoReg,
     fontSize: 11,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
@@ -952,10 +957,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 18,
   },
-  modalCard: {
+  modalOuter: {
+    position: 'relative',
     maxHeight: '86%',
+  },
+  modalCard: {
     borderRadius: RADII.card,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: 20,
     gap: 12,
   },
@@ -977,19 +985,19 @@ const styles = StyleSheet.create({
   modalCloseIconBtn: {
     width: 34,
     height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalEyebrow: {
+    fontFamily: FONTS.monoBold,
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.8,
   },
   modalTitle: {
+    fontFamily: FONTS.displayBold,
     fontSize: 21,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   modalMetricsRow: {
     flexDirection: 'row',
@@ -998,20 +1006,23 @@ const styles = StyleSheet.create({
   modalMetricBox: {
     flex: 1,
     borderRadius: RADII.control,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: 12,
     gap: 4,
   },
   metricLabel: {
+    fontFamily: FONTS.monoBold,
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.6,
   },
   metricValue: {
+    fontFamily: FONTS.displayBold,
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   metricMono: {
+    fontFamily: FONTS.monoBold,
     fontSize: 11,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
@@ -1019,7 +1030,7 @@ const styles = StyleSheet.create({
   modalNotesBox: {
     flexShrink: 1,
     borderRadius: RADII.control,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: 12,
     gap: 6,
   },
@@ -1028,7 +1039,7 @@ const styles = StyleSheet.create({
   },
   modalMetaCard: {
     borderRadius: RADII.control,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: 12,
     gap: 10,
   },
@@ -1060,10 +1071,9 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
   },
   mapLinkText: {
+    fontFamily: FONTS.displayBold,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -1076,32 +1086,35 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 2,
   },
-  modalDeleteBtn: {
+  modalDeleteBtnWrap: {
     flex: 1,
-    minHeight: 50,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
+  },
+  modalDeleteBtn: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
   modalDeleteText: {
+    fontFamily: FONTS.displayBold,
     fontSize: 13,
     fontWeight: '700',
   },
-  modalRetryBtn: {
+  modalRetryBtnWrap: {
     flex: 2,
-    minHeight: 50,
-    borderRadius: RADII.pill,
+  },
+  modalRetryBtn: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
   modalRetryText: {
+    fontFamily: FONTS.displayBold,
     color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
   },
 });

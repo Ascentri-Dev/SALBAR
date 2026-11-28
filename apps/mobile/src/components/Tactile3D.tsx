@@ -83,7 +83,7 @@ export function Tactile3DCard({
           styles.face,
           {
             borderRadius: radius,
-            borderColor: borderColor ?? colors.borderSubtle,
+            borderColor: borderColor ?? colors.tactileBorder,
             backgroundColor: backgroundColor ?? colors.bgSurface,
           },
           contentStyle,
@@ -176,7 +176,7 @@ export function Tactile3DButton({
           styles.face,
           {
             borderRadius: radius,
-            borderColor: borderColor ?? colors.borderSubtle,
+            borderColor: borderColor ?? colors.tactileBorder,
             backgroundColor: backgroundColor ?? colors.accentPrimary,
             transform: [{ translateX: shift }, { translateY: shift }],
           },

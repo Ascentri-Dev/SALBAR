@@ -16,6 +16,7 @@ export interface ThemePalette {
   accentHover: string;
   accentSubtle: string;
   tactileShadow: string;
+  tactileBorder: string;
 }
 
 export const DARK_PALETTE: ThemePalette = {
@@ -30,7 +31,8 @@ export const DARK_PALETTE: ThemePalette = {
   accentPrimary: '#FF6B00',
   accentHover: '#FF8533',
   accentSubtle: 'rgba(255, 107, 0, 0.12)',
-  tactileShadow: '#040711',
+  tactileShadow: '#0F172A',
+  tactileBorder: '#0F172A',
 };
 
 export const LIGHT_PALETTE: ThemePalette = {
@@ -46,6 +48,7 @@ export const LIGHT_PALETTE: ThemePalette = {
   accentHover: '#C2410C',
   accentSubtle: 'rgba(234, 88, 12, 0.10)',
   tactileShadow: '#0F172A',
+  tactileBorder: '#0F172A',
 };
 
 export const EMERGENCY_COLORS = {

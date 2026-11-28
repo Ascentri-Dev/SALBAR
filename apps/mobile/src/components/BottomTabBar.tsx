@@ -133,7 +133,7 @@ export function BottomTabBar({
             styles.pillBar,
             {
               backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
+              borderColor: colors.tactileBorder,
             },
           ]}
         >
@@ -214,7 +214,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   tabPressed: {
-    transform: [{ scale: 0.95 }],
+    opacity: 0.78,
+    transform: [{ translateY: 1 }],
   },
   staggerRow: {
     flexDirection: 'row',

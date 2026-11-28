@@ -164,17 +164,12 @@ function EmergencyTile({
       onPress={onPress}
       style={styles.gridTileWrapper}
     >
-      <Animated.View
-        style={[
-          styles.tileOuter,
-          { opacity: dimAnim },
-        ]}
-      >
-        <View
+      <View style={styles.tileOuter}>
+        <Animated.View
           pointerEvents="none"
           style={[
             styles.tileShadowBacking,
-            { backgroundColor: colors.tactileShadow },
+            { backgroundColor: colors.tactileShadow, opacity: dimAnim },
           ]}
         />
         <Animated.View
@@ -188,19 +183,21 @@ function EmergencyTile({
             },
           ]}
         >
-          <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
-          <ContainerTexture texture={item.texture} color={item.accentColor} />
+          <Animated.View style={[styles.tileInnerFill, { opacity: dimAnim }]}>
+            <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+            <ContainerTexture texture={item.texture} color={item.accentColor} />
 
-          <View style={styles.tileTextBlock}>
-            <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
-              {item.label}
-            </Text>
-            <Text style={[styles.tileHint, { color: colors.textSecondary }]} numberOfLines={1}>
-              {item.localHint}
-            </Text>
-          </View>
+            <View style={styles.tileTextBlock}>
+              <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
+                {item.label}
+              </Text>
+              <Text style={[styles.tileHint, { color: colors.textSecondary }]} numberOfLines={1}>
+                {item.localHint}
+              </Text>
+            </View>
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }
@@ -252,17 +249,12 @@ function UrgencyGridCard({
       }}
       style={styles.urgencyGridWrap}
     >
-      <Animated.View
-        style={[
-          styles.tileOuter,
-          { opacity },
-        ]}
-      >
-        <View
+      <View style={styles.tileOuter}>
+        <Animated.View
           pointerEvents="none"
           style={[
             styles.tileShadowBacking,
-            { backgroundColor: colors.tactileShadow },
+            { backgroundColor: colors.tactileShadow, opacity },
           ]}
         />
         <View
@@ -275,43 +267,45 @@ function UrgencyGridCard({
             },
           ]}
         >
-          {!selected ? (
-            <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
-          ) : null}
+          <Animated.View style={[styles.tileInnerFill, { opacity }]}>
+            {!selected ? (
+              <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+            ) : null}
 
-          {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
-          {isCritical ? (
-            <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
-              {[0, 1, 2, 3, 4].map((i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.stripeLine,
-                    { backgroundColor: selected ? '#FFFFFF' : opt.color, right: -24 + i * 24 },
-                  ]}
-                />
-              ))}
-            </View>
-          ) : null}
+            {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
+            {isCritical ? (
+              <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.stripeLine,
+                      { backgroundColor: selected ? '#FFFFFF' : opt.color, right: -24 + i * 24 },
+                    ]}
+                  />
+                ))}
+              </View>
+            ) : null}
 
-          <Text
-            style={[
-              styles.urgencyCardLabel,
-              { color: selected ? '#FFFFFF' : colors.textPrimary },
-            ]}
-          >
-            {opt.label}
-          </Text>
-          <Text
-            style={[
-              styles.urgencyCardSub,
-              { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
-            ]}
-          >
-            {opt.subtitle}
-          </Text>
+            <Text
+              style={[
+                styles.urgencyCardLabel,
+                { color: selected ? '#FFFFFF' : colors.textPrimary },
+              ]}
+            >
+              {opt.label}
+            </Text>
+            <Text
+              style={[
+                styles.urgencyCardSub,
+                { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
+              ]}
+            >
+              {opt.subtitle}
+            </Text>
+          </Animated.View>
         </View>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }
@@ -928,10 +922,14 @@ const styles = StyleSheet.create({
   gridTile: {
     flex: 1,
     borderRadius: RADII.card,
+    overflow: 'hidden',
+  },
+  tileInnerFill: {
+    flex: 1,
     padding: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    gap: 4,
   },
   tileTintOverlay: {
     position: 'absolute',
@@ -1088,10 +1086,6 @@ const styles = StyleSheet.create({
   urgencyGridCard: {
     flex: 1,
     borderRadius: RADII.card,
-    padding: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
     overflow: 'hidden',
   },
   urgencyCardLabel: {

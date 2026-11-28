@@ -115,15 +115,10 @@ function KpiFilterCard({
 
   return (
     <Pressable onPress={onPress} style={styles.kpiWrap}>
-      <Animated.View
-        style={[
-          styles.kpiOuter,
-          { opacity: dimAnim },
-        ]}
-      >
-        <View
+      <View style={styles.kpiOuter}>
+        <Animated.View
           pointerEvents="none"
-          style={[styles.kpiShadow, { backgroundColor: colors.tactileShadow }]}
+          style={[styles.kpiShadow, { backgroundColor: colors.tactileShadow, opacity: dimAnim }]}
         />
         <View
           style={[
@@ -135,8 +130,114 @@ function KpiFilterCard({
             },
           ]}
         >
-          <Text style={[styles.kpiValue, { color: accentColor }]}>{value}</Text>
-          <Text style={[styles.kpiLabel, { color: colors.textSecondary }]}>{label}</Text>
+          <Animated.View style={{ opacity: dimAnim, alignItems: 'center' }}>
+            <Text style={[styles.kpiValue, { color: accentColor }]}>{value}</Text>
+            <Text style={[styles.kpiLabel, { color: colors.textSecondary }]}>{label}</Text>
+          </Animated.View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+/**
+ * Saved Report Card with fluid 3D tactile press animation.
+ */
+function SavedReportCard({
+  report,
+  onPress,
+}: {
+  report: LocalReport;
+  onPress: () => void;
+}) {
+  const { colors } = useAppTheme();
+  const press = useRef(new Animated.Value(0)).current;
+
+  const catOpt = getCategoryOption(report.category);
+  const urgencyColor = getUrgencyColor(report.urgency);
+  const syncMeta = getSyncMeta(report.syncStatus);
+
+  const handlePressIn = () => {
+    Animated.timing(press, {
+      toValue: 1,
+      duration: 75,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(press, {
+      toValue: 0,
+      friction: 6,
+      tension: 180,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const shift = press.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 3],
+  });
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={styles.reportCardOuter}
+    >
+      <View
+        pointerEvents="none"
+        style={[styles.cardShadowBacking, { backgroundColor: colors.tactileShadow }]}
+      />
+      <Animated.View
+        style={[
+          styles.reportCard,
+          {
+            backgroundColor: colors.bgSurface,
+            borderColor: colors.tactileBorder,
+            borderLeftColor: catOpt.accentColor,
+            transform: [{ translateX: shift }, { translateY: shift }],
+          },
+        ]}
+      >
+        <View style={styles.reportTop}>
+          <Text style={[styles.reportCategory, { color: colors.textPrimary }]}>
+            {getCategoryLabel(report.category)}
+          </Text>
+          <Text style={[styles.severityText, { color: urgencyColor }]}>
+            {report.urgency}
+          </Text>
+        </View>
+
+        <Text style={[styles.reportMetaLine, { color: colors.textSecondary }]}>
+          #{report.incidentIdNum}  •  {report.victimCount}{' '}
+          {report.victimCount === 1 ? 'person' : 'people'}  •  {' '}
+          {formatTimestamp(report.createdAtUtc)}
+        </Text>
+
+        {report.rawText ? (
+          <Text
+            style={[styles.reportBody, { color: colors.textPrimary }]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {report.rawText}
+          </Text>
+        ) : null}
+
+        <View style={styles.reportFooter}>
+          <Text style={[styles.coords, { color: colors.textMuted }]}>
+            {report.lat !== 0 || report.lng !== 0
+              ? `${report.lat.toFixed(4)}, ${report.lng.toFixed(4)}`
+              : 'NO GPS FIX'}
+          </Text>
+          {report.syncStatus !== 'PENDING_LOCAL' ? (
+            <Text style={[styles.syncPlainText, { color: syncMeta.color }]}>
+              {syncMeta.label}
+            </Text>
+          ) : null}
         </View>
       </Animated.View>
     </Pressable>
@@ -429,73 +530,16 @@ export function OutboxScreen({
             </Tactile3DButton>
           </Tactile3DCard>
         ) : (
-          filteredReports.map((report) => {
-            const catOpt = getCategoryOption(report.category);
-            const urgencyColor = getUrgencyColor(report.urgency);
-            const syncMeta = getSyncMeta(report.syncStatus);
-
-            return (
-              <View key={report.id} style={styles.reportCardOuter}>
-                <View
-                  pointerEvents="none"
-                  style={[styles.cardShadowBacking, { backgroundColor: colors.tactileShadow }]}
-                />
-                <Pressable
-                  onPress={() => {
-                    void Haptics.selectionAsync();
-                    setSelectedReport(report);
-                  }}
-                  style={({ pressed }) => [
-                    styles.reportCard,
-                    {
-                      backgroundColor: colors.bgSurface,
-                      borderColor: colors.tactileBorder,
-                      borderLeftColor: catOpt.accentColor,
-                      transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
-                    },
-                  ]}
-                >
-                <View style={styles.reportTop}>
-                  <Text style={[styles.reportCategory, { color: colors.textPrimary }]}>
-                    {getCategoryLabel(report.category)}
-                  </Text>
-                  <Text style={[styles.severityText, { color: urgencyColor }]}>
-                    {report.urgency}
-                  </Text>
-                </View>
-
-                <Text style={[styles.reportMetaLine, { color: colors.textSecondary }]}>
-                  #{report.incidentIdNum}  •  {report.victimCount}{' '}
-                  {report.victimCount === 1 ? 'person' : 'people'}  •  {' '}
-                  {formatTimestamp(report.createdAtUtc)}
-                </Text>
-
-                {report.rawText ? (
-                  <Text
-                    style={[styles.reportBody, { color: colors.textPrimary }]}
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
-                    {report.rawText}
-                  </Text>
-                ) : null}
-
-                <View style={styles.reportFooter}>
-                  <Text style={[styles.coords, { color: colors.textMuted }]}>
-                    {report.lat !== 0 || report.lng !== 0
-                      ? `${report.lat.toFixed(4)}, ${report.lng.toFixed(4)}`
-                      : 'NO GPS FIX'}
-                  </Text>
-                  {report.syncStatus !== 'PENDING_LOCAL' ? (
-                    <Text style={[styles.syncPlainText, { color: syncMeta.color }]}>
-                      {syncMeta.label}
-                    </Text>
-                  ) : null}
-                </View>
-                </Pressable>
-              </View>
-            );
-          })
+          filteredReports.map((report) => (
+            <SavedReportCard
+              key={report.id}
+              report={report}
+              onPress={() => {
+                void Haptics.selectionAsync();
+                setSelectedReport(report);
+              }}
+            />
+          ))
         )}
       </ScrollView>
 

@@ -269,7 +269,7 @@ export function TacticalMap({
             })}
           >
             <Popup closeButton={false} className="salbar-popup">
-              <div className="relative overflow-hidden bg-[var(--bg-surface)]/95 backdrop-blur-xl border border-amber-500/40 p-4 rounded-2xl shadow-2xl text-xs text-[var(--text-primary)] w-60 font-sans select-none">
+              <div className="relative overflow-hidden bg-[var(--bg-surface)] salbar-tactile-card salbar-reveal-up m-1 p-4 rounded-2xl text-xs text-[var(--text-primary)] w-60 font-sans select-none">
                 <BorderBeam delay={0} color="#F59E0B" />
                 <div className="relative z-10 flex items-center gap-1.5 text-amber-400 font-bold mb-1.5 text-[11px] font-mono tracking-wider">
                   <AlertTriangle size={13} />
@@ -294,7 +294,7 @@ export function TacticalMap({
             icon={createResponderMarkerIcon(resp)}
           >
             <Popup closeButton={false} className="salbar-popup">
-              <div className="relative overflow-hidden bg-[var(--bg-surface)]/95 backdrop-blur-xl border border-[var(--border-subtle)] p-4 rounded-2xl shadow-2xl text-xs text-[var(--text-primary)] w-68 sm:w-72 font-sans select-none">
+              <div className="relative overflow-hidden bg-[var(--bg-surface)] salbar-tactile-card salbar-reveal-up m-1 p-4 rounded-2xl text-xs text-[var(--text-primary)] w-68 sm:w-72 font-sans select-none">
                 <BorderBeam delay={0} color="#10B981" />
 
                 {/* Header */}
@@ -313,7 +313,7 @@ export function TacticalMap({
                 {/* Telemetry Matrix Grid */}
                 <div className="relative z-10 space-y-2 mb-3">
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="p-2.5 rounded-xl bg-[var(--bg-surface-elevated)]/60 border border-[var(--border-subtle)]/70">
+                    <div className="p-2.5 rounded-xl bg-[var(--bg-surface-elevated)]/60 border-2 border-[var(--tactile-border)]">
                       <div className="flex items-center gap-1 text-[10px] font-mono text-[var(--text-secondary)] uppercase">
                         <Battery size={12} className="text-emerald-400" />
                         <span>Power Level</span>
@@ -323,7 +323,7 @@ export function TacticalMap({
                       </div>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-[var(--bg-surface-elevated)]/60 border border-[var(--border-subtle)]/70">
+                    <div className="p-2.5 rounded-xl bg-[var(--bg-surface-elevated)]/60 border-2 border-[var(--tactile-border)]">
                       <div className="flex items-center gap-1 text-[10px] font-mono text-[var(--text-secondary)] uppercase">
                         <Radio size={12} className="text-[var(--accent-primary)]" />
                         <span>LoRa Link</span>
@@ -334,7 +334,7 @@ export function TacticalMap({
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-[var(--bg-surface-elevated)]/60 border border-[var(--border-subtle)]/70 flex items-center justify-between text-[11px]">
+                  <div className="p-2.5 rounded-xl bg-[var(--bg-surface-elevated)]/60 border-2 border-[var(--tactile-border)] flex items-center justify-between text-[11px]">
                     <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                       <Navigation size={12} className="text-cyan-400" />
                       <span>GNSS Precision</span>
@@ -376,7 +376,7 @@ export function TacticalMap({
               }}
             >
               <Popup closeButton={false} className="salbar-popup">
-                <div className="relative overflow-hidden bg-[var(--bg-surface)]/95 backdrop-blur-xl border border-[var(--border-subtle)] p-4 rounded-2xl shadow-2xl text-xs text-[var(--text-primary)] w-72 sm:w-80 font-sans select-none">
+                <div className="relative overflow-hidden bg-[var(--bg-surface)] salbar-tactile-card salbar-reveal-up m-1 p-4 rounded-2xl text-xs text-[var(--text-primary)] w-72 sm:w-80 font-sans select-none">
                   <BorderBeam delay={0} color={inc.urgency === 'CRITICAL' ? '#EF4444' : '#ff6b00'} />
 
                   {/* Header */}
@@ -403,7 +403,7 @@ export function TacticalMap({
                   </div>
 
                   {/* Raw Field Quote */}
-                  <div className="relative z-10 p-2.5 rounded-xl bg-[var(--bg-surface-elevated)]/60 border border-[var(--border-subtle)]/70 mb-2.5">
+                  <div className="relative z-10 p-2.5 rounded-xl bg-[var(--bg-surface-elevated)]/60 border-2 border-[var(--tactile-border)] mb-2.5">
                     <div className="text-[9px] font-mono uppercase text-[var(--text-secondary)] mb-1 flex items-center justify-between">
                       <span>LoRa Transmission</span>
                       <span className="text-[var(--accent-primary)] font-bold">{inc.detectedLanguage}</span>
@@ -436,7 +436,7 @@ export function TacticalMap({
                             onApproveDispatch(inc.id, inc.recommendedUnitId)
                           }
                         }}
-                        className="w-full py-2.5 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-[11px] font-mono font-bold uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-95 group"
+                        className="w-full py-2.5 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-[11px] font-mono font-bold uppercase tracking-wider rounded-full flex items-center justify-center gap-2 salbar-tactile-btn cursor-pointer group"
                       >
                         <span>{inc.status === 'DISPATCHED' ? 'View Live Dispatch' : 'Approve & Dispatch via LoRa'}</span>
                         <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />

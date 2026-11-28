@@ -65,10 +65,10 @@ export function IncidentStreamPanel({
             <button
               type="button"
               onClick={onClose}
-              className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
                 isLight
-                  ? 'hover:bg-slate-200 text-slate-600 hover:text-slate-900'
-                  : 'hover:bg-[var(--bg-surface-elevated)] text-slate-400 hover:text-white'
+                  ? 'bg-white text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
               }`}
               title="Collapse Queue"
               aria-label="Collapse Queue"

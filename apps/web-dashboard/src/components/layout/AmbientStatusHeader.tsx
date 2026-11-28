@@ -203,7 +203,7 @@ export function AmbientStatusHeader({
             opacity: isNavbarOpen ? 1 : 0,
           }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className={`relative w-full h-full flex items-center justify-between rounded-full px-6 sm:px-10 pointer-events-auto salbar-tactile-card hover:scale-[1.012] transition-all duration-300 ${
+          className={`relative w-full h-full flex items-center justify-between rounded-full px-6 sm:px-10 pointer-events-auto salbar-tactile-card hover:border-[var(--accent-primary)] transition-colors duration-200 ${
             isLight
               ? 'bg-white'
               : 'bg-[var(--bg-surface)]'

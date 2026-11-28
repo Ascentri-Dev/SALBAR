@@ -20,15 +20,16 @@ const containerVariants: Variants = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.09,
+      staggerChildren: 0.08,
       delayChildren: 0.03,
     },
   },
   exit: {
-    opacity: 0,
+    opacity: 1,
     transition: {
-      staggerChildren: 0.05,
+      staggerChildren: 0.045,
       staggerDirection: -1,
+      when: 'afterChildren',
     },
   },
 }
@@ -39,13 +40,13 @@ const getCardVariants = (align: 'left' | 'right'): Variants => ({
     x: 0,
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
   },
   exit: {
     x: align === 'right' ? 35 : -35,
     opacity: 0,
     scale: 0.94,
-    transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
   },
 })
 
@@ -198,9 +199,6 @@ export function KPIStrip({
       {/* Staggered Animated Circular Pill Cards */}
       <motion.div
         variants={containerVariants}
-        initial="hidden"
-        animate="show"
-        exit="exit"
         className="flex flex-col gap-2.5"
       >
         {kpiStats.map((stat) => {

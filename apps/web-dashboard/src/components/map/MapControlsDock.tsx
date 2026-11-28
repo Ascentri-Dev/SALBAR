@@ -106,7 +106,7 @@ export function MapControlsDock({
 
       <div className={`w-px h-5 my-auto ${isLight ? 'bg-slate-300' : 'bg-[var(--border-subtle)]'}`} />
 
-      {/* Map Tile Style Toggle */}
+      {/* Map Tile Style Selector */}
       <button
         type="button"
         onClick={onToggleTileType}
@@ -117,11 +117,9 @@ export function MapControlsDock({
         }
         aria-label="Toggle Map Tile Style"
         className={`h-9 sm:h-10 px-3 rounded-full flex items-center justify-center gap-1.5 salbar-tactile-sm cursor-pointer text-xs font-bold ${
-          mapTileType === 'humanitarian'
-            ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white'
-            : isLight
-              ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
-              : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
+          isLight
+            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
+            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
         }`}
       >
         <Layers size={14} />
@@ -130,18 +128,16 @@ export function MapControlsDock({
 
       <div className={`w-px h-5 my-auto ${isLight ? 'bg-slate-300' : 'bg-[var(--border-subtle)]'}`} />
 
-      {/* Map Dark / Light Mode Toggle */}
+      {/* Map Dark / Light Mode Selector */}
       <button
         type="button"
         onClick={onToggleMapDark}
         title={isMapDark ? 'Map: Dark Mode (Click for Light Mode)' : 'Map: Light Mode (Click for Dark Mode)'}
         aria-label="Toggle Map Dark Mode"
         className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center salbar-tactile-sm cursor-pointer ${
-          isMapDark
-            ? isLight
-              ? 'bg-slate-100 text-amber-500 hover:bg-[var(--accent-primary)] hover:text-white'
-              : 'bg-[var(--bg-surface-elevated)] text-amber-400 hover:bg-[var(--accent-primary)] hover:text-white'
-            : 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white'
+          isLight
+            ? 'bg-slate-100 text-slate-800 hover:bg-[var(--accent-primary)] hover:text-white'
+            : 'bg-[var(--bg-surface-elevated)] text-amber-400 hover:bg-[var(--accent-primary)] hover:text-white'
         }`}
       >
         {isMapDark ? <Sun size={16} /> : <Moon size={16} />}

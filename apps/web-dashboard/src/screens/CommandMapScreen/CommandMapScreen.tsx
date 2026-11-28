@@ -23,6 +23,18 @@ export interface CommandMapScreenProps {
 const DEFAULT_CENTER: [number, number] = [10.3157, 123.8854]
 const DEFAULT_ZOOM = 14
 
+const kpiStripWrapperVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { duration: 0.2 },
+  },
+  exit: {
+    opacity: 0,
+    transition: { when: 'afterChildren' as const, duration: 0.15 },
+  },
+}
+
 export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
   const { theme, isMapDark, toggleMapDark, isNavbarOpen, setIsNavbarOpen } = useTheme()
   const isLight = theme === 'light'
@@ -294,10 +306,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
             {isKpiOpen ? (
               <motion.div
                 key="left-kpi-strip"
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                variants={kpiStripWrapperVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
                 className="pointer-events-auto absolute left-3 sm:left-5 top-20 z-20"
               >
                 <KPIStrip
@@ -513,10 +525,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 ) : (
                   <motion.div
                     key="right-kpi-strip"
-                    initial={{ x: 35, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: 35, opacity: 0 }}
-                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    variants={kpiStripWrapperVariants}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
                     className="pointer-events-auto"
                   >
                     <KPIStrip

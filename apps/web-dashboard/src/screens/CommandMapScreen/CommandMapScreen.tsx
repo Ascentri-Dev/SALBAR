@@ -318,10 +318,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 type="button"
                 onClick={() => setIsKpiOpen(true)}
-                className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full salbar-tactile-btn cursor-pointer select-none ${
                   isLight
                     ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                 }`}
                 title="Show Metrics"
                 aria-label="Show Metrics"
@@ -347,7 +347,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                 type="button"
                 onClick={toggleFocusMode}
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-[var(--accent-primary)] text-white shadow-2xl hover:bg-[var(--accent-hover)] transition-all cursor-pointer active:scale-95"
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-[var(--accent-primary)] border-[var(--text-primary)] text-white salbar-tactile-btn hover:bg-[var(--accent-hover)] cursor-pointer"
                 title="Exit Focus Mode (Return to Normal)"
                 aria-label="Exit Focus Mode"
               >
@@ -362,10 +362,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                 type="button"
                 onClick={() => setIsControlsOpen(true)}
-                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border shadow-2xl transition-all cursor-pointer active:scale-95 ${
+                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center salbar-tactile-btn cursor-pointer ${
                   isLight
                     ? 'bg-white border-slate-300 text-slate-800 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-200 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-200 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                 }`}
                 title="Show Map Controls"
                 aria-label="Show Map Controls"
@@ -411,7 +411,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
           <div className="relative h-full flex flex-col min-h-0 gap-2.5">
             {/* Top segment: Live Queue Feed with Circular Pill Styling */}
             <div
-              className={`transition-all duration-300 overflow-hidden ${
+              className={`transition-all duration-300 pr-1 pb-1 ${
                 selectedIncident ? 'h-1/2 min-h-[220px]' : 'h-full'
               }`}
             >
@@ -428,7 +428,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
 
             {/* Bottom segment: HITL Dispatch Authorization Drawer */}
             {selectedIncident && (
-              <div className="h-1/2 min-h-[260px] overflow-hidden">
+              <div className="h-1/2 min-h-[260px] pr-1 pb-1">
                 <HITLDispatchDrawer
                   key={selectedIncident.id}
                   incident={selectedIncident}
@@ -458,10 +458,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
               <button
                 type="button"
                 onClick={() => setIsQueueOpen(true)}
-                className={`pointer-events-auto flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                className={`pointer-events-auto flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full salbar-tactile-btn cursor-pointer select-none ${
                   isLight
                     ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                 }`}
                 title="Show Live Dispatch Queue"
                 aria-label="Show Live Dispatch Queue"
@@ -483,10 +483,10 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                     type="button"
                     onClick={() => setIsKpiOpen(true)}
-                    className={`pointer-events-auto flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full border shadow-2xl transition-all cursor-pointer select-none active:scale-95 ${
+                    className={`pointer-events-auto flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full salbar-tactile-btn cursor-pointer select-none ${
                       isLight
                         ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)] shadow-black/40'
+                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                     }`}
                     title="Show Metrics"
                     aria-label="Show Metrics"

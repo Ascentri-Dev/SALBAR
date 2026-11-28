@@ -159,7 +159,7 @@ export function KPIStrip({
             <button
               type="button"
               onClick={onClose}
-              className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
                 isLight
                   ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                   : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
@@ -181,7 +181,7 @@ export function KPIStrip({
             <button
               type="button"
               onClick={onClose}
-              className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
                 isLight
                   ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                   : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'

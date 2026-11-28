@@ -38,10 +38,10 @@ export function IncidentStreamPanel({
 
   return (
     <div
-      className={`flex flex-col h-full rounded-3xl border shadow-2xl overflow-hidden font-sans select-none transition-colors duration-300 ${
+      className={`flex flex-col h-full rounded-3xl salbar-tactile-card overflow-hidden font-sans select-none transition-colors duration-300 ${
         isLight
-          ? 'bg-white border-slate-300 shadow-slate-300/40 text-slate-900'
-          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] shadow-black/50 text-slate-100'
+          ? 'bg-white border-slate-300 text-slate-900'
+          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100'
       } ${className}`.trim()}
     >
       {/* Panel Header with Circular Collapse Button */}

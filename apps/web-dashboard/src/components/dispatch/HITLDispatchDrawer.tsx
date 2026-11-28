@@ -55,10 +55,10 @@ export function HITLDispatchDrawer({
 
   return (
     <div
-      className={`flex flex-col h-full rounded-3xl border shadow-2xl overflow-hidden font-sans select-none transition-colors duration-300 ${
+      className={`flex flex-col h-full rounded-3xl salbar-tactile-card overflow-hidden font-sans select-none transition-colors duration-300 ${
         isLight
-          ? 'bg-white border-slate-300 shadow-slate-300/40 text-slate-900'
-          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] shadow-black/50 text-slate-100'
+          ? 'bg-white border-slate-300 text-slate-900'
+          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100'
       } ${className}`.trim()}
     >
       {/* Header */}
@@ -241,7 +241,7 @@ export function HITLDispatchDrawer({
               type="button"
               onClick={handleApprove}
               disabled={isSubmitting}
-              className="flex-1 py-2.5 px-4 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg active:scale-95 disabled:opacity-50"
+              className="flex-1 py-2.5 px-4 rounded-full bg-[var(--accent-primary)] border-[var(--text-primary)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 salbar-tactile-btn cursor-pointer disabled:opacity-50"
             >
               <Send size={13} />
               {isSubmitting ? 'Transmitting...' : 'Authorize Dispatch'}
@@ -250,10 +250,10 @@ export function HITLDispatchDrawer({
               type="button"
               onClick={handleReject}
               disabled={isSubmitting}
-              className={`py-2.5 px-4 rounded-full border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-95 ${
+              className={`py-2.5 px-4 rounded-full text-xs font-bold uppercase tracking-wider salbar-tactile-btn cursor-pointer ${
                 isLight
-                  ? 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                  : 'border-[var(--border-subtle)] text-slate-300 hover:bg-[var(--bg-surface-elevated)]'
+                  ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                  : 'bg-[var(--bg-surface-elevated)] border-[var(--border-subtle)] text-slate-300 hover:bg-[var(--bg-surface)]'
               }`}
             >
               Reject

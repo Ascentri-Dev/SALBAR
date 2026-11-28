@@ -168,10 +168,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
             <button
               type="button"
               onClick={handleExportCSV}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer active:scale-95 ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 isLight
-                  ? 'bg-white border-slate-300 text-slate-800 hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] shadow-sm'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-200 hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] shadow-md shadow-black/40'
+                  ? 'bg-white text-slate-800 hover:text-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] text-slate-200 hover:text-[var(--accent-primary)]'
               }`}
             >
               <Download size={14} className="text-[var(--accent-primary)]" />
@@ -181,7 +181,7 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
             <button
               type="button"
               onClick={handleExportPDF}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--accent-primary)] text-white text-xs font-black tracking-wider uppercase hover:bg-[var(--accent-hover)] transition-all cursor-pointer shadow-md active:scale-95"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full salbar-tactile-btn font-heading bg-[var(--accent-primary)] text-white text-xs font-black tracking-wider uppercase hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] cursor-pointer"
             >
               <Printer size={14} />
               <span>Export PDF (RDANA)</span>
@@ -197,7 +197,7 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.98 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="p-3 rounded-2xl border text-xs font-bold text-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+              className="p-3 rounded-2xl border-2 border-[var(--tactile-border)] shadow-[3px_3px_0_var(--tactile-shadow)] text-xs font-bold text-center bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
             >
               {exportNotice}
             </motion.div>
@@ -211,10 +211,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
         >
           {/* Total Archived */}
           <div
-            className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
+            className={`p-4 rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] flex items-center gap-3.5 ${
               isLight
-                ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/40'
+                ? 'bg-white text-slate-900'
+                : 'bg-[var(--bg-surface)] text-slate-100'
             }`}
           >
             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] shrink-0">
@@ -235,10 +235,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
 
           {/* Resolution Rate */}
           <div
-            className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
+            className={`p-4 rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] flex items-center gap-3.5 ${
               isLight
-                ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/40'
+                ? 'bg-white text-slate-900'
+                : 'bg-[var(--bg-surface)] text-slate-100'
             }`}
           >
             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -259,10 +259,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
 
           {/* Average Response Time */}
           <div
-            className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
+            className={`p-4 rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] flex items-center gap-3.5 ${
               isLight
-                ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/40'
+                ? 'bg-white text-slate-900'
+                : 'bg-[var(--bg-surface)] text-slate-100'
             }`}
           >
             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-500/15 text-amber-500 shrink-0">
@@ -283,10 +283,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
 
           {/* Compliance Ready */}
           <div
-            className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
+            className={`p-4 rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] flex items-center gap-3.5 ${
               isLight
-                ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/40'
+                ? 'bg-white text-slate-900'
+                : 'bg-[var(--bg-surface)] text-slate-100'
             }`}
           >
             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/15 text-blue-500 shrink-0">
@@ -313,16 +313,16 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
         >
           {/* Status Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={() => setStatusFilter('ALL')}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 statusFilter === 'ALL'
-                  ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] shadow-md'
+                  ? 'bg-[var(--accent-primary)] text-white hover:border-[var(--tactile-border)]'
                   : isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:border-slate-400'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-[var(--accent-primary)]'
+                    ? 'bg-white text-slate-700'
+                    : 'bg-[var(--bg-surface)] text-slate-300'
               }`}
             >
               ALL ({records.length})
@@ -330,12 +330,12 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
             <button
               type="button"
               onClick={() => setStatusFilter('RESOLVED')}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 statusFilter === 'RESOLVED'
-                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-md'
+                  ? 'bg-emerald-500 text-white hover:border-[var(--tactile-border)]'
                   : isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:border-slate-400'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-emerald-500'
+                    ? 'bg-white text-slate-700'
+                    : 'bg-[var(--bg-surface)] text-slate-300'
               }`}
             >
               RESOLVED
@@ -343,12 +343,12 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
             <button
               type="button"
               onClick={() => setStatusFilter('DISPATCHED')}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 statusFilter === 'DISPATCHED'
-                  ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] shadow-md'
+                  ? 'bg-[var(--accent-primary)] text-white hover:border-[var(--tactile-border)]'
                   : isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:border-slate-400'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-[var(--accent-primary)]'
+                    ? 'bg-white text-slate-700'
+                    : 'bg-[var(--bg-surface)] text-slate-300'
               }`}
             >
               DISPATCHED
@@ -356,12 +356,12 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
             <button
               type="button"
               onClick={() => setStatusFilter('UNASSIGNED')}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 statusFilter === 'UNASSIGNED'
-                  ? 'bg-amber-500 text-white border-amber-500 shadow-md'
+                  ? 'bg-amber-500 text-white hover:border-[var(--tactile-border)]'
                   : isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:border-slate-400'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-amber-500'
+                    ? 'bg-white text-slate-700'
+                    : 'bg-[var(--bg-surface)] text-slate-300'
               }`}
             >
               UNASSIGNED
@@ -379,10 +379,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search ID, category, location..."
-              className={`w-full pl-9 pr-4 py-1.5 rounded-full border text-xs font-sans transition-colors focus:outline-none focus:border-[var(--accent-primary)] ${
+              className={`w-full pl-9 pr-4 py-1.5 rounded-full border-2 border-[var(--tactile-border)] shadow-[2px_2px_0_var(--tactile-shadow)] text-xs font-sans transition-colors focus:outline-none focus:border-[var(--accent-primary)] ${
                 isLight
-                  ? 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 placeholder:text-slate-400'
+                  ? 'bg-white text-slate-900 placeholder:text-slate-400'
+                  : 'bg-[var(--bg-surface)] text-slate-100 placeholder:text-slate-400'
               }`}
             />
           </div>
@@ -392,10 +392,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
         <motion.section
           variants={itemVariants}
           data-testid="archive-table-container"
-          className={`rounded-3xl border shadow-xl overflow-hidden transition-all ${
+          className={`rounded-3xl salbar-tactile-card overflow-hidden ${
             isLight
-              ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-              : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/50'
+              ? 'bg-white text-slate-900'
+              : 'bg-[var(--bg-surface)] text-slate-100'
           }`}
         >
           <div className="overflow-x-auto salbar-scrollbar">
@@ -403,10 +403,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
               {/* Table Header */}
               <thead>
                 <tr
-                  className={`border-b font-mono font-black uppercase text-[10px] tracking-wider ${
+                  className={`border-b-2 border-[var(--tactile-border)] font-mono font-black uppercase text-[10px] tracking-wider ${
                     isLight
-                      ? 'bg-slate-100/70 border-slate-200 text-slate-700'
-                      : 'bg-[var(--bg-surface-elevated)]/60 border-[var(--border-subtle)] text-slate-300'
+                      ? 'bg-slate-100/70 text-slate-700'
+                      : 'bg-[var(--bg-surface-elevated)]/60 text-slate-300'
                   }`}
                 >
                   <th className="py-3.5 px-4">Incident ID</th>
@@ -469,10 +469,10 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
                       <button
                         type="button"
                         onClick={() => setSelectedIncident(item)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full salbar-tactile-sm font-heading text-[11px] font-black uppercase tracking-wider cursor-pointer ${
                           isLight
-                            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white hover:border-[var(--accent-primary)] text-slate-800 border-slate-300'
-                            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white hover:border-[var(--accent-primary)] text-slate-200 border-[var(--border-subtle)]'
+                            ? 'bg-slate-100 hover:text-[var(--accent-primary)] text-slate-800'
+                            : 'bg-[var(--bg-surface-elevated)] hover:text-[var(--accent-primary)] text-slate-200'
                         }`}
                       >
                         <span>Audit Trail</span>
@@ -501,7 +501,7 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
                   setStatusFilter('ALL')
                   setSearchQuery('')
                 }}
-                className="px-4 py-1.5 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
+                className="px-4 py-1.5 rounded-full salbar-tactile-btn font-heading bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] cursor-pointer"
               >
                 Reset Search Filters
               </button>

@@ -258,13 +258,13 @@ body {
   }
 
   .salbar-tactile-sm:hover:not(:disabled) {
-    transform: translate(-1.5px, -1.5px) scale(1.06);
-    box-shadow: 4px 4px 0 var(--tactile-shadow);
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--tactile-shadow);
     border-color: var(--accent-primary);
   }
 
   .salbar-tactile-sm:active:not(:disabled) {
-    transform: translate(1.5px, 1.5px) scale(0.96);
+    transform: translate(1.5px, 1.5px);
     box-shadow: 0 0 0 var(--tactile-shadow);
   }
 
@@ -281,13 +281,13 @@ body {
   }
 
   .salbar-tactile-btn:hover:not(:disabled) {
-    transform: translate(-2px, -2px) scale(1.025);
-    box-shadow: 5px 5px 0 var(--tactile-shadow);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--tactile-shadow);
     border-color: var(--accent-primary);
   }
 
   .salbar-tactile-btn:active:not(:disabled) {
-    transform: translate(2px, 2px) scale(0.98);
+    transform: translate(2px, 2px);
     box-shadow: 0 0 0 var(--tactile-shadow);
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type Dispatch, type SetStateAction } from 'react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import {
@@ -15,13 +15,17 @@ import {
   Coffee,
   SlidersHorizontal,
 } from 'lucide-react'
-import type { ResponderStatus } from '../../types/cad'
+import type { FieldResponder, ResponderStatus } from '../../types/cad'
 import type { ScreenId } from '../../types/navigation'
+import type { GatewayConnectionState } from '../../hooks/useGatewayBridge'
 import { useTheme } from '../../context'
 import { UnitInspectorModal, type FleetResponderUnit } from './UnitInspectorModal'
 
 export interface FleetManagementScreenProps {
   onSelectScreen?: (screenId: ScreenId) => void
+  responders?: FieldResponder[]
+  setResponders?: Dispatch<SetStateAction<FieldResponder[]>>
+  connectionState?: GatewayConnectionState
   className?: string
 }
 
@@ -72,15 +76,62 @@ const itemVariants: Variants = {
 
 export function FleetManagementScreen({
   onSelectScreen,
+  responders: externalResponders,
+  setResponders: externalSetResponders,
+  connectionState,
   className = '',
 }: FleetManagementScreenProps) {
-  const { theme, isNavbarOpen } = useTheme()
+  const { theme } = useTheme()
   const isLight = theme === 'light'
 
-  const [responders, setResponders] = useState<FleetResponderUnit[]>(DEFAULT_FLEET_UNITS)
+  const [localResponders, setLocalResponders] = useState<FleetResponderUnit[]>(DEFAULT_FLEET_UNITS)
   const [statusFilter, setStatusFilter] = useState<'ALL' | ResponderStatus | 'N/A'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
-  const [inspectingUnit, setInspectingUnit] = useState<FleetResponderUnit | null>(null)
+  const [inspectingUnitId, setInspectingUnitId] = useState<string | null>(null)
+
+  const responders: FleetResponderUnit[] = useMemo(() => {
+    if (!externalResponders) return localResponders
+    return externalResponders.map((r) => ({
+      id: r.id,
+      name: r.name,
+      role: r.role,
+      status: r.status,
+      batteryPercent: r.batteryPercent,
+      batteryVoltage: r.batteryVoltage,
+      fatigueScore: r.fatigueScore,
+      location: {
+        lat: r.location.lat,
+        lng: r.location.lng,
+        accuracyMeters: r.location.accuracyMeters,
+        kalmanFiltered: r.location.kalmanFiltered,
+      },
+      assignedIncidentId: r.assignedIncidentId ?? null,
+      lastSeen: r.lastSeen,
+      relayedReportsCount: r.relayedReportsCount,
+      terminalType: r.terminalType,
+    }))
+  }, [externalResponders, localResponders])
+
+  const inspectingUnit = useMemo(
+    () => responders.find((r) => r.id === inspectingUnitId) ?? null,
+    [responders, inspectingUnitId]
+  )
+
+  const fleetStats = useMemo(() => {
+    const total = responders.length
+    const online = responders.filter((r) => r.status !== 'OFFLINE' && r.status !== 'N/A').length
+    const available = responders.filter((r) => r.status === 'AVAILABLE').length
+    const fatigueValues = responders
+      .map((r) => r.fatigueScore)
+      .filter((v): v is number => v !== null)
+    const avgFatigue =
+      fatigueValues.length > 0
+        ? Math.round(fatigueValues.reduce((sum, v) => sum + v, 0) / fatigueValues.length)
+        : null
+    const totalRelayed = responders.reduce((sum, r) => sum + (r.relayedReportsCount ?? 0), 0)
+    const readinessPct = total > 0 ? Math.round((available / total) * 100) : 0
+    return { total, online, available, avgFatigue, totalRelayed, readinessPct }
+  }, [responders])
 
   // Filtered Responders
   const filteredResponders = useMemo(() => {
@@ -96,18 +147,31 @@ export function FleetManagementScreen({
     })
   }, [responders, statusFilter, searchQuery])
 
-  // Status Handlers
+  // Status Handlers (updates shared App state when connected, or local state in standalone/test mode)
   const handleUpdateStatus = (unitId: string, newStatus: ResponderStatus | 'N/A') => {
-    setResponders((prev) =>
+    if (externalSetResponders && newStatus !== 'N/A') {
+      externalSetResponders((prev) =>
+        prev.map((r) => (r.id === unitId ? { ...r, status: newStatus } : r))
+      )
+      return
+    }
+    setLocalResponders((prev) =>
       prev.map((r) => (r.id === unitId ? { ...r, status: newStatus } : r))
     )
-    if (inspectingUnit?.id === unitId) {
-      setInspectingUnit((prev) => (prev ? { ...prev, status: newStatus } : null))
-    }
   }
 
   const handleToggleRest = (unitId: string) => {
-    setResponders((prev) =>
+    if (externalSetResponders) {
+      externalSetResponders((prev) =>
+        prev.map((r) => {
+          if (r.id !== unitId) return r
+          const isResting = r.status === 'RESTING'
+          return { ...r, status: isResting ? 'AVAILABLE' : 'RESTING' }
+        })
+      )
+      return
+    }
+    setLocalResponders((prev) =>
       prev.map((r) => {
         if (r.id !== unitId) return r
         const isResting = r.status === 'RESTING'
@@ -120,12 +184,15 @@ export function FleetManagementScreen({
   }
 
   const handleUpdateFatigue = (unitId: string, newFatigueScore: number | null) => {
-    setResponders((prev) =>
+    if (externalSetResponders && newFatigueScore !== null) {
+      externalSetResponders((prev) =>
+        prev.map((r) => (r.id === unitId ? { ...r, fatigueScore: newFatigueScore } : r))
+      )
+      return
+    }
+    setLocalResponders((prev) =>
       prev.map((r) => (r.id === unitId ? { ...r, fatigueScore: newFatigueScore } : r))
     )
-    if (inspectingUnit?.id === unitId) {
-      setInspectingUnit((prev) => (prev ? { ...prev, fatigueScore: newFatigueScore } : null))
-    }
   }
 
   const getStatusBadge = (status: ResponderStatus | 'N/A') => {
@@ -183,9 +250,7 @@ export function FleetManagementScreen({
   return (
     <div
       data-testid="screen-fleet-management"
-      className={`screen-fleet-management flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pb-8 overflow-y-auto salbar-scrollbar select-none font-sans transition-[padding] duration-300 ${
-        isNavbarOpen ? 'pt-20 sm:pt-22' : 'pt-4 sm:pt-6'
-      } ${className}`.trim()}
+      className={`screen-fleet-management flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pb-8 pt-20 sm:pt-22 overflow-y-auto salbar-scrollbar select-none font-sans ${className}`.trim()}
     >
       <motion.div
         variants={containerVariants}
@@ -210,18 +275,25 @@ export function FleetManagementScreen({
           {/* Quick Fleet Health Badges */}
           <div className="flex items-center gap-2">
             <span
-              className={`font-mono text-xs font-bold px-3 py-1.5 rounded-full salbar-tactile-sm ${
+              className={`font-mono text-xs font-bold px-3 py-1.5 rounded-full salbar-tactile-sm flex items-center gap-2 ${
                 isLight
                   ? 'bg-white text-slate-700'
                   : 'bg-[var(--bg-surface)] text-slate-200'
               }`}
             >
-              Terminals: N/A
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  connectionState?.isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                }`}
+              />
+              {connectionState?.isConnected
+                ? `Gateway Live (${connectionState.port}) • ${fleetStats.total} Terminal${fleetStats.total === 1 ? '' : 's'}`
+                : `Terminals: ${fleetStats.total} (Gateway Standby)`}
             </span>
           </div>
         </motion.header>
 
-        {/* Fleet KPI Summary Strip (4 Circular Cards with N/A) */}
+        {/* Fleet KPI Summary Strip */}
         <motion.section
           variants={itemVariants}
           className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
@@ -243,10 +315,10 @@ export function FleetManagementScreen({
                   Deployed Terminals
                 </span>
                 <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                  N/A
+                  {fleetStats.total}
                 </span>
                 <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
-                  Mesh Sync: N/A
+                  Online: {fleetStats.online} / {fleetStats.total}
                 </span>
               </div>
             </div>
@@ -269,10 +341,10 @@ export function FleetManagementScreen({
                   Readiness State
                 </span>
                 <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                  N/A
+                  {fleetStats.available} Ready
                 </span>
                 <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
-                  Status: N/A
+                  {fleetStats.readinessPct}% Available
                 </span>
               </div>
             </div>
@@ -295,10 +367,10 @@ export function FleetManagementScreen({
                   Fleet Avg Fatigue
                 </span>
                 <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                  N/A
+                  {fleetStats.avgFatigue !== null ? `${fleetStats.avgFatigue}%` : 'N/A'}
                 </span>
                 <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
-                  Telemetry: N/A
+                  {connectionState?.isConnected ? 'Live Telemetry' : 'Awaiting Packet'}
                 </span>
               </div>
             </div>
@@ -321,10 +393,10 @@ export function FleetManagementScreen({
                   BLE Mesh Packets
                 </span>
                 <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                  N/A
+                  {fleetStats.totalRelayed}
                 </span>
                 <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
-                  Ingestion: N/A
+                  LoRa / BLE Relayed
                 </span>
               </div>
             </div>
@@ -566,9 +638,11 @@ export function FleetManagementScreen({
                       isLight ? 'bg-slate-50' : 'bg-[var(--bg-base)]/40'
                     }`}
                   >
-                    <span>Assignment: N/A</span>
+                    <span>
+                      Assignment: {unit.assignedIncidentId ?? 'Standby'}
+                    </span>
                     <span className="font-mono text-[10px] text-[var(--text-secondary)] font-bold">
-                      Awaiting Mission
+                      {unit.lastSeen ?? 'Awaiting Sync'}
                     </span>
                   </div>
                 </div>
@@ -594,7 +668,7 @@ export function FleetManagementScreen({
                   {/* Inspect Telemetry */}
                   <button
                     type="button"
-                    onClick={() => setInspectingUnit(unit)}
+                    onClick={() => setInspectingUnitId(unit.id)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                       isLight
                         ? 'bg-slate-100 hover:bg-slate-200 text-slate-800'
@@ -657,7 +731,7 @@ export function FleetManagementScreen({
         <UnitInspectorModal
           unit={inspectingUnit}
           assignedIncident={null}
-          onClose={() => setInspectingUnit(null)}
+          onClose={() => setInspectingUnitId(null)}
           onUpdateStatus={handleUpdateStatus}
           onUpdateFatigue={handleUpdateFatigue}
         />

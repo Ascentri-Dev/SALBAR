@@ -104,7 +104,7 @@ const itemVariants: Variants = {
 }
 
 export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenProps) {
-  const { theme, isNavbarOpen } = useTheme()
+  const { theme } = useTheme()
   const isLight = theme === 'light'
 
   const [records] = useState<ArchivedIncidentRecord[]>(DEFAULT_ARCHIVE_RECORDS)
@@ -139,9 +139,7 @@ export function IncidentArchiveScreen({ className = '' }: IncidentArchiveScreenP
   return (
     <div
       data-testid="screen-incident-archive"
-      className={`screen-incident-archive flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pb-8 overflow-y-auto salbar-scrollbar select-none font-sans transition-[padding] duration-300 ${
-        isNavbarOpen ? 'pt-20 sm:pt-22' : 'pt-4 sm:pt-6'
-      } ${className}`.trim()}
+      className={`screen-incident-archive flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pb-8 pt-20 sm:pt-22 overflow-y-auto salbar-scrollbar select-none font-sans ${className}`.trim()}
     >
       <motion.div
         variants={containerVariants}

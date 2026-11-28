@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect, type Dispatch, type SetStateAction } from 'react'
 import { ChevronRight, ChevronLeft, Minimize2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import L from 'leaflet'
@@ -17,6 +17,11 @@ import type { IncidentReport, FieldResponder } from '../../types/cad'
 import { useGatewayBridge, type LiveTelemetryUpdate } from '../../hooks/useGatewayBridge'
 
 export interface CommandMapScreenProps {
+  incidents?: IncidentReport[]
+  setIncidents?: Dispatch<SetStateAction<IncidentReport[]>>
+  responders?: FieldResponder[]
+  setResponders?: Dispatch<SetStateAction<FieldResponder[]>>
+  sendDispatch?: (targetUnit: string, incidentId: string, notes?: string) => void
   className?: string
 }
 
@@ -35,26 +40,44 @@ const kpiStripWrapperVariants = {
   },
 }
 
-export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
+export function CommandMapScreen({
+  incidents: externalIncidents,
+  setIncidents: externalSetIncidents,
+  responders: externalResponders,
+  setResponders: externalSetResponders,
+  sendDispatch: externalSendDispatch,
+  className = '',
+}: CommandMapScreenProps) {
   const { theme, isMapDark, toggleMapDark, isNavbarOpen, setIsNavbarOpen } = useTheme()
   const isLight = theme === 'light'
 
-  const [incidents, setIncidents] = useState<IncidentReport[]>(INITIAL_INCIDENTS)
-  const [responders, setResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
+  const [localIncidents, setLocalIncidents] = useState<IncidentReport[]>(INITIAL_INCIDENTS)
+  const [localResponders, setLocalResponders] = useState<FieldResponder[]>(INITIAL_RESPONDERS)
+
+  const incidents = externalIncidents ?? localIncidents
+  const setIncidents = externalSetIncidents ?? setLocalIncidents
+  const responders = externalResponders ?? localResponders
+  const setResponders = externalSetResponders ?? setLocalResponders
+
   const [selectedIncident, setSelectedIncident] = useState<IncidentReport | null>(null)
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('ALL')
   const hasAutoCenteredRef = useRef(false)
 
-  // Handler for live LoRa telemetry packet arriving from Gateway
+  // Auto-center map on first live responder fix when coordinates arrive
+  useEffect(() => {
+    if (hasAutoCenteredRef.current || !mapRef.current) return
+    const fixed = responders.find((r) => !(r.location.lat === 0 && r.location.lng === 0))
+    if (fixed) {
+      mapRef.current.flyTo([fixed.location.lat, fixed.location.lng], 15, { duration: 1.0 })
+      hasAutoCenteredRef.current = true
+    }
+  }, [responders])
+
+  // Standalone fallback bridge only when CommandMapScreen is mounted without App-level state
   const handleLiveTelemetry = useCallback(
     (telemetry: LiveTelemetryUpdate) => {
-      // Auto-center map on unit upon receiving valid live coordinates
-      if (!hasAutoCenteredRef.current && telemetry.lat !== undefined && telemetry.lng !== undefined && mapRef.current) {
-        mapRef.current.flyTo([telemetry.lat, telemetry.lng], 15, { duration: 1.0 })
-        hasAutoCenteredRef.current = true
-      }
-
-      setResponders((prev) => {
+      if (externalSetResponders) return
+      setLocalResponders((prev) => {
         const exists = prev.some((r) => r.id === telemetry.id)
         if (!exists) {
           const newUnit: FieldResponder = {
@@ -67,7 +90,6 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
             batteryVoltage: telemetry.batteryVoltage ?? 4.0,
             fatigueScore: telemetry.fatigueScore ?? 10,
             location: {
-              // 0,0 = no fix yet; the map hides units that never had a fix
               lat: telemetry.lat ?? 0,
               lng: telemetry.lng ?? 0,
               accuracyMeters: telemetry.accuracyMeters ?? 0,
@@ -107,22 +129,29 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
         })
       })
     },
-    []
+    [externalSetResponders]
   )
 
-  // Handler for live emergency reports arriving over LoRa from Gateway
-  const handleLiveIncident = useCallback((incomingInc: IncidentReport) => {
-    setIncidents((prev) => {
-      if (prev.some((i) => i.id === incomingInc.id)) return prev
-      return [incomingInc, ...prev]
-    })
-    setKpiFilter('ALL')
-    if (incomingInc.location?.lat && incomingInc.location?.lng && mapRef.current) {
-      mapRef.current.flyTo([incomingInc.location.lat, incomingInc.location.lng], 16, { duration: 1.0 })
-    }
-  }, [])
+  const handleLiveIncident = useCallback(
+    (incomingInc: IncidentReport) => {
+      if (externalSetIncidents) return
+      setLocalIncidents((prev) => {
+        if (prev.some((i) => i.id === incomingInc.id)) return prev
+        return [incomingInc, ...prev]
+      })
+      setKpiFilter('ALL')
+      if (incomingInc.location?.lat && incomingInc.location?.lng && mapRef.current) {
+        mapRef.current.flyTo([incomingInc.location.lat, incomingInc.location.lng], 16, { duration: 1.0 })
+      }
+    },
+    [externalSetIncidents]
+  )
 
-  const { sendDispatch } = useGatewayBridge(handleLiveTelemetry, handleLiveIncident)
+  const { sendDispatch: localSendDispatch } = useGatewayBridge(
+    externalSetResponders ? undefined : handleLiveTelemetry,
+    externalSetIncidents ? undefined : handleLiveIncident
+  )
+  const sendDispatch = externalSendDispatch ?? localSendDispatch
 
   const [mapTileType, setMapTileType] = useState<MapTileType>('standard')
   const [isKpiOpen, setIsKpiOpen] = useState(false)

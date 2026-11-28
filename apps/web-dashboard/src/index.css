@@ -46,8 +46,8 @@
   --accent-primary: #ff6b00;
   --accent-hover: #ff8533;
   --accent-subtle: rgba(255, 107, 0, 0.12);
-  --tactile-shadow: #f8fafc;
-  --tactile-border: #f8fafc;
+  --tactile-shadow: #0f172a;
+  --tactile-border: #0f172a;
 
   /* Starter Template Compatibility Aliases */
   --bg: var(--bg-base);

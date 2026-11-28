@@ -24,8 +24,9 @@ import {
   UrgencyOption,
 } from '../constants/triage';
 import { createReport } from '../db/reportsRepository';
+import { Tactile3DButton, Tactile3DCard } from '../components/Tactile3D';
 import { useAppTheme } from '../theme/ThemeContext';
-import { EMERGENCY_COLORS, RADII } from '../theme/tokens';
+import { EMERGENCY_COLORS, FONTS, RADII } from '../theme/tokens';
 import type { GpsReading, IncidentCategory, IncidentUrgency } from '../types/report';
 import { getUtf8ByteLength, MAX_RAW_TEXT_BYTES, truncateToUtf8Bytes } from '../utils/utf8';
 
@@ -165,26 +166,38 @@ function EmergencyTile({
     >
       <Animated.View
         style={[
-          styles.gridTile,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: isThisFocused ? colors.textPrimary : item.accentColor,
-            borderWidth: isThisFocused ? 2.5 : 1.5,
-            opacity: dimAnim,
-            transform: [{ scale }],
-          },
+          styles.tileOuter,
+          { opacity: dimAnim, transform: [{ scale }] },
         ]}
       >
-        <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
-        <ContainerTexture texture={item.texture} color={item.accentColor} />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.tileShadowBacking,
+            { backgroundColor: colors.tactileShadow },
+          ]}
+        />
+        <View
+          style={[
+            styles.gridTile,
+            {
+              backgroundColor: colors.bgSurface,
+              borderColor: isThisFocused ? colors.textPrimary : item.accentColor,
+              borderWidth: isThisFocused ? 2.5 : 2,
+            },
+          ]}
+        >
+          <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+          <ContainerTexture texture={item.texture} color={item.accentColor} />
 
-        <View style={styles.tileTextBlock}>
-          <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
-            {item.label}
-          </Text>
-          <Text style={[styles.tileHint, { color: colors.textSecondary }]} numberOfLines={1}>
-            {item.localHint}
-          </Text>
+          <View style={styles.tileTextBlock}>
+            <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
+              {item.label}
+            </Text>
+            <Text style={[styles.tileHint, { color: colors.textSecondary }]} numberOfLines={1}>
+              {item.localHint}
+            </Text>
+          </View>
         </View>
       </Animated.View>
     </Pressable>
@@ -228,54 +241,80 @@ function UrgencyGridCard({
   });
 
   return (
-    <Pressable onPress={onPress} style={styles.urgencyGridWrap}>
+    <Pressable
+      onPress={() => {
+        Animated.sequence([
+          Animated.timing(focusAnim, { toValue: 0.2, duration: 70, useNativeDriver: true }),
+          Animated.spring(focusAnim, {
+            toValue: 1,
+            friction: 5,
+            tension: 160,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        onPress();
+      }}
+      style={styles.urgencyGridWrap}
+    >
       <Animated.View
         style={[
-          styles.urgencyGridCard,
-          {
-            backgroundColor: selected ? opt.color : colors.bgSurface,
-            borderColor: selected ? colors.textPrimary : opt.color,
-            borderWidth: selected || isCritical ? 2.2 : 1.5,
-            opacity,
-            transform: [{ scale }],
-          },
+          styles.tileOuter,
+          { opacity, transform: [{ scale }] },
         ]}
       >
-        {!selected ? (
-          <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
-        ) : null}
-
-        {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
-        {isCritical ? (
-          <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <View
-                key={i}
-                style={[
-                  styles.stripeLine,
-                  { backgroundColor: selected ? '#FFFFFF' : opt.color, right: -24 + i * 24 },
-                ]}
-              />
-            ))}
-          </View>
-        ) : null}
-
-        <Text
+        <View
+          pointerEvents="none"
           style={[
-            styles.urgencyCardLabel,
-            { color: selected ? '#FFFFFF' : colors.textPrimary },
+            styles.tileShadowBacking,
+            { backgroundColor: colors.tactileShadow },
+          ]}
+        />
+        <View
+          style={[
+            styles.urgencyGridCard,
+            {
+              backgroundColor: selected ? opt.color : colors.bgSurface,
+              borderColor: selected ? colors.textPrimary : opt.color,
+              borderWidth: 2,
+            },
           ]}
         >
-          {opt.label}
-        </Text>
-        <Text
-          style={[
-            styles.urgencyCardSub,
-            { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
-          ]}
-        >
-          {opt.subtitle}
-        </Text>
+          {!selected ? (
+            <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+          ) : null}
+
+          {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
+          {isCritical ? (
+            <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.stripeLine,
+                    { backgroundColor: selected ? '#FFFFFF' : opt.color, right: -24 + i * 24 },
+                  ]}
+                />
+              ))}
+            </View>
+          ) : null}
+
+          <Text
+            style={[
+              styles.urgencyCardLabel,
+              { color: selected ? '#FFFFFF' : colors.textPrimary },
+            ]}
+          >
+            {opt.label}
+          </Text>
+          <Text
+            style={[
+              styles.urgencyCardSub,
+              { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
+            ]}
+          >
+            {opt.subtitle}
+          </Text>
+        </View>
       </Animated.View>
     </Pressable>
   );
@@ -555,13 +594,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               ))}
             </View>
 
-            {/* Symmetric Affected Persons Selector: -10  -1  [ 1 ]  +1  +10 */}
-            <View
-              style={[
-                styles.peopleCard,
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-              ]}
-            >
+            <Tactile3DCard offset={4} contentStyle={styles.peopleCardInner}>
               <Text style={[styles.peopleTitle, { color: colors.textPrimary }]}>
                 Affected Persons (Tap number to type)
               </Text>
@@ -638,24 +671,19 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                   <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>+10</Text>
                 </Pressable>
               </View>
-            </View>
+            </Tactile3DCard>
 
-            <Pressable
+            <Tactile3DButton
               onPress={() => {
                 void Haptics.selectionAsync();
                 goToStage(3);
               }}
-              style={({ pressed }) => [
-                styles.primaryCta,
-                {
-                  backgroundColor: colors.accentPrimary,
-                  transform: [{ scale: pressed ? 0.97 : 1 }],
-                },
-              ]}
+              borderColor={colors.textPrimary}
+              contentStyle={styles.primaryCtaInner}
             >
               <Text style={styles.primaryCtaText}>NEXT: SITUATION NOTES</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-            </Pressable>
+            </Tactile3DButton>
           </View>
         ) : null}
 
@@ -708,22 +736,17 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               />
             </Animated.View>
 
-            <Pressable
+            <Tactile3DButton
               onPress={() => {
                 void Haptics.selectionAsync();
                 setConfirmOpen(true);
               }}
-              style={({ pressed }) => [
-                styles.primaryCta,
-                {
-                  backgroundColor: colors.accentPrimary,
-                  transform: [{ scale: pressed ? 0.97 : 1 }],
-                },
-              ]}
+              borderColor={colors.textPrimary}
+              contentStyle={styles.primaryCtaInner}
             >
               <Text style={styles.primaryCtaText}>REVIEW & SEND</Text>
               <Ionicons name="checkmark-circle-outline" size={19} color="#FFFFFF" />
-            </Pressable>
+            </Tactile3DButton>
           </View>
         ) : null}
       </Animated.View>
@@ -864,9 +887,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   stageTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontFamily: FONTS.displayBold,
+    fontSize: 25,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   stageSubtitle: {
     fontSize: 13,
@@ -880,8 +904,20 @@ const styles = StyleSheet.create({
     rowGap: 10,
   },
   gridTileWrapper: {
-    width: '48.3%',
-    height: '31.5%',
+    width: '48%',
+    height: '31%',
+  },
+  tileOuter: {
+    flex: 1,
+    position: 'relative',
+  },
+  tileShadowBacking: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: -4,
+    bottom: -4,
+    borderRadius: RADII.card,
   },
   gridTile: {
     flex: 1,
@@ -1020,8 +1056,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tileLabel: {
+    fontFamily: FONTS.displayBold,
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.3,
     textAlign: 'center',
   },
@@ -1039,8 +1076,8 @@ const styles = StyleSheet.create({
     rowGap: 10,
   },
   urgencyGridWrap: {
-    width: '48.3%',
-    height: '48.5%',
+    width: '48%',
+    height: '47.5%',
   },
   urgencyGridCard: {
     flex: 1,
@@ -1052,8 +1089,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   urgencyCardLabel: {
-    fontSize: 17,
-    fontWeight: '900',
+    fontFamily: FONTS.displayBold,
+    fontSize: 18,
+    fontWeight: '700',
     letterSpacing: 0.5,
     textAlign: 'center',
   },
@@ -1062,9 +1100,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  peopleCard: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
+  peopleCardInner: {
     padding: 14,
     gap: 10,
   },
@@ -1095,10 +1131,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: RADII.pill,
-    borderWidth: 1.5,
+    borderWidth: 2,
     textAlign: 'center',
+    fontFamily: FONTS.monoBold,
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   notesHeaderRow: {
@@ -1107,6 +1144,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   byteCounter: {
+    fontFamily: FONTS.monoBold,
     fontSize: 12,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
@@ -1114,7 +1152,7 @@ const styles = StyleSheet.create({
   massiveNotesBox: {
     flex: 1,
     borderRadius: RADII.card,
-    borderWidth: 1.5,
+    borderWidth: 2,
     overflow: 'hidden',
   },
   massiveTextInput: {
@@ -1149,19 +1187,19 @@ const styles = StyleSheet.create({
   voiceSub: {
     fontSize: 11,
   },
-  primaryCta: {
+  primaryCtaInner: {
     minHeight: 54,
-    borderRadius: RADII.pill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
   primaryCtaText: {
+    fontFamily: FONTS.displayBold,
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.7,
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
   arrowBarContainer: {
     flexDirection: 'row',

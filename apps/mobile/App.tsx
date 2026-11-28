@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import {
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_600SemiBold,
+  SpaceGrotesk_700Bold,
+} from '@expo-google-fonts/space-grotesk';
+import {
+  JetBrainsMono_400Regular,
+  JetBrainsMono_700Bold,
+} from '@expo-google-fonts/jetbrains-mono';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { BottomTabBar, MobileTab } from './src/components/BottomTabBar';
 import { SplashScreen } from './src/components/SplashScreen';
@@ -29,6 +39,13 @@ const TAB_ORDER: Record<MobileTab, number> = {
 };
 
 function SalbarMobileShell() {
+  const [fontsLoaded] = useFonts({
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_600SemiBold,
+    SpaceGrotesk_700Bold,
+    JetBrainsMono_400Regular,
+    JetBrainsMono_700Bold,
+  });
   const { colors, isDark } = useAppTheme();
   const { reading: gps, refreshPermission } = useLocationStatus();
   const network = useNetworkStatus();
@@ -161,7 +178,10 @@ function SalbarMobileShell() {
       </View>
 
       {splashVisible ? (
-        <SplashScreen ready={dbReady} onFinish={() => setSplashVisible(false)} />
+        <SplashScreen
+          ready={dbReady && fontsLoaded}
+          onFinish={() => setSplashVisible(false)}
+        />
       ) : null}
     </SafeAreaView>
   );

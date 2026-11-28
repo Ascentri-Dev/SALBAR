@@ -142,7 +142,7 @@ export function IncidentStreamPanel({
               <div
                 key={inc.id}
                 onClick={() => onSelectIncident(inc)}
-                className={`p-3.5 rounded-2xl border border-l-4 ${statusBorderColor} transition-all cursor-pointer select-none font-sans shadow-sm hover:shadow-md ${
+                className={`p-3.5 rounded-2xl border-l-4 ${statusBorderColor} salbar-tactile-btn cursor-pointer select-none font-sans ${
                   isSelected
                     ? isLight
                       ? 'border-[var(--accent-primary)] bg-orange-50/40 ring-2 ring-[var(--accent-primary)]'

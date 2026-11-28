@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/ThemeContext';
-import { EMERGENCY_COLORS, RADII } from '../theme/tokens';
+import { EMERGENCY_COLORS, FONTS, RADII } from '../theme/tokens';
 
 export type MobileTab = 'report' | 'outbox' | 'guide';
 
@@ -123,16 +123,20 @@ export function BottomTabBar({
 
   return (
     <View pointerEvents="box-none" style={styles.floatingWrapper}>
-      <View
-        style={[
-          styles.pillBar,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
-            shadowColor: isDark ? '#000000' : '#64748B',
-          },
-        ]}
-      >
+      <View style={styles.pillOuter}>
+        <View
+          pointerEvents="none"
+          style={[styles.pillShadow, { backgroundColor: colors.tactileShadow }]}
+        />
+        <View
+          style={[
+            styles.pillBar,
+            {
+              backgroundColor: colors.bgSurface,
+              borderColor: colors.borderSubtle,
+            },
+          ]}
+        >
         {TAB_ITEMS.map((tab) => {
           const active = tab.id === activeTab;
           const iconColor = active ? colors.accentPrimary : colors.textSecondary;
@@ -162,6 +166,7 @@ export function BottomTabBar({
             </Pressable>
           );
         })}
+        </View>
       </View>
     </View>
   );
@@ -171,9 +176,21 @@ const styles = StyleSheet.create({
   floatingWrapper: {
     position: 'absolute',
     left: 16,
-    right: 16,
-    bottom: 14,
+    right: 20,
+    bottom: 16,
     alignItems: 'center',
+  },
+  pillOuter: {
+    width: '100%',
+    position: 'relative',
+  },
+  pillShadow: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: -4,
+    bottom: -4,
+    borderRadius: RADII.pill,
   },
   pillBar: {
     width: '100%',
@@ -181,19 +198,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: RADII.pill,
-    borderWidth: 1,
+    borderWidth: 2,
     paddingVertical: 6,
     paddingHorizontal: 10,
     gap: 4,
-    ...Platform.select({
-      android: { elevation: 12 },
-      ios: {
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.35,
-        shadowRadius: 18,
-      },
-      default: {},
-    }),
   },
   tabItem: {
     flex: 1,
@@ -219,6 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   charText: {
+    fontFamily: FONTS.displayBold,
     fontSize: 11,
     lineHeight: CHAR_HEIGHT,
     fontWeight: '700',

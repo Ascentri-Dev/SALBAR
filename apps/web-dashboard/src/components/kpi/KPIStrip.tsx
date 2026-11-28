@@ -212,15 +212,15 @@ export function KPIStrip({
               variants={cardVariants}
               type="button"
               onClick={() => onFilterChange(stat.id)}
-              className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full border px-5 sm:px-6 shadow-xl transition-all duration-300 cursor-pointer ${
+              className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full px-5 sm:px-6 salbar-tactile-btn cursor-pointer ${
                 stat.border
               } ${
                 isLight
                   ? isSelected
-                    ? 'ring-2 ring-[var(--accent-primary)] bg-white border-[var(--accent-primary)] shadow-md'
+                    ? 'ring-2 ring-[var(--accent-primary)] bg-white border-[var(--accent-primary)]'
                     : 'bg-white hover:border-[var(--accent-primary)]'
                   : isSelected
-                    ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] border-[var(--accent-primary)] shadow-md shadow-[var(--accent-primary)]/20'
+                    ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] border-[var(--accent-primary)]'
                     : 'bg-[var(--bg-surface)] hover:border-[var(--accent-primary)]'
               }`}
               title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}

@@ -203,10 +203,10 @@ export function AmbientStatusHeader({
             opacity: isNavbarOpen ? 1 : 0,
           }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className={`relative w-full h-full flex items-center justify-between rounded-full px-6 sm:px-10 pointer-events-auto border transition-colors duration-300 shadow-2xl ${
+          className={`relative w-full h-full flex items-center justify-between rounded-full px-6 sm:px-10 pointer-events-auto salbar-tactile-card transition-colors duration-300 ${
             isLight
-              ? 'bg-white border-slate-300 shadow-slate-400/25'
-              : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] shadow-black/50'
+              ? 'bg-white border-slate-300'
+              : 'bg-[var(--bg-surface)] border-[var(--border-subtle)]'
           }`}
         >
           {/* Center: Navigation Links with Staggered Letter-by-Letter Animation (Mathematically Centered) */}

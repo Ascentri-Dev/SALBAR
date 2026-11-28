@@ -172,10 +172,14 @@ The mobile UI directly mirrors [web-dashboard-ui-plan.md](web-dashboard-ui-plan.
 | **Operational / Success** | `#10B981` | `CLOUD READY`, `SENT VIA CLOUD`, `RELAYED VIA BLE` |
 | **Radio / Telemetry** | `#06B6D4` | `OFFLINE: BLE`, `GPS LOCKED`, RSSI indicators |
 
-### Typography & Component Geometry
-- **UI Font**: `Inter` (Regular 400, Medium 500, Semibold 600, Bold 700).
-- **Telemetry / Data Font**: `JetBrains Mono` with tabular numbers (`fontVariant: ['tabular-nums']`) for coordinates, byte counts, RSSI dBm, and timestamps.
-- **Border Radii**: `16px` (`rounded-2xl`) for cards and modals; `12px` for inputs and CTA buttons; `9999px` (`rounded-full`) for status pills and urgency chips.
+### Typography & Tactile 3D Component Geometry
+- **Display & Headings Font**: `Space Grotesk` (`@expo-google-fonts/space-grotesk`, weights 500, 600, 700) for screen titles, emergency card headers, modal titles, and navigation labels.
+- **UI Body Font**: System Sans / `Inter` for descriptions, helper copy, and form inputs.
+- **Telemetry / Data Font**: `JetBrains Mono` (`@expo-google-fonts/jetbrains-mono`, weights 400, 500, 700) with tabular numbers (`fontVariant: ['tabular-nums']`) for coordinates, byte counts, RSSI dBm, and timestamps.
+- **Tactile 3D Border & Extrusion System**:
+  - Preserves SALBAR's rounded geometry (`24px` cards, `18px` controls, `9999px` pills) and Midnight Navy / Light palette while adding crisp `2px` borders and a hard-offset `3px–4px` 3D backing layer.
+  - **Mechanical Press Physics**: Interactive tiles, cards, and pill CTAs physically depress (`translateX: +3px, translateY: +3px`) onto their 3D backing layer on press (`onPressIn` / `onPressOut` spring).
+  - **Subtle Container Motion**: Staggered `reveal-up` entrance (`translateY: 14px -> 0`, `opacity: 0 -> 1`) on list cards and stage transitions.
 
 ---
 

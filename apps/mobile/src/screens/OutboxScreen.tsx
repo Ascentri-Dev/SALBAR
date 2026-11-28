@@ -20,8 +20,9 @@ import {
   getUrgencyColor,
 } from '../constants/triage';
 import { deleteReport } from '../db/reportsRepository';
+import { Tactile3DButton, Tactile3DCard } from '../components/Tactile3D';
 import { useAppTheme } from '../theme/ThemeContext';
-import { EMERGENCY_COLORS, RADII } from '../theme/tokens';
+import { EMERGENCY_COLORS, FONTS, RADII } from '../theme/tokens';
 import type { LocalReport, ReportCounts, SyncStatus } from '../types/report';
 
 interface OutboxScreenProps {
@@ -131,18 +132,27 @@ function KpiFilterCard({
     <Pressable onPress={onPress} style={styles.kpiWrap}>
       <Animated.View
         style={[
-          styles.kpiCard,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: isSelected ? accentColor : colors.borderSubtle,
-            borderWidth: isSelected ? 2 : 1,
-            opacity: dimAnim,
-            transform: [{ scale }],
-          },
+          styles.kpiOuter,
+          { opacity: dimAnim, transform: [{ scale }] },
         ]}
       >
-        <Text style={[styles.kpiValue, { color: accentColor }]}>{value}</Text>
-        <Text style={[styles.kpiLabel, { color: colors.textSecondary }]}>{label}</Text>
+        <View
+          pointerEvents="none"
+          style={[styles.kpiShadow, { backgroundColor: colors.tactileShadow }]}
+        />
+        <View
+          style={[
+            styles.kpiCard,
+            {
+              backgroundColor: colors.bgSurface,
+              borderColor: isSelected ? accentColor : colors.borderSubtle,
+              borderWidth: 2,
+            },
+          ]}
+        >
+          <Text style={[styles.kpiValue, { color: accentColor }]}>{value}</Text>
+          <Text style={[styles.kpiLabel, { color: colors.textSecondary }]}>{label}</Text>
+        </View>
       </Animated.View>
     </Pressable>
   );
@@ -327,12 +337,7 @@ export function OutboxScreen({
         </View>
 
         {/* Animated BLE Responder Radar Card */}
-        <View
-          style={[
-            styles.bleCard,
-            { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-          ]}
-        >
+        <Tactile3DCard offset={4} revealDelayMs={60} contentStyle={styles.bleCardInner}>
           <View style={styles.bleRow}>
             <RadarBeacon scanning={isScanningBle} color={EMERGENCY_COLORS.telemetry} />
             <View style={styles.bleTextCol}>
@@ -347,16 +352,12 @@ export function OutboxScreen({
                     : 'Relays pending reports offline when a T-Beam is near'}
               </Text>
             </View>
-            <Pressable
+            <Tactile3DButton
               onPress={handleScanToggle}
-              style={({ pressed }) => [
-                styles.scanBtn,
-                {
-                  backgroundColor: isScanningBle ? colors.bgSurfaceElevated : colors.accentPrimary,
-                  borderColor: isScanningBle ? colors.borderSubtle : colors.accentPrimary,
-                  transform: [{ scale: pressed ? 0.94 : 1 }],
-                },
-              ]}
+              offset={3}
+              backgroundColor={isScanningBle ? colors.bgSurfaceElevated : colors.accentPrimary}
+              borderColor={isScanningBle ? colors.borderSubtle : colors.textPrimary}
+              contentStyle={styles.scanBtnInner}
             >
               <Text
                 style={[
@@ -366,7 +367,7 @@ export function OutboxScreen({
               >
                 {isScanningBle ? 'Stop' : 'Scan'}
               </Text>
-            </Pressable>
+            </Tactile3DButton>
           </View>
 
           {terminals.length > 0 ? (
@@ -396,7 +397,7 @@ export function OutboxScreen({
               ))}
             </View>
           ) : null}
-        </View>
+        </Tactile3DCard>
 
         {/* Feed Section Header */}
         <View style={styles.feedHeaderRow}>
@@ -733,9 +734,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   screenTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontFamily: FONTS.displayBold,
+    fontSize: 25,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   screenSubtitle: {
     fontSize: 13,
@@ -747,6 +749,17 @@ const styles = StyleSheet.create({
   kpiWrap: {
     flex: 1,
   },
+  kpiOuter: {
+    position: 'relative',
+  },
+  kpiShadow: {
+    position: 'absolute',
+    top: 3,
+    left: 3,
+    right: -3,
+    bottom: -3,
+    borderRadius: RADII.card,
+  },
   kpiCard: {
     borderRadius: RADII.card,
     paddingVertical: 14,
@@ -756,17 +769,17 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   kpiValue: {
+    fontFamily: FONTS.monoBold,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   kpiLabel: {
+    fontFamily: FONTS.displaySemi,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  bleCard: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
+  bleCardInner: {
     padding: 14,
   },
   bleRow: {
@@ -806,15 +819,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
   },
-  scanBtn: {
+  scanBtnInner: {
     paddingHorizontal: 16,
     paddingVertical: 9,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
   },
   scanBtnText: {
+    fontFamily: FONTS.displayBold,
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   terminalList: {
     marginTop: 12,
@@ -888,8 +900,8 @@ const styles = StyleSheet.create({
   },
   reportCard: {
     borderRadius: RADII.card,
-    borderWidth: 1,
-    borderLeftWidth: 4,
+    borderWidth: 2,
+    borderLeftWidth: 5,
     padding: 16,
     gap: 6,
   },
@@ -900,8 +912,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   reportCategory: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontFamily: FONTS.displayBold,
+    fontSize: 16,
+    fontWeight: '700',
   },
   severityText: {
     fontSize: 11,

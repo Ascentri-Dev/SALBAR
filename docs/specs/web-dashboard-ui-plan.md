@@ -142,11 +142,26 @@ Strictly consistent across both dark and light modes to maintain universal recog
 ## Typography Standards
 
 ### Font Families
-- **Primary UI & Headings**: `Inter` (weights: 400, 500, 600, 700) with fallback `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`.
+- **Display & Headings**: `Space Grotesk` (weights: 500, 600, 700) with fallback `Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`.
+  - Geometric, high-impact technical character for screen titles, modal headers, navigation links, and metric labels.
+- **Primary UI & Body**: `Inter` (weights: 400, 500, 600, 700) with fallback `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`.
   - Open apertures and clean geometry engineered for high-density dashboard interfaces.
   - Enabled font features: `cv02`, `cv03`, `cv04`, `cv11` for high-clarity technical legibility.
-- **Telemetry & Numerical Data (Monospace)**: `JetBrains Mono` (weights: 400, 500, 600) with fallback `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`.
+- **Telemetry & Numerical Data (Monospace)**: `JetBrains Mono` (weights: 400, 500, 600, 700) with fallback `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`.
   - Tabular numbers (`tnum`) ensure GPS coordinates, live counters, and timestamps do not shift layout on updates.
+
+### Tactile 3D Border, Extrusion & Motion System
+While preserving SALBAR's Midnight Navy / Light color palette and rounded geometry, interactive containers and buttons use a crisp **tactile 3D extrusion** aesthetic:
+- **Border Weight**: `2px` solid borders (`border-2`) using `--border-subtle` (or `--border-focus` / accent color when active).
+- **Hard-Offset 3D Shadow**: Unblurred solid offset shadows (`--tactile-shadow-color`) creating physical depth:
+  - Small (`sm`): `2px 2px 0` (status chips, secondary icon buttons, filter pills)
+  - Default (`md`): `4px 4px 0` (KPI metric pills, incident cards, primary CTA buttons, floating navbar)
+  - Large (`lg`): `6px 6px 0` (HITL dispatch drawer, modals)
+- **Mechanical Press & Hover Physics**:
+  - Hover: subtle lift (`translate(-1px, -1px)`) with crisp border focus.
+  - Active / Press: button depresses smoothly into its shadow (`translate(3px, 3px)`, shadow collapses to `0 0 0`) over `75ms–120ms`.
+- **Subtle Container Motion**:
+  - `reveal-up`: staggered entrance (`opacity: 0 -> 1`, `translateY: 14px -> 0`) on panels and lists.
 
 ### Typographical Hierarchy Scale
 

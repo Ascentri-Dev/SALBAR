@@ -40,8 +40,8 @@ export function IncidentStreamPanel({
     <div
       className={`flex flex-col h-full rounded-3xl salbar-tactile-card overflow-hidden font-sans select-none transition-colors duration-300 ${
         isLight
-          ? 'bg-white border-slate-300 text-slate-900'
-          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100'
+          ? 'bg-white text-slate-900'
+          : 'bg-[var(--bg-surface)] text-slate-100'
       } ${className}`.trim()}
     >
       {/* Panel Header with Circular Collapse Button */}
@@ -97,10 +97,10 @@ export function IncidentStreamPanel({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search reports, location, dialect..."
-            className={`w-full pl-9 pr-4 py-2 rounded-full border text-xs font-sans transition-colors focus:outline-none focus:border-[var(--accent-primary)] ${
+            className={`w-full pl-9 pr-4 py-2 rounded-full border-2 border-[var(--tactile-border)] text-xs font-sans transition-colors focus:outline-none focus:border-[var(--accent-primary)] ${
               isLight
-                ? 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'
-                : 'bg-[var(--bg-surface-elevated)] border-[var(--border-subtle)] text-slate-100 placeholder:text-slate-400'
+                ? 'bg-white text-slate-900 placeholder:text-slate-400'
+                : 'bg-[var(--bg-surface-elevated)] text-slate-100 placeholder:text-slate-400'
             }`}
           />
         </div>
@@ -148,8 +148,8 @@ export function IncidentStreamPanel({
                       ? 'border-[var(--accent-primary)] bg-orange-50/40 ring-2 ring-[var(--accent-primary)]'
                       : 'border-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] ring-2 ring-[var(--accent-primary)]'
                     : isLight
-                      ? 'border-slate-200 bg-slate-50/60 hover:bg-white hover:border-slate-300'
-                      : 'border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)]/40 hover:bg-[var(--bg-surface-elevated)]'
+                      ? 'bg-slate-50/60 hover:bg-white hover:border-[var(--accent-primary)]'
+                      : 'bg-[var(--bg-surface-elevated)]/40 hover:bg-[var(--bg-surface-elevated)] hover:border-[var(--accent-primary)]'
                 }`}
               >
                 {/* Header row */}

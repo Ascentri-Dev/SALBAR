@@ -310,27 +310,31 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 />
               </motion.div>
             ) : (
-              <motion.button
+              <motion.div
                 key="left-kpi-pill"
                 initial={{ x: -20, opacity: 0, scale: 0.92 }}
                 animate={{ x: 0, opacity: 1, scale: 1 }}
                 exit={{ x: -20, opacity: 0, scale: 0.92 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                type="button"
-                onClick={() => setIsKpiOpen(true)}
-                className={`pointer-events-auto absolute left-3 sm:left-5 top-20 z-30 flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full salbar-tactile-btn cursor-pointer select-none ${
-                  isLight
-                    ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                }`}
-                title="Show Metrics"
-                aria-label="Show Metrics"
+                className="pointer-events-auto absolute left-3 sm:left-5 top-20 z-30"
               >
-                <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
-                  METRICS
-                </span>
-                <ChevronRight size={14} className="text-[var(--accent-primary)] shrink-0" />
-              </motion.button>
+                <button
+                  type="button"
+                  onClick={() => setIsKpiOpen(true)}
+                  className={`flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full salbar-tactile-btn cursor-pointer select-none ${
+                    isLight
+                      ? 'bg-white text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                      : 'bg-[var(--bg-surface)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  }`}
+                  title="Show Metrics"
+                  aria-label="Show Metrics"
+                >
+                  <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
+                    METRICS
+                  </span>
+                  <ChevronRight size={14} className="text-[var(--accent-primary)] shrink-0" />
+                </button>
+              </motion.div>
             )}
           </AnimatePresence>
         )}
@@ -339,39 +343,45 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
         <div className="pointer-events-auto absolute bottom-4 left-3 sm:left-5 z-30 h-13 sm:h-14 flex items-center">
           <AnimatePresence mode="wait">
             {isFocusMode ? (
-              <motion.button
+              <motion.div
                 key="focus-mode-toggle"
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.85, opacity: 0 }}
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                type="button"
-                onClick={toggleFocusMode}
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-[var(--accent-primary)] border-[var(--text-primary)] text-white salbar-tactile-btn hover:bg-[var(--accent-hover)] cursor-pointer"
-                title="Exit Focus Mode (Return to Normal)"
-                aria-label="Exit Focus Mode"
               >
-                <Minimize2 size={18} />
-              </motion.button>
+                <button
+                  type="button"
+                  onClick={toggleFocusMode}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-[var(--accent-primary)] text-white salbar-tactile-btn hover:bg-[var(--accent-hover)] cursor-pointer"
+                  title="Exit Focus Mode (Return to Normal)"
+                  aria-label="Exit Focus Mode"
+                >
+                  <Minimize2 size={18} />
+                </button>
+              </motion.div>
             ) : !isControlsOpen ? (
-              <motion.button
+              <motion.div
                 key="controls-reveal-toggle"
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.85, opacity: 0 }}
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                type="button"
-                onClick={() => setIsControlsOpen(true)}
-                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center salbar-tactile-btn cursor-pointer ${
-                  isLight
-                    ? 'bg-white border-slate-300 text-slate-800 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-200 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                }`}
-                title="Show Map Controls"
-                aria-label="Show Map Controls"
               >
-                <ChevronRight size={18} />
-              </motion.button>
+                <button
+                  type="button"
+                  onClick={() => setIsControlsOpen(true)}
+                  className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center salbar-tactile-btn cursor-pointer ${
+                    isLight
+                      ? 'bg-white text-slate-800 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                      : 'bg-[var(--bg-surface)] text-slate-200 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  }`}
+                  title="Show Map Controls"
+                  aria-label="Show Map Controls"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </motion.div>
             ) : (
               <motion.div
                 key="controls-dock-container"
@@ -460,8 +470,8 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 onClick={() => setIsQueueOpen(true)}
                 className={`pointer-events-auto flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full salbar-tactile-btn cursor-pointer select-none ${
                   isLight
-                    ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                    ? 'bg-white text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                    : 'bg-[var(--bg-surface)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
                 }`}
                 title="Show Live Dispatch Queue"
                 aria-label="Show Live Dispatch Queue"
@@ -475,27 +485,31 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
               {/* Metrics on the Right (Untoggled Compact Pill or Expanded Right Strip) */}
               <AnimatePresence mode="wait">
                 {!isKpiOpen ? (
-                  <motion.button
+                  <motion.div
                     key="right-kpi-pill"
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.95, opacity: 0 }}
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    type="button"
-                    onClick={() => setIsKpiOpen(true)}
-                    className={`pointer-events-auto flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full salbar-tactile-btn cursor-pointer select-none ${
-                      isLight
-                        ? 'bg-white border-slate-300 text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                    }`}
-                    title="Show Metrics"
-                    aria-label="Show Metrics"
+                    className="pointer-events-auto"
                   >
-                    <ChevronLeft size={14} className="text-[var(--accent-primary)] shrink-0" />
-                    <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
-                      METRICS
-                    </span>
-                  </motion.button>
+                    <button
+                      type="button"
+                      onClick={() => setIsKpiOpen(true)}
+                      className={`flex h-9.5 w-[130px] items-center justify-center gap-2 rounded-full salbar-tactile-btn cursor-pointer select-none ${
+                        isLight
+                          ? 'bg-white text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                          : 'bg-[var(--bg-surface)] text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                      }`}
+                      title="Show Metrics"
+                      aria-label="Show Metrics"
+                    >
+                      <ChevronLeft size={14} className="text-[var(--accent-primary)] shrink-0" />
+                      <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)]">
+                        METRICS
+                      </span>
+                    </button>
+                  </motion.div>
                 ) : (
                   <motion.div
                     key="right-kpi-strip"

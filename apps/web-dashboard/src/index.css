@@ -46,7 +46,8 @@
   --accent-primary: #ff6b00;
   --accent-hover: #ff8533;
   --accent-subtle: rgba(255, 107, 0, 0.12);
-  --tactile-shadow: #040711;
+  --tactile-shadow: #f8fafc;
+  --tactile-border: #f8fafc;
 
   /* Starter Template Compatibility Aliases */
   --bg: var(--bg-base);
@@ -81,6 +82,7 @@
   --accent-hover: #c2410c;
   --accent-subtle: rgba(234, 88, 12, 0.10);
   --tactile-shadow: #0f172a;
+  --tactile-border: #0f172a;
 
   --code-bg: #f1f5f9;
   --social-bg: rgba(226, 232, 240, 0.7);
@@ -228,41 +230,64 @@ body {
 }
 
 /* Tactile 3D Extrusion & Border System (preserving SALBAR palette & rounded geometry) */
-.font-heading {
-  font-family: var(--font-heading);
-}
+@layer components {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
 
-.salbar-tactile-card {
-  border-width: 2px;
-  box-shadow: 4px 4px 0 var(--tactile-shadow);
-  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 150ms ease;
-}
+  .salbar-tactile-card {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--tactile-border);
+    box-shadow: 4px 4px 0 var(--tactile-shadow);
+    transition: transform 130ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 130ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 150ms ease;
+  }
 
-.salbar-tactile-sm {
-  border-width: 2px;
-  box-shadow: 2px 2px 0 var(--tactile-shadow);
-  transition: transform 110ms cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 110ms cubic-bezier(0.22, 1, 0.36, 1);
-}
+  .salbar-tactile-sm {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--tactile-border);
+    box-shadow: 2px 2px 0 var(--tactile-shadow);
+    transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 150ms ease,
+                color 150ms ease,
+                border-color 150ms ease;
+  }
 
-.salbar-tactile-btn {
-  border-width: 2px;
-  box-shadow: 3px 3px 0 var(--tactile-shadow);
-  transition: transform 100ms cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 100ms cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 150ms ease;
-}
+  .salbar-tactile-sm:hover:not(:disabled) {
+    transform: translate(-1.5px, -1.5px) scale(1.06);
+    box-shadow: 4px 4px 0 var(--tactile-shadow);
+  }
 
-.salbar-tactile-btn:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--tactile-shadow);
-}
+  .salbar-tactile-sm:active:not(:disabled) {
+    transform: translate(1.5px, 1.5px) scale(0.96);
+    box-shadow: 0 0 0 var(--tactile-shadow);
+  }
 
-.salbar-tactile-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--tactile-shadow);
+  .salbar-tactile-btn {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--tactile-border);
+    box-shadow: 3px 3px 0 var(--tactile-shadow);
+    transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 150ms ease,
+                color 150ms ease,
+                border-color 150ms ease;
+  }
+
+  .salbar-tactile-btn:hover:not(:disabled) {
+    transform: translate(-2px, -2px) scale(1.025);
+    box-shadow: 5px 5px 0 var(--tactile-shadow);
+  }
+
+  .salbar-tactile-btn:active:not(:disabled) {
+    transform: translate(2px, 2px) scale(0.98);
+    box-shadow: 0 0 0 var(--tactile-shadow);
+  }
 }
 
 @keyframes salbar-reveal-up {

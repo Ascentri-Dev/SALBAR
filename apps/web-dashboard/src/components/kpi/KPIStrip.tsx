@@ -161,8 +161,8 @@ export function KPIStrip({
               onClick={onClose}
               className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
                 isLight
-                  ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  ? 'bg-white text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
               }`}
               title="Hide Metrics"
               aria-label="Hide Metrics"
@@ -183,8 +183,8 @@ export function KPIStrip({
               onClick={onClose}
               className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
                 isLight
-                  ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  ? 'bg-white text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
               }`}
               title="Hide Metrics"
               aria-label="Hide Metrics"
@@ -207,57 +207,55 @@ export function KPIStrip({
           const isSelected = activeFilter === stat.id
 
           return (
-            <motion.button
-              key={stat.id}
-              variants={cardVariants}
-              type="button"
-              onClick={() => onFilterChange(stat.id)}
-              className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full px-5 sm:px-6 salbar-tactile-btn cursor-pointer ${
-                stat.border
-              } ${
-                isLight
-                  ? isSelected
-                    ? 'ring-2 ring-[var(--accent-primary)] bg-white border-[var(--accent-primary)]'
-                    : 'bg-white hover:border-[var(--accent-primary)]'
-                  : isSelected
-                    ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] border-[var(--accent-primary)]'
-                    : 'bg-[var(--bg-surface)] hover:border-[var(--accent-primary)]'
-              }`}
-              title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}
-            >
-              {/* High-Visibility Proportional Occupancy Meter Fill Bar: Always starts from the left */}
-              <div
-                className={`absolute inset-y-0 left-0 rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
-                style={{ width: `${stat.pct}%` }}
-              />
-
-              {/* Header & Percentage-Only Subheader */}
-              <div className="flex flex-col z-10 min-w-0 text-left">
-                <span
-                  className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
-                    isSelected
-                      ? 'text-[var(--accent-primary)]'
-                      : isLight
-                        ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
-                        : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
-                  }`}
-                >
-                  {stat.label}
-                </span>
-                <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
-                  {stat.pctText}
-                </span>
-              </div>
-
-              {/* Big, Bold Numeric Count */}
-              <span
-                className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
-                  stat.tone
-                } ${stat.pulse ? 'animate-pulse' : ''}`}
+            <motion.div key={stat.id} variants={cardVariants}>
+              <button
+                type="button"
+                onClick={() => onFilterChange(stat.id)}
+                className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full px-5 sm:px-6 salbar-tactile-btn cursor-pointer ${
+                  isLight
+                    ? isSelected
+                      ? 'ring-2 ring-[var(--accent-primary)] bg-white'
+                      : 'bg-white hover:border-[var(--accent-primary)]'
+                    : isSelected
+                      ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)]'
+                      : 'bg-[var(--bg-surface)] hover:border-[var(--accent-primary)]'
+                }`}
+                title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}
               >
-                {stat.value}
-              </span>
-            </motion.button>
+                {/* High-Visibility Proportional Occupancy Meter Fill Bar: Always starts from the left */}
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
+                  style={{ width: `${stat.pct}%` }}
+                />
+
+                {/* Header & Percentage-Only Subheader */}
+                <div className="flex flex-col z-10 min-w-0 text-left">
+                  <span
+                    className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
+                      isSelected
+                        ? 'text-[var(--accent-primary)]'
+                        : isLight
+                          ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
+                          : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
+                    }`}
+                  >
+                    {stat.label}
+                  </span>
+                  <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
+                    {stat.pctText}
+                  </span>
+                </div>
+
+                {/* Big, Bold Numeric Count */}
+                <span
+                  className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
+                    stat.tone
+                  } ${stat.pulse ? 'animate-pulse' : ''}`}
+                >
+                  {stat.value}
+                </span>
+              </button>
+            </motion.div>
           )
         })}
       </motion.div>

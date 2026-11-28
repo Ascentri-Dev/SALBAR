@@ -365,7 +365,7 @@ export function CommandMapScreen({ className = '' }: CommandMapScreenProps) {
                 <button
                   type="button"
                   onClick={toggleFocusMode}
-                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-[var(--accent-primary)] text-white salbar-tactile-btn hover:bg-[var(--accent-hover)] cursor-pointer"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-[var(--accent-primary)] text-white salbar-tactile-btn hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] cursor-pointer"
                   title="Exit Focus Mode (Return to Normal)"
                   aria-label="Exit Focus Mode"
                 >

@@ -436,7 +436,7 @@ export function TacticalMap({
                             onApproveDispatch(inc.id, inc.recommendedUnitId)
                           }
                         }}
-                        className="w-full py-2.5 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-[11px] font-mono font-bold uppercase tracking-wider rounded-full flex items-center justify-center gap-2 salbar-tactile-btn cursor-pointer group"
+                        className="w-full py-2.5 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] text-white text-[11px] font-mono font-bold uppercase tracking-wider rounded-full flex items-center justify-center gap-2 salbar-tactile-btn cursor-pointer group"
                       >
                         <span>{inc.status === 'DISPATCHED' ? 'View Live Dispatch' : 'Approve & Dispatch via LoRa'}</span>
                         <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />

@@ -260,6 +260,7 @@ body {
   .salbar-tactile-sm:hover:not(:disabled) {
     transform: translate(-1.5px, -1.5px) scale(1.06);
     box-shadow: 4px 4px 0 var(--tactile-shadow);
+    border-color: var(--accent-primary);
   }
 
   .salbar-tactile-sm:active:not(:disabled) {
@@ -282,6 +283,7 @@ body {
   .salbar-tactile-btn:hover:not(:disabled) {
     transform: translate(-2px, -2px) scale(1.025);
     box-shadow: 5px 5px 0 var(--tactile-shadow);
+    border-color: var(--accent-primary);
   }
 
   .salbar-tactile-btn:active:not(:disabled) {

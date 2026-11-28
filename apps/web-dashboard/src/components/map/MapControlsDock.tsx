@@ -48,8 +48,8 @@ export function MapControlsDock({
         aria-label="Zoom In"
         className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center salbar-tactile-sm cursor-pointer ${
           isLight
-            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
-            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
+            ? 'bg-slate-100 hover:bg-slate-200/80 hover:text-[var(--accent-primary)] text-slate-800'
+            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface)] hover:text-[var(--accent-primary)] text-slate-200'
         }`}
       >
         <Plus size={16} />
@@ -63,8 +63,8 @@ export function MapControlsDock({
         aria-label="Zoom Out"
         className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center salbar-tactile-sm cursor-pointer ${
           isLight
-            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
-            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
+            ? 'bg-slate-100 hover:bg-slate-200/80 hover:text-[var(--accent-primary)] text-slate-800'
+            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface)] hover:text-[var(--accent-primary)] text-slate-200'
         }`}
       >
         <Minus size={16} />
@@ -80,8 +80,8 @@ export function MapControlsDock({
         aria-label="Locate Me"
         className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center salbar-tactile-sm cursor-pointer ${
           isLight
-            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-[var(--accent-primary)]'
-            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-[var(--accent-primary)]'
+            ? 'bg-slate-100 hover:bg-slate-200/80 text-[var(--accent-primary)]'
+            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface)] text-[var(--accent-primary)]'
         }`}
       >
         <Crosshair size={16} />
@@ -95,10 +95,10 @@ export function MapControlsDock({
         aria-label="Toggle Focus Mode"
         className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center salbar-tactile-sm cursor-pointer ${
           isFocusMode
-            ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white'
+            ? 'bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] text-white'
             : isLight
-              ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
-              : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
+              ? 'bg-slate-100 hover:bg-slate-200/80 hover:text-[var(--accent-primary)] text-slate-800'
+              : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface)] hover:text-[var(--accent-primary)] text-slate-200'
         }`}
       >
         {isFocusMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -118,8 +118,8 @@ export function MapControlsDock({
         aria-label="Toggle Map Tile Style"
         className={`h-9 sm:h-10 px-3 rounded-full flex items-center justify-center gap-1.5 salbar-tactile-sm cursor-pointer text-xs font-bold ${
           isLight
-            ? 'bg-slate-100 hover:bg-[var(--accent-primary)] hover:text-white text-slate-800'
-            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent-primary)] hover:text-white text-slate-200'
+            ? 'bg-slate-100 hover:bg-slate-200/80 hover:text-[var(--accent-primary)] text-slate-800'
+            : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface)] hover:text-[var(--accent-primary)] text-slate-200'
         }`}
       >
         <Layers size={14} />
@@ -136,8 +136,8 @@ export function MapControlsDock({
         aria-label="Toggle Map Dark Mode"
         className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center salbar-tactile-sm cursor-pointer ${
           isLight
-            ? 'bg-slate-100 text-slate-800 hover:bg-[var(--accent-primary)] hover:text-white'
-            : 'bg-[var(--bg-surface-elevated)] text-amber-400 hover:bg-[var(--accent-primary)] hover:text-white'
+            ? 'bg-slate-100 text-slate-800 hover:bg-slate-200/80 hover:text-[var(--accent-primary)]'
+            : 'bg-[var(--bg-surface-elevated)] text-amber-400 hover:bg-[var(--bg-surface)] hover:text-[var(--accent-primary)]'
         }`}
       >
         {isMapDark ? <Sun size={16} /> : <Moon size={16} />}

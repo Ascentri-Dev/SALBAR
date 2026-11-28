@@ -241,7 +241,7 @@ export function HITLDispatchDrawer({
               type="button"
               onClick={handleApprove}
               disabled={isSubmitting}
-              className="flex-1 py-2.5 px-4 rounded-full bg-[var(--accent-primary)] border-[var(--text-primary)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 salbar-tactile-btn cursor-pointer disabled:opacity-50"
+              className="flex-1 py-2.5 px-4 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 salbar-tactile-btn cursor-pointer disabled:opacity-50"
             >
               <Send size={13} />
               {isSubmitting ? 'Transmitting...' : 'Authorize Dispatch'}

@@ -24,8 +24,9 @@ import {
   UrgencyOption,
 } from '../constants/triage';
 import { createReport } from '../db/reportsRepository';
+import { Tactile3DButton, Tactile3DCard } from '../components/Tactile3D';
 import { useAppTheme } from '../theme/ThemeContext';
-import { EMERGENCY_COLORS, RADII } from '../theme/tokens';
+import { EMERGENCY_COLORS, FONTS, RADII } from '../theme/tokens';
 import type { GpsReading, IncidentCategory, IncidentUrgency } from '../types/report';
 import { getUtf8ByteLength, MAX_RAW_TEXT_BYTES, truncateToUtf8Bytes } from '../utils/utf8';
 
@@ -151,10 +152,10 @@ function EmergencyTile({
     }).start();
   }, [isOtherFocused, dimAnim]);
 
-  const scale = Animated.add(
-    focusAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }),
-    dimAnim.interpolate({ inputRange: [0.34, 1], outputRange: [-0.04, 0] }),
-  );
+  const depress = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 2.5],
+  });
 
   return (
     <Pressable
@@ -163,30 +164,40 @@ function EmergencyTile({
       onPress={onPress}
       style={styles.gridTileWrapper}
     >
-      <Animated.View
-        style={[
-          styles.gridTile,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: isThisFocused ? colors.textPrimary : item.accentColor,
-            borderWidth: isThisFocused ? 2.5 : 1.5,
-            opacity: dimAnim,
-            transform: [{ scale }],
-          },
-        ]}
-      >
-        <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
-        <ContainerTexture texture={item.texture} color={item.accentColor} />
+      <View style={styles.tileOuter}>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.tileShadowBacking,
+            { backgroundColor: colors.tactileShadow, opacity: dimAnim },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.gridTile,
+            {
+              backgroundColor: colors.bgSurface,
+              borderColor: isThisFocused ? item.accentColor : colors.tactileBorder,
+              borderWidth: 2,
+              transform: [{ translateX: depress }, { translateY: depress }],
+            },
+          ]}
+        >
+          <Animated.View style={[styles.tileInnerFill, { opacity: dimAnim }]}>
+            <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+            <ContainerTexture texture={item.texture} color={item.accentColor} />
 
-        <View style={styles.tileTextBlock}>
-          <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
-            {item.label}
-          </Text>
-          <Text style={[styles.tileHint, { color: colors.textSecondary }]} numberOfLines={1}>
-            {item.localHint}
-          </Text>
-        </View>
-      </Animated.View>
+            <View style={styles.tileTextBlock}>
+              <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>
+                {item.label}
+              </Text>
+              <Text style={[styles.tileHint, { color: colors.textSecondary }]} numberOfLines={1}>
+                {item.localHint}
+              </Text>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </View>
     </Pressable>
   );
 }
@@ -217,66 +228,84 @@ function UrgencyGridCard({
     }).start();
   }, [selected, focusAnim]);
 
-  const scale = focusAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.96, 1.03],
-  });
-
   const opacity = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.42, 1],
+    outputRange: [0.46, 1],
   });
 
   return (
-    <Pressable onPress={onPress} style={styles.urgencyGridWrap}>
-      <Animated.View
-        style={[
-          styles.urgencyGridCard,
-          {
-            backgroundColor: selected ? opt.color : colors.bgSurface,
-            borderColor: selected ? colors.textPrimary : opt.color,
-            borderWidth: selected || isCritical ? 2.2 : 1.5,
-            opacity,
-            transform: [{ scale }],
-          },
-        ]}
-      >
-        {!selected ? (
-          <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
-        ) : null}
-
-        {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
-        {isCritical ? (
-          <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <View
-                key={i}
-                style={[
-                  styles.stripeLine,
-                  { backgroundColor: selected ? '#FFFFFF' : opt.color, right: -24 + i * 24 },
-                ]}
-              />
-            ))}
-          </View>
-        ) : null}
-
-        <Text
+    <Pressable
+      onPress={() => {
+        Animated.sequence([
+          Animated.timing(focusAnim, { toValue: 0.2, duration: 70, useNativeDriver: true }),
+          Animated.spring(focusAnim, {
+            toValue: 1,
+            friction: 5,
+            tension: 160,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        onPress();
+      }}
+      style={styles.urgencyGridWrap}
+    >
+      <View style={styles.tileOuter}>
+        <Animated.View
+          pointerEvents="none"
           style={[
-            styles.urgencyCardLabel,
-            { color: selected ? '#FFFFFF' : colors.textPrimary },
+            styles.tileShadowBacking,
+            { backgroundColor: colors.tactileShadow, opacity },
+          ]}
+        />
+        <View
+          style={[
+            styles.urgencyGridCard,
+            {
+              backgroundColor: selected ? opt.color : colors.bgSurface,
+              borderColor: colors.tactileBorder,
+              borderWidth: 2,
+            },
           ]}
         >
-          {opt.label}
-        </Text>
-        <Text
-          style={[
-            styles.urgencyCardSub,
-            { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
-          ]}
-        >
-          {opt.subtitle}
-        </Text>
-      </Animated.View>
+          <Animated.View style={[styles.tileInnerFill, { opacity }]}>
+            {!selected ? (
+              <View style={[styles.tileTintOverlay, { backgroundColor: baseTint }]} />
+            ) : null}
+
+            {/* CRITICAL gets a unique hazard diagonal-stripe texture */}
+            {isCritical ? (
+              <View pointerEvents="none" style={[styles.textureLayer, { opacity: selected ? 0.18 : 0.14 }]}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.stripeLine,
+                      { backgroundColor: selected ? '#FFFFFF' : opt.color, right: -24 + i * 24 },
+                    ]}
+                  />
+                ))}
+              </View>
+            ) : null}
+
+            <Text
+              style={[
+                styles.urgencyCardLabel,
+                { color: selected ? '#FFFFFF' : colors.textPrimary },
+              ]}
+            >
+              {opt.label}
+            </Text>
+            <Text
+              style={[
+                styles.urgencyCardSub,
+                { color: selected ? 'rgba(255,255,255,0.92)' : colors.textSecondary },
+              ]}
+            >
+              {opt.subtitle}
+            </Text>
+          </Animated.View>
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -377,7 +406,7 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
 
   const notesBorderColor = notesBorderAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.borderSubtle, colors.accentPrimary],
+    outputRange: [colors.tactileBorder, colors.accentPrimary],
   });
 
   const adjustVictimCount = (delta: number) => {
@@ -466,7 +495,11 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                       : completed
                         ? colors.accentSubtle
                         : colors.bgSurface,
-                    borderColor: highlighted ? colors.accentPrimary : colors.borderSubtle,
+                    borderColor: active
+                      ? colors.tactileBorder
+                      : completed
+                        ? colors.accentPrimary
+                        : colors.tactileBorder,
                   },
                 ]}
               >
@@ -555,44 +588,30 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               ))}
             </View>
 
-            {/* Symmetric Affected Persons Selector: -10  -1  [ 1 ]  +1  +10 */}
-            <View
-              style={[
-                styles.peopleCard,
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-              ]}
-            >
+            <Tactile3DCard offset={4} contentStyle={styles.peopleCardInner}>
               <Text style={[styles.peopleTitle, { color: colors.textPrimary }]}>
                 Affected Persons (Tap number to type)
               </Text>
               <View style={styles.peopleInputRow}>
-                <Pressable
+                <Tactile3DButton
                   onPress={() => adjustVictimCount(-10)}
-                  style={({ pressed }) => [
-                    styles.adjBtn,
-                    {
-                      backgroundColor: colors.bgSurfaceElevated,
-                      borderColor: colors.borderSubtle,
-                      transform: [{ scale: pressed ? 0.9 : 1 }],
-                    },
-                  ]}
+                  offset={2}
+                  backgroundColor={colors.bgSurfaceElevated}
+                  borderColor={colors.tactileBorder}
+                  contentStyle={styles.adjBtn}
                 >
                   <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>-10</Text>
-                </Pressable>
+                </Tactile3DButton>
 
-                <Pressable
+                <Tactile3DButton
                   onPress={() => adjustVictimCount(-1)}
-                  style={({ pressed }) => [
-                    styles.adjBtn,
-                    {
-                      backgroundColor: colors.bgSurfaceElevated,
-                      borderColor: colors.borderSubtle,
-                      transform: [{ scale: pressed ? 0.9 : 1 }],
-                    },
-                  ]}
+                  offset={2}
+                  backgroundColor={colors.bgSurfaceElevated}
+                  borderColor={colors.tactileBorder}
+                  contentStyle={styles.adjBtn}
                 >
                   <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>-1</Text>
-                </Pressable>
+                </Tactile3DButton>
 
                 <TextInput
                   value={victimCountText}
@@ -604,58 +623,45 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
                     styles.peopleInput,
                     {
                       backgroundColor: colors.bgBase,
-                      borderColor: colors.borderFocus,
+                      borderColor: colors.tactileBorder,
                       color: colors.textPrimary,
                     },
                   ]}
                 />
 
-                <Pressable
+                <Tactile3DButton
                   onPress={() => adjustVictimCount(1)}
-                  style={({ pressed }) => [
-                    styles.adjBtn,
-                    {
-                      backgroundColor: colors.bgSurfaceElevated,
-                      borderColor: colors.borderSubtle,
-                      transform: [{ scale: pressed ? 0.9 : 1 }],
-                    },
-                  ]}
+                  offset={2}
+                  backgroundColor={colors.bgSurfaceElevated}
+                  borderColor={colors.tactileBorder}
+                  contentStyle={styles.adjBtn}
                 >
                   <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>+1</Text>
-                </Pressable>
+                </Tactile3DButton>
 
-                <Pressable
+                <Tactile3DButton
                   onPress={() => adjustVictimCount(10)}
-                  style={({ pressed }) => [
-                    styles.adjBtn,
-                    {
-                      backgroundColor: colors.bgSurfaceElevated,
-                      borderColor: colors.borderSubtle,
-                      transform: [{ scale: pressed ? 0.9 : 1 }],
-                    },
-                  ]}
+                  offset={2}
+                  backgroundColor={colors.bgSurfaceElevated}
+                  borderColor={colors.tactileBorder}
+                  contentStyle={styles.adjBtn}
                 >
                   <Text style={[styles.adjBtnText, { color: colors.textPrimary }]}>+10</Text>
-                </Pressable>
+                </Tactile3DButton>
               </View>
-            </View>
+            </Tactile3DCard>
 
-            <Pressable
+            <Tactile3DButton
               onPress={() => {
                 void Haptics.selectionAsync();
                 goToStage(3);
               }}
-              style={({ pressed }) => [
-                styles.primaryCta,
-                {
-                  backgroundColor: colors.accentPrimary,
-                  transform: [{ scale: pressed ? 0.97 : 1 }],
-                },
-              ]}
+              borderColor={colors.tactileBorder}
+              contentStyle={styles.primaryCtaInner}
             >
               <Text style={styles.primaryCtaText}>NEXT: SITUATION NOTES</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-            </Pressable>
+            </Tactile3DButton>
           </View>
         ) : null}
 
@@ -686,44 +692,45 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
               </Text>
             </View>
 
-            <Animated.View
-              style={[
-                styles.massiveNotesBox,
-                {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: notesBorderColor,
-                },
-              ]}
-            >
-              <TextInput
-                multiline
-                maxLength={MAX_RAW_TEXT_BYTES}
-                value={rawText}
-                onChangeText={handleTextChange}
-                onFocus={() => setNotesFocused(true)}
-                onBlur={() => setNotesFocused(false)}
-                placeholder="Describe landmarks, hazards, or urgent needs (e.g., Naay natabunan sa Sitio Riverside, tabang!)..."
-                placeholderTextColor={colors.textMuted}
-                style={[styles.massiveTextInput, { color: colors.textPrimary }]}
+            <View style={styles.notesBoxWrap}>
+              <View
+                pointerEvents="none"
+                style={[styles.tileShadowBacking, { backgroundColor: colors.tactileShadow }]}
               />
-            </Animated.View>
+              <Animated.View
+                style={[
+                  styles.massiveNotesBox,
+                  {
+                    backgroundColor: colors.bgSurface,
+                    borderColor: notesBorderColor,
+                  },
+                ]}
+              >
+                <TextInput
+                  multiline
+                  maxLength={MAX_RAW_TEXT_BYTES}
+                  value={rawText}
+                  onChangeText={handleTextChange}
+                  onFocus={() => setNotesFocused(true)}
+                  onBlur={() => setNotesFocused(false)}
+                  placeholder="Describe landmarks, hazards, or urgent needs (e.g., Naay natabunan sa Sitio Riverside, tabang!)..."
+                  placeholderTextColor={colors.textMuted}
+                  style={[styles.massiveTextInput, { color: colors.textPrimary }]}
+                />
+              </Animated.View>
+            </View>
 
-            <Pressable
+            <Tactile3DButton
               onPress={() => {
                 void Haptics.selectionAsync();
                 setConfirmOpen(true);
               }}
-              style={({ pressed }) => [
-                styles.primaryCta,
-                {
-                  backgroundColor: colors.accentPrimary,
-                  transform: [{ scale: pressed ? 0.97 : 1 }],
-                },
-              ]}
+              borderColor={colors.tactileBorder}
+              contentStyle={styles.primaryCtaInner}
             >
               <Text style={styles.primaryCtaText}>REVIEW & SEND</Text>
               <Ionicons name="checkmark-circle-outline" size={19} color="#FFFFFF" />
-            </Pressable>
+            </Tactile3DButton>
           </View>
         ) : null}
       </Animated.View>
@@ -736,106 +743,122 @@ export function ReportScreen({ gps, onReportSaved }: ReportScreenProps) {
         onRequestClose={() => setConfirmOpen(false)}
       >
         <View style={styles.modalBackdrop}>
-          <View
-            style={[
-              styles.modalCard,
-              { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-            ]}
-          >
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeroRow}>
-                <View style={styles.modalHeroLeft}>
-                  <Text style={[styles.modalEyebrow, { color: colors.textSecondary }]}>
-                    EMERGENCY DISPATCH REPORT
-                  </Text>
-                  <Text style={[styles.modalHeroTitle, { color: colors.textPrimary }]}>
-                    {getCategoryLabel(category)}
-                  </Text>
+          <View style={styles.modalOuter}>
+            <View
+              pointerEvents="none"
+              style={[styles.tileShadowBacking, { backgroundColor: colors.tactileShadow }]}
+            />
+            <View
+              style={[
+                styles.modalCard,
+                { backgroundColor: colors.bgSurface, borderColor: colors.tactileBorder },
+              ]}
+            >
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeroRow}>
+                  <View style={styles.modalHeroLeft}>
+                    <Text style={[styles.modalEyebrow, { color: colors.textSecondary }]}>
+                      EMERGENCY DISPATCH REPORT
+                    </Text>
+                    <Text style={[styles.modalHeroTitle, { color: colors.textPrimary }]}>
+                      {getCategoryLabel(category)}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.urgencyBadge,
+                      {
+                        backgroundColor: getUrgencyColor(urgency),
+                        borderColor: colors.tactileBorder,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.urgencyBadgeText}>{urgency}</Text>
+                  </View>
                 </View>
-                <View style={[styles.urgencyBadge, { backgroundColor: getUrgencyColor(urgency) }]}>
-                  <Text style={styles.urgencyBadgeText}>{urgency}</Text>
-                </View>
-              </View>
 
-              {/* 2-up Telemetry Tiles */}
-              <View style={styles.modalMetricsRow}>
+                {/* 2-up Telemetry Tiles */}
+                <View style={styles.modalMetricsRow}>
+                  <View
+                    style={[
+                      styles.modalMetricBox,
+                      { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
+                    ]}
+                  >
+                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                      AFFECTED
+                    </Text>
+                    <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
+                      {parsedVictimCount} {parsedVictimCount === 1 ? 'person' : 'people'}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.modalMetricBox,
+                      { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
+                    ]}
+                  >
+                    <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>GPS FIX</Text>
+                    <Text
+                      style={[styles.metricMono, { color: EMERGENCY_COLORS.telemetry }]}
+                      numberOfLines={1}
+                    >
+                      {gps.fixState === 'LOCKED' || gps.fixState === 'LAST_KNOWN'
+                        ? `${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}`
+                        : gps.fixState}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Bounded Scrollable Notes Preview (edge-case safe for long text) */}
                 <View
                   style={[
-                    styles.modalMetricBox,
-                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                    styles.modalNotesBox,
+                    { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
                   ]}
                 >
                   <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                    AFFECTED
+                    SITUATION NOTES
                   </Text>
-                  <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                    {parsedVictimCount} {parsedVictimCount === 1 ? 'person' : 'people'}
-                  </Text>
+                  <ScrollView style={styles.modalNotesScroll} nestedScrollEnabled>
+                    <Text style={[styles.notesText, { color: colors.textPrimary }]}>
+                      {rawText.trim() ? rawText.trim() : 'No additional notes provided.'}
+                    </Text>
+                  </ScrollView>
                 </View>
 
-                <View
-                  style={[
-                    styles.modalMetricBox,
-                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-                  ]}
-                >
-                  <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>GPS FIX</Text>
-                  <Text
-                    style={[styles.metricMono, { color: EMERGENCY_COLORS.telemetry }]}
-                    numberOfLines={1}
-                  >
-                    {gps.fixState === 'LOCKED' || gps.fixState === 'LAST_KNOWN'
-                      ? `${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}`
-                      : gps.fixState}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Bounded Scrollable Notes Preview (edge-case safe for long text) */}
-              <View
-                style={[
-                  styles.modalNotesBox,
-                  { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-                ]}
-              >
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                  SITUATION NOTES
+                <Text style={[styles.modalHint, { color: colors.textSecondary }]}>
+                  Stored locally on your device immediately, then routed via Cloud or BLE.
                 </Text>
-                <ScrollView style={styles.modalNotesScroll} nestedScrollEnabled>
-                  <Text style={[styles.notesText, { color: colors.textPrimary }]}>
-                    {rawText.trim() ? rawText.trim() : 'No additional notes provided.'}
-                  </Text>
-                </ScrollView>
-              </View>
 
-              <Text style={[styles.modalHint, { color: colors.textSecondary }]}>
-                Stored locally on your device immediately, then routed via Cloud or BLE.
-              </Text>
+                <View style={styles.modalActions}>
+                  <Tactile3DButton
+                    onPress={() => setConfirmOpen(false)}
+                    offset={3}
+                    backgroundColor={colors.bgSurfaceElevated}
+                    borderColor={colors.tactileBorder}
+                    style={styles.modalCancelBtnWrap}
+                    contentStyle={styles.modalCancelBtn}
+                  >
+                    <Text style={[styles.modalCancelText, { color: colors.textPrimary }]}>Edit</Text>
+                  </Tactile3DButton>
 
-              <View style={styles.modalActions}>
-                <Pressable
-                  onPress={() => setConfirmOpen(false)}
-                  style={[
-                    styles.modalCancelBtn,
-                    { backgroundColor: colors.bgSurfaceElevated, borderColor: colors.borderSubtle },
-                  ]}
-                >
-                  <Text style={[styles.modalCancelText, { color: colors.textPrimary }]}>Edit</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={handleSubmit}
-                  disabled={submitting}
-                  style={[
-                    styles.modalSendBtn,
-                    { backgroundColor: colors.accentPrimary, opacity: submitting ? 0.7 : 1 },
-                  ]}
-                >
-                  <Ionicons name="send" size={16} color="#FFFFFF" />
-                  <Text style={styles.modalSendText}>
-                    {submitting ? 'SAVING...' : 'CONFIRM & SEND'}
-                  </Text>
-                </Pressable>
+                  <Tactile3DButton
+                    onPress={handleSubmit}
+                    disabled={submitting}
+                    offset={3}
+                    backgroundColor={colors.accentPrimary}
+                    borderColor={colors.tactileBorder}
+                    style={styles.modalSendBtnWrap}
+                    contentStyle={styles.modalSendBtn}
+                  >
+                    <Ionicons name="send" size={16} color="#FFFFFF" />
+                    <Text style={styles.modalSendText}>
+                      {submitting ? 'SAVING...' : 'CONFIRM & SEND'}
+                    </Text>
+                  </Tactile3DButton>
+                </View>
               </View>
             </View>
           </View>
@@ -864,9 +887,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   stageTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontFamily: FONTS.displayBold,
+    fontSize: 25,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   stageSubtitle: {
     fontSize: 13,
@@ -880,16 +904,32 @@ const styles = StyleSheet.create({
     rowGap: 10,
   },
   gridTileWrapper: {
-    width: '48.3%',
-    height: '31.5%',
+    width: '48%',
+    height: '31%',
+  },
+  tileOuter: {
+    flex: 1,
+    position: 'relative',
+  },
+  tileShadowBacking: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: -4,
+    bottom: -4,
+    borderRadius: RADII.card,
   },
   gridTile: {
     flex: 1,
     borderRadius: RADII.card,
+    overflow: 'hidden',
+  },
+  tileInnerFill: {
+    flex: 1,
     padding: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    gap: 4,
   },
   tileTintOverlay: {
     position: 'absolute',
@@ -1020,8 +1060,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tileLabel: {
+    fontFamily: FONTS.displayBold,
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.3,
     textAlign: 'center',
   },
@@ -1039,21 +1080,18 @@ const styles = StyleSheet.create({
     rowGap: 10,
   },
   urgencyGridWrap: {
-    width: '48.3%',
-    height: '48.5%',
+    width: '48%',
+    height: '47.5%',
   },
   urgencyGridCard: {
     flex: 1,
     borderRadius: RADII.card,
-    padding: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
     overflow: 'hidden',
   },
   urgencyCardLabel: {
-    fontSize: 17,
-    fontWeight: '900',
+    fontFamily: FONTS.displayBold,
+    fontSize: 18,
+    fontWeight: '700',
     letterSpacing: 0.5,
     textAlign: 'center',
   },
@@ -1062,9 +1100,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  peopleCard: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
+  peopleCardInner: {
     padding: 14,
     gap: 10,
   },
@@ -1081,24 +1117,24 @@ const styles = StyleSheet.create({
   adjBtn: {
     minWidth: 46,
     height: 44,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 10,
   },
   adjBtnText: {
+    fontFamily: FONTS.monoBold,
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   peopleInput: {
     flex: 1,
     height: 44,
     borderRadius: RADII.pill,
-    borderWidth: 1.5,
+    borderWidth: 2,
     textAlign: 'center',
+    fontFamily: FONTS.monoBold,
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   notesHeaderRow: {
@@ -1107,14 +1143,19 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   byteCounter: {
+    fontFamily: FONTS.monoBold,
     fontSize: 12,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
+  notesBoxWrap: {
+    flex: 1,
+    position: 'relative',
+  },
   massiveNotesBox: {
     flex: 1,
     borderRadius: RADII.card,
-    borderWidth: 1.5,
+    borderWidth: 2,
     overflow: 'hidden',
   },
   massiveTextInput: {
@@ -1149,19 +1190,19 @@ const styles = StyleSheet.create({
   voiceSub: {
     fontSize: 11,
   },
-  primaryCta: {
+  primaryCtaInner: {
     minHeight: 54,
-    borderRadius: RADII.pill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
   primaryCtaText: {
+    fontFamily: FONTS.displayBold,
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.7,
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
   arrowBarContainer: {
     flexDirection: 'row',
@@ -1183,13 +1224,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: RADII.pill,
-    borderWidth: 1,
+    borderWidth: 2,
   },
   stagePillText: {
+    fontFamily: FONTS.displayBold,
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   arrowConnector: {
     flex: 1,
@@ -1216,9 +1258,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 18,
   },
+  modalOuter: {
+    position: 'relative',
+  },
   modalCard: {
     borderRadius: RADII.card,
-    borderWidth: 1,
+    borderWidth: 2,
     overflow: 'hidden',
   },
   modalAccentStrip: {
@@ -1240,24 +1285,28 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   modalEyebrow: {
+    fontFamily: FONTS.monoBold,
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 1,
   },
   modalHeroTitle: {
+    fontFamily: FONTS.displayBold,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.3,
   },
   urgencyBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: RADII.pill,
+    borderWidth: 2,
   },
   urgencyBadgeText: {
+    fontFamily: FONTS.monoBold,
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   modalMetricsRow: {
     flexDirection: 'row',
@@ -1266,27 +1315,30 @@ const styles = StyleSheet.create({
   modalMetricBox: {
     flex: 1,
     borderRadius: RADII.control,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: 12,
     gap: 4,
   },
   metricLabel: {
+    fontFamily: FONTS.monoBold,
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.6,
   },
   metricValue: {
+    fontFamily: FONTS.displayBold,
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   metricMono: {
+    fontFamily: FONTS.monoBold,
     fontSize: 12,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   modalNotesBox: {
     borderRadius: RADII.control,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: 12,
     gap: 6,
   },
@@ -1305,31 +1357,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-  modalCancelBtn: {
+  modalCancelBtnWrap: {
     flex: 1,
-    minHeight: 50,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
+  },
+  modalCancelBtn: {
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalCancelText: {
+    fontFamily: FONTS.displayBold,
     fontSize: 14,
     fontWeight: '700',
   },
-  modalSendBtn: {
+  modalSendBtnWrap: {
     flex: 2,
-    minHeight: 50,
-    borderRadius: RADII.pill,
+  },
+  modalSendBtn: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
   modalSendText: {
+    fontFamily: FONTS.displayBold,
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
 });

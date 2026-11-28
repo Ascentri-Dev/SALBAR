@@ -11,8 +11,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Tactile3DButton, Tactile3DCard } from '../components/Tactile3D';
 import { useAppTheme } from '../theme/ThemeContext';
-import { EMERGENCY_COLORS, RADII } from '../theme/tokens';
+import { EMERGENCY_COLORS, FONTS, RADII } from '../theme/tokens';
 import type { GpsReading } from '../types/report';
 
 interface GuideScreenProps {
@@ -96,18 +97,13 @@ export function GuideScreen({
       </View>
 
       {/* Bilingual Emergency Guide Card */}
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-        ]}
-      >
+      <Tactile3DCard offset={4} revealDelayMs={30} contentStyle={styles.cardInner}>
         <View style={styles.guideTopRow}>
           <Text style={[styles.cardHeader, { color: colors.textPrimary }]}>How Reporting Works</Text>
           <View
             style={[
               styles.langSwitch,
-              { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+              { backgroundColor: colors.bgBase, borderColor: colors.tactileBorder },
             ]}
           >
             {(['EN', 'CEB', 'TL'] as GuideLang[]).map((code) => {
@@ -168,15 +164,10 @@ export function GuideScreen({
             {guideCopy.step3Desc}
           </Text>
         </View>
-      </View>
+      </Tactile3DCard>
 
       {/* Hardware & Permission Readiness */}
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-        ]}
-      >
+      <Tactile3DCard offset={4} revealDelayMs={90} contentStyle={styles.cardInner}>
         <Text style={[styles.cardHeader, { color: colors.textPrimary }]}>
           Device Readiness
         </Text>
@@ -212,21 +203,12 @@ export function GuideScreen({
             </View>
           </View>
 
-          <Pressable
+          <Tactile3DButton
             onPress={locationGranted ? onRefreshLocation : () => void Linking.openSettings()}
-            style={[
-              styles.softBadge,
-              {
-                backgroundColor: hexToRgba(
-                  locationGranted ? EMERGENCY_COLORS.success : EMERGENCY_COLORS.critical,
-                  0.14,
-                ),
-                borderColor: hexToRgba(
-                  locationGranted ? EMERGENCY_COLORS.success : EMERGENCY_COLORS.critical,
-                  0.32,
-                ),
-              },
-            ]}
+            offset={2}
+            backgroundColor={colors.bgSurfaceElevated}
+            borderColor={colors.tactileBorder}
+            contentStyle={styles.softBadgeBtnInner}
           >
             <Text
               style={[
@@ -240,7 +222,7 @@ export function GuideScreen({
             >
               {locationGranted ? 'Ready' : 'Fix'}
             </Text>
-          </Pressable>
+          </Tactile3DButton>
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
@@ -273,10 +255,7 @@ export function GuideScreen({
                   bleAvailable ? EMERGENCY_COLORS.success : EMERGENCY_COLORS.moderate,
                   0.14,
                 ),
-                borderColor: hexToRgba(
-                  bleAvailable ? EMERGENCY_COLORS.success : EMERGENCY_COLORS.moderate,
-                  0.32,
-                ),
+                borderColor: colors.tactileBorder,
               },
             ]}
           >
@@ -292,15 +271,10 @@ export function GuideScreen({
             </Text>
           </View>
         </View>
-      </View>
+      </Tactile3DCard>
 
       {/* Preferences & Field Trial Settings */}
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-        ]}
-      >
+      <Tactile3DCard offset={4} revealDelayMs={150} contentStyle={styles.cardInner}>
         <Text style={[styles.cardHeader, { color: colors.textPrimary }]}>
           Preferences & Field Trials
         </Text>
@@ -359,13 +333,13 @@ export function GuideScreen({
               styles.input,
               {
                 backgroundColor: colors.bgBase,
-                borderColor: colors.borderSubtle,
+                borderColor: colors.tactileBorder,
                 color: colors.textPrimary,
               },
             ]}
           />
         </View>
-      </View>
+      </Tactile3DCard>
     </ScrollView>
   );
 }
@@ -385,22 +359,22 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   screenTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontFamily: FONTS.displayBold,
+    fontSize: 25,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   screenSubtitle: {
     fontSize: 13,
   },
-  card: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
+  cardInner: {
     padding: 16,
     gap: 12,
   },
   cardHeader: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontFamily: FONTS.displayBold,
+    fontSize: 16,
+    fontWeight: '700',
   },
   guideTopRow: {
     flexDirection: 'row',
@@ -411,7 +385,7 @@ const styles = StyleSheet.create({
   langSwitch: {
     flexDirection: 'row',
     borderRadius: RADII.pill,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: 3,
     gap: 2,
   },
@@ -421,15 +395,17 @@ const styles = StyleSheet.create({
     borderRadius: RADII.pill,
   },
   langPillText: {
+    fontFamily: FONTS.displayBold,
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   stepItem: {
     gap: 3,
   },
   stepTitle: {
+    fontFamily: FONTS.displayBold,
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   stepDesc: {
     fontSize: 12,
@@ -458,6 +434,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemTitle: {
+    fontFamily: FONTS.displaySemi,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -469,11 +446,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: RADII.pill,
-    borderWidth: 1,
+    borderWidth: 2,
+  },
+  softBadgeBtnInner: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
   },
   softBadgeText: {
+    fontFamily: FONTS.monoBold,
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   divider: {
     height: 1,
@@ -482,8 +464,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   input: {
+    fontFamily: FONTS.monoReg,
     borderRadius: RADII.pill,
-    borderWidth: 1,
+    borderWidth: 2,
     paddingHorizontal: 14,
     paddingVertical: 11,
     fontSize: 12,

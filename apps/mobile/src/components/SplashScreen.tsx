@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import { EMERGENCY_COLORS } from '../theme/tokens';
+import { EMERGENCY_COLORS, FONTS } from '../theme/tokens';
 
 interface SplashScreenProps {
   ready: boolean;
@@ -101,22 +101,27 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 16,
     backgroundColor: '#FF6B00',
+    borderWidth: 2,
+    borderColor: '#0F172A',
     alignItems: 'center',
     justifyContent: 'center',
   },
   emblemLetter: {
+    fontFamily: FONTS.displayBold,
     color: '#FFFFFF',
     fontSize: 32,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
   brandTitle: {
+    fontFamily: FONTS.displayBold,
     color: '#F8FAFC',
     fontSize: 30,
     fontWeight: '800',
     letterSpacing: 4,
   },
   brandSubtitle: {
+    fontFamily: FONTS.displaySemi,
     color: '#94A3B8',
     fontSize: 12,
     fontWeight: '600',
@@ -133,8 +138,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 9999,
     backgroundColor: '#111C38',
-    borderWidth: 1,
-    borderColor: '#1F2E5C',
+    borderWidth: 2,
+    borderColor: '#0F172A',
   },
   statusDot: {
     width: 8,
@@ -143,6 +148,7 @@ const styles = StyleSheet.create({
     backgroundColor: EMERGENCY_COLORS.telemetry,
   },
   footerText: {
+    fontFamily: FONTS.monoBold,
     color: '#94A3B8',
     fontSize: 11,
     fontWeight: '600',

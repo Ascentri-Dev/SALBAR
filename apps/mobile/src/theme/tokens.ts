@@ -15,6 +15,8 @@ export interface ThemePalette {
   accentPrimary: string;
   accentHover: string;
   accentSubtle: string;
+  tactileShadow: string;
+  tactileBorder: string;
 }
 
 export const DARK_PALETTE: ThemePalette = {
@@ -29,6 +31,8 @@ export const DARK_PALETTE: ThemePalette = {
   accentPrimary: '#FF6B00',
   accentHover: '#FF8533',
   accentSubtle: 'rgba(255, 107, 0, 0.12)',
+  tactileShadow: '#0F172A',
+  tactileBorder: '#0F172A',
 };
 
 export const LIGHT_PALETTE: ThemePalette = {
@@ -43,6 +47,8 @@ export const LIGHT_PALETTE: ThemePalette = {
   accentPrimary: '#EA580C',
   accentHover: '#C2410C',
   accentSubtle: 'rgba(234, 88, 12, 0.10)',
+  tactileShadow: '#0F172A',
+  tactileBorder: '#0F172A',
 };
 
 export const EMERGENCY_COLORS = {
@@ -58,4 +64,12 @@ export const RADII = {
   card: 24,
   control: 18,
   pill: 9999,
+} as const;
+
+export const FONTS = {
+  displayMed: 'SpaceGrotesk_500Medium',
+  displaySemi: 'SpaceGrotesk_600SemiBold',
+  displayBold: 'SpaceGrotesk_700Bold',
+  monoReg: 'JetBrainsMono_400Regular',
+  monoBold: 'JetBrainsMono_700Bold',
 } as const;

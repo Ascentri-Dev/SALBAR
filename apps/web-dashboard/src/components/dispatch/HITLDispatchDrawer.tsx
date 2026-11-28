@@ -55,10 +55,10 @@ export function HITLDispatchDrawer({
 
   return (
     <div
-      className={`flex flex-col h-full rounded-3xl border shadow-2xl overflow-hidden font-sans select-none transition-colors duration-300 ${
+      className={`flex flex-col h-full rounded-3xl salbar-tactile-card overflow-hidden font-sans select-none transition-colors duration-300 ${
         isLight
-          ? 'bg-white border-slate-300 shadow-slate-300/40 text-slate-900'
-          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] shadow-black/50 text-slate-100'
+          ? 'bg-white text-slate-900'
+          : 'bg-[var(--bg-surface)] text-slate-100'
       } ${className}`.trim()}
     >
       {/* Header */}
@@ -89,10 +89,10 @@ export function HITLDispatchDrawer({
           type="button"
           onClick={onClose}
           aria-label="Close Dispatch Panel"
-          className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+          className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
             isLight
-              ? 'hover:bg-slate-200 text-slate-600 hover:text-slate-900'
-              : 'hover:bg-[var(--bg-surface-elevated)] text-slate-400 hover:text-white'
+              ? 'bg-white text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+              : 'bg-[var(--bg-surface)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
           }`}
         >
           <X size={16} />
@@ -102,10 +102,10 @@ export function HITLDispatchDrawer({
       <div className="p-3.5 space-y-3 overflow-y-auto salbar-scrollbar flex-1 font-sans">
         {/* Civilian Input */}
         <div
-          className={`p-3 rounded-2xl border space-y-1 ${
+          className={`p-3 rounded-2xl border-2 border-[var(--tactile-border)] space-y-1 ${
             isLight
-              ? 'bg-slate-50/70 border-slate-200'
-              : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
+              ? 'bg-slate-50/70'
+              : 'bg-[var(--bg-base)]/40'
           }`}
         >
           <div
@@ -127,10 +127,10 @@ export function HITLDispatchDrawer({
 
         {/* AI Briefing Context */}
         <div
-          className={`p-3 rounded-2xl border space-y-1 ${
+          className={`p-3 rounded-2xl border-2 border-[var(--tactile-border)] space-y-1 ${
             isLight
-              ? 'bg-slate-50/70 border-slate-200'
-              : 'bg-[var(--bg-surface-elevated)]/40 border-[var(--border-subtle)]'
+              ? 'bg-slate-50/70'
+              : 'bg-[var(--bg-surface-elevated)]/40'
           }`}
         >
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--accent-primary)] uppercase tracking-wider font-heading">
@@ -148,10 +148,10 @@ export function HITLDispatchDrawer({
 
         {/* OR-Tools Optimization Recommendation */}
         <div
-          className={`p-3 rounded-2xl border space-y-2 ${
+          className={`p-3 rounded-2xl border-2 border-[var(--tactile-border)] space-y-2 ${
             isLight
-              ? 'bg-orange-50/40 border-orange-200'
-              : 'bg-orange-500/5 border-orange-500/30'
+              ? 'bg-orange-50/40'
+              : 'bg-orange-500/5'
           }`}
         >
           <div className="flex items-center justify-between">
@@ -207,10 +207,10 @@ export function HITLDispatchDrawer({
             value={selectedUnitId}
             onChange={(e) => setSelectedUnitId(e.target.value)}
             disabled={isDispatchedSuccess}
-            className={`w-full px-4 py-2 rounded-full border text-xs font-mono transition-colors focus:outline-none focus:border-[var(--accent-primary)] ${
+            className={`w-full px-4 py-2 rounded-full border-2 border-[var(--tactile-border)] text-xs font-mono transition-colors focus:outline-none focus:border-[var(--accent-primary)] ${
               isLight
-                ? 'bg-white border-slate-300 text-slate-900'
-                : 'bg-[var(--bg-base)] border-[var(--border-subtle)] text-slate-100'
+                ? 'bg-white text-slate-900'
+                : 'bg-[var(--bg-base)] text-slate-100'
             }`}
           >
             {responders.map((r) => (
@@ -241,7 +241,7 @@ export function HITLDispatchDrawer({
               type="button"
               onClick={handleApprove}
               disabled={isSubmitting}
-              className="flex-1 py-2.5 px-4 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg active:scale-95 disabled:opacity-50"
+              className="flex-1 py-2.5 px-4 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 salbar-tactile-btn cursor-pointer disabled:opacity-50"
             >
               <Send size={13} />
               {isSubmitting ? 'Transmitting...' : 'Authorize Dispatch'}
@@ -250,10 +250,10 @@ export function HITLDispatchDrawer({
               type="button"
               onClick={handleReject}
               disabled={isSubmitting}
-              className={`py-2.5 px-4 rounded-full border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-95 ${
+              className={`py-2.5 px-4 rounded-full text-xs font-bold uppercase tracking-wider salbar-tactile-btn cursor-pointer ${
                 isLight
-                  ? 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                  : 'border-[var(--border-subtle)] text-slate-300 hover:bg-[var(--bg-surface-elevated)]'
+                  ? 'bg-white text-slate-700 hover:bg-slate-100'
+                  : 'bg-[var(--bg-surface-elevated)] text-slate-300 hover:bg-[var(--bg-surface)]'
               }`}
             >
               Reject

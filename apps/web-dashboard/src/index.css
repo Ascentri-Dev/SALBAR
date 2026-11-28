@@ -2,6 +2,7 @@
 
 @theme {
   /* Font Families */
+  --font-heading: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
@@ -45,6 +46,8 @@
   --accent-primary: #ff6b00;
   --accent-hover: #ff8533;
   --accent-subtle: rgba(255, 107, 0, 0.12);
+  --tactile-shadow: #0f172a;
+  --tactile-border: #0f172a;
 
   /* Starter Template Compatibility Aliases */
   --bg: var(--bg-base);
@@ -78,6 +81,8 @@
   --accent-primary: #ea580c;
   --accent-hover: #c2410c;
   --accent-subtle: rgba(234, 88, 12, 0.10);
+  --tactile-shadow: #0f172a;
+  --tactile-border: #0f172a;
 
   --code-bg: #f1f5f9;
   --social-bg: rgba(226, 232, 240, 0.7);
@@ -222,4 +227,82 @@ body {
 
 .salbar-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: var(--accent-primary);
+}
+
+/* Tactile 3D Extrusion & Border System (preserving SALBAR palette & rounded geometry) */
+@layer components {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .salbar-tactile-card {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--tactile-border);
+    box-shadow: 4px 4px 0 var(--tactile-shadow);
+    transition: transform 130ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 130ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 150ms ease;
+  }
+
+  .salbar-tactile-sm {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--tactile-border);
+    box-shadow: 2px 2px 0 var(--tactile-shadow);
+    transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 150ms ease,
+                color 150ms ease,
+                border-color 150ms ease;
+  }
+
+  .salbar-tactile-sm:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--tactile-shadow);
+    border-color: var(--accent-primary);
+  }
+
+  .salbar-tactile-sm:active:not(:disabled) {
+    transform: translate(1.5px, 1.5px);
+    box-shadow: 0 0 0 var(--tactile-shadow);
+  }
+
+  .salbar-tactile-btn {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--tactile-border);
+    box-shadow: 3px 3px 0 var(--tactile-shadow);
+    transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 150ms ease,
+                color 150ms ease,
+                border-color 150ms ease;
+  }
+
+  .salbar-tactile-btn:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--tactile-shadow);
+    border-color: var(--accent-primary);
+  }
+
+  .salbar-tactile-btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 var(--tactile-shadow);
+  }
+}
+
+@keyframes salbar-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.salbar-reveal-up {
+  animation: salbar-reveal-up 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }

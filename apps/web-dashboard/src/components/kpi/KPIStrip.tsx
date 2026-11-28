@@ -20,15 +20,16 @@ const containerVariants: Variants = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.09,
+      staggerChildren: 0.08,
       delayChildren: 0.03,
     },
   },
   exit: {
-    opacity: 0,
+    opacity: 1,
     transition: {
-      staggerChildren: 0.05,
+      staggerChildren: 0.045,
       staggerDirection: -1,
+      when: 'afterChildren',
     },
   },
 }
@@ -39,13 +40,13 @@ const getCardVariants = (align: 'left' | 'right'): Variants => ({
     x: 0,
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
   },
   exit: {
     x: align === 'right' ? 35 : -35,
     opacity: 0,
     scale: 0.94,
-    transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
   },
 })
 
@@ -159,10 +160,10 @@ export function KPIStrip({
             <button
               type="button"
               onClick={onClose}
-              className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
                 isLight
-                  ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  ? 'bg-white text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
               }`}
               title="Hide Metrics"
               aria-label="Hide Metrics"
@@ -181,10 +182,10 @@ export function KPIStrip({
             <button
               type="button"
               onClick={onClose}
-              className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
                 isLight
-                  ? 'bg-white border-slate-300 text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  ? 'bg-white text-slate-700 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                  : 'bg-[var(--bg-surface)] text-slate-300 hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
               }`}
               title="Hide Metrics"
               aria-label="Hide Metrics"
@@ -198,66 +199,61 @@ export function KPIStrip({
       {/* Staggered Animated Circular Pill Cards */}
       <motion.div
         variants={containerVariants}
-        initial="hidden"
-        animate="show"
-        exit="exit"
         className="flex flex-col gap-2.5"
       >
         {kpiStats.map((stat) => {
           const isSelected = activeFilter === stat.id
 
           return (
-            <motion.button
-              key={stat.id}
-              variants={cardVariants}
-              type="button"
-              onClick={() => onFilterChange(stat.id)}
-              className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full border px-5 sm:px-6 shadow-xl transition-all duration-300 cursor-pointer ${
-                stat.border
-              } ${
-                isLight
-                  ? isSelected
-                    ? 'ring-2 ring-[var(--accent-primary)] bg-white border-[var(--accent-primary)] shadow-md'
-                    : 'bg-white hover:border-[var(--accent-primary)]'
-                  : isSelected
-                    ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)] border-[var(--accent-primary)] shadow-md shadow-[var(--accent-primary)]/20'
-                    : 'bg-[var(--bg-surface)] hover:border-[var(--accent-primary)]'
-              }`}
-              title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}
-            >
-              {/* High-Visibility Proportional Occupancy Meter Fill Bar: Always starts from the left */}
-              <div
-                className={`absolute inset-y-0 left-0 rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
-                style={{ width: `${stat.pct}%` }}
-              />
-
-              {/* Header & Percentage-Only Subheader */}
-              <div className="flex flex-col z-10 min-w-0 text-left">
-                <span
-                  className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
-                    isSelected
-                      ? 'text-[var(--accent-primary)]'
-                      : isLight
-                        ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
-                        : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
-                  }`}
-                >
-                  {stat.label}
-                </span>
-                <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
-                  {stat.pctText}
-                </span>
-              </div>
-
-              {/* Big, Bold Numeric Count */}
-              <span
-                className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
-                  stat.tone
-                } ${stat.pulse ? 'animate-pulse' : ''}`}
+            <motion.div key={stat.id} variants={cardVariants}>
+              <button
+                type="button"
+                onClick={() => onFilterChange(stat.id)}
+                className={`group relative overflow-hidden flex h-13 sm:h-14 w-full items-center justify-between rounded-full px-5 sm:px-6 salbar-tactile-btn cursor-pointer ${
+                  isLight
+                    ? isSelected
+                      ? 'ring-2 ring-[var(--accent-primary)] bg-white'
+                      : 'bg-white hover:border-[var(--accent-primary)]'
+                    : isSelected
+                      ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--bg-surface-elevated)]'
+                      : 'bg-[var(--bg-surface)] hover:border-[var(--accent-primary)]'
+                }`}
+                title={`Filter by ${stat.label}: ${stat.value} reports (${stat.pctText})`}
               >
-                {stat.value}
-              </span>
-            </motion.button>
+                {/* High-Visibility Proportional Occupancy Meter Fill Bar: Always starts from the left */}
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-full opacity-25 dark:opacity-30 group-hover:opacity-45 pointer-events-none transition-all duration-500 ${stat.barBg}`}
+                  style={{ width: `${stat.pct}%` }}
+                />
+
+                {/* Header & Percentage-Only Subheader */}
+                <div className="flex flex-col z-10 min-w-0 text-left">
+                  <span
+                    className={`font-heading font-black text-xs sm:text-sm tracking-wider uppercase transition-colors ${
+                      isSelected
+                        ? 'text-[var(--accent-primary)]'
+                        : isLight
+                          ? 'text-slate-900 group-hover:text-[var(--accent-primary)]'
+                          : 'text-slate-100 group-hover:text-[var(--accent-primary)]'
+                    }`}
+                  >
+                    {stat.label}
+                  </span>
+                  <span className="font-mono font-bold text-[10px] sm:text-[11px] text-[var(--text-muted)] dark:text-slate-400">
+                    {stat.pctText}
+                  </span>
+                </div>
+
+                {/* Big, Bold Numeric Count */}
+                <span
+                  className={`font-mono font-black text-lg sm:text-xl shrink-0 z-10 leading-none ${
+                    stat.tone
+                  } ${stat.pulse ? 'animate-pulse' : ''}`}
+                >
+                  {stat.value}
+                </span>
+              </button>
+            </motion.div>
           )
         })}
       </motion.div>

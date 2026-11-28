@@ -9,6 +9,7 @@ This directory houses the academic manuscripts, technical guides, UI specificati
 
 ### 1. System & Hardware Guides (`guides/`)
 - **[`guides/increment-1-guide.md`](guides/increment-1-guide.md)**: Authoritative end-to-end technical reference, wiring manual, command cheat sheet, and verification guide for Increment 1. Covers LILYGO T3-S3 SX1262 Gateway setup, TTGO T-Beam V1.2 SX1276 Field Terminal setup, breadboard wiring (OLED + 4 buttons), PlatformIO flashing, Python Serial Bridge daemon, GPS diagnostics, and the 10-trial field test.
+- **[`guides/increment-2-guide.md`](guides/increment-2-guide.md)**: Setup and end-to-end testing guide for Increment 2 covering the Resident Mobile App (`apps/mobile`), Cloud Relay (`apps/cloud-relay`), Serial Bridge forwarding, and live Web Dashboard verification.
 
 ### 2. Design & UI Specifications (`specs/`)
 - **[`specs/web-dashboard-ui-plan.md`](specs/web-dashboard-ui-plan.md)**: User interface specification, 3-view screen architecture (Command Map CAD, Responder Fleet Management, Incident Archive), design tokens, and high-contrast light/dark emergency dispatch color palette.

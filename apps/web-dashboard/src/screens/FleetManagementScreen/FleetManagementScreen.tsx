@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type Dispatch, type SetStateAction } from 'react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import {
@@ -15,13 +15,17 @@ import {
   Coffee,
   SlidersHorizontal,
 } from 'lucide-react'
-import type { ResponderStatus } from '../../types/cad'
+import type { FieldResponder, ResponderStatus } from '../../types/cad'
 import type { ScreenId } from '../../types/navigation'
+import type { GatewayConnectionState } from '../../hooks/useGatewayBridge'
 import { useTheme } from '../../context'
 import { UnitInspectorModal, type FleetResponderUnit } from './UnitInspectorModal'
 
 export interface FleetManagementScreenProps {
   onSelectScreen?: (screenId: ScreenId) => void
+  responders?: FieldResponder[]
+  setResponders?: Dispatch<SetStateAction<FieldResponder[]>>
+  connectionState?: GatewayConnectionState
   className?: string
 }
 
@@ -72,15 +76,62 @@ const itemVariants: Variants = {
 
 export function FleetManagementScreen({
   onSelectScreen,
+  responders: externalResponders,
+  setResponders: externalSetResponders,
+  connectionState,
   className = '',
 }: FleetManagementScreenProps) {
-  const { theme, isNavbarOpen } = useTheme()
+  const { theme } = useTheme()
   const isLight = theme === 'light'
 
-  const [responders, setResponders] = useState<FleetResponderUnit[]>(DEFAULT_FLEET_UNITS)
+  const [localResponders, setLocalResponders] = useState<FleetResponderUnit[]>(DEFAULT_FLEET_UNITS)
   const [statusFilter, setStatusFilter] = useState<'ALL' | ResponderStatus | 'N/A'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
-  const [inspectingUnit, setInspectingUnit] = useState<FleetResponderUnit | null>(null)
+  const [inspectingUnitId, setInspectingUnitId] = useState<string | null>(null)
+
+  const responders: FleetResponderUnit[] = useMemo(() => {
+    if (!externalResponders) return localResponders
+    return externalResponders.map((r) => ({
+      id: r.id,
+      name: r.name,
+      role: r.role,
+      status: r.status,
+      batteryPercent: r.batteryPercent,
+      batteryVoltage: r.batteryVoltage,
+      fatigueScore: r.fatigueScore,
+      location: {
+        lat: r.location.lat,
+        lng: r.location.lng,
+        accuracyMeters: r.location.accuracyMeters,
+        kalmanFiltered: r.location.kalmanFiltered,
+      },
+      assignedIncidentId: r.assignedIncidentId ?? null,
+      lastSeen: r.lastSeen,
+      relayedReportsCount: r.relayedReportsCount,
+      terminalType: r.terminalType,
+    }))
+  }, [externalResponders, localResponders])
+
+  const inspectingUnit = useMemo(
+    () => responders.find((r) => r.id === inspectingUnitId) ?? null,
+    [responders, inspectingUnitId]
+  )
+
+  const fleetStats = useMemo(() => {
+    const total = responders.length
+    const online = responders.filter((r) => r.status !== 'OFFLINE' && r.status !== 'N/A').length
+    const available = responders.filter((r) => r.status === 'AVAILABLE').length
+    const fatigueValues = responders
+      .map((r) => r.fatigueScore)
+      .filter((v): v is number => v !== null)
+    const avgFatigue =
+      fatigueValues.length > 0
+        ? Math.round(fatigueValues.reduce((sum, v) => sum + v, 0) / fatigueValues.length)
+        : null
+    const totalRelayed = responders.reduce((sum, r) => sum + (r.relayedReportsCount ?? 0), 0)
+    const readinessPct = total > 0 ? Math.round((available / total) * 100) : 0
+    return { total, online, available, avgFatigue, totalRelayed, readinessPct }
+  }, [responders])
 
   // Filtered Responders
   const filteredResponders = useMemo(() => {
@@ -96,18 +147,31 @@ export function FleetManagementScreen({
     })
   }, [responders, statusFilter, searchQuery])
 
-  // Status Handlers
+  // Status Handlers (updates shared App state when connected, or local state in standalone/test mode)
   const handleUpdateStatus = (unitId: string, newStatus: ResponderStatus | 'N/A') => {
-    setResponders((prev) =>
+    if (externalSetResponders && newStatus !== 'N/A') {
+      externalSetResponders((prev) =>
+        prev.map((r) => (r.id === unitId ? { ...r, status: newStatus } : r))
+      )
+      return
+    }
+    setLocalResponders((prev) =>
       prev.map((r) => (r.id === unitId ? { ...r, status: newStatus } : r))
     )
-    if (inspectingUnit?.id === unitId) {
-      setInspectingUnit((prev) => (prev ? { ...prev, status: newStatus } : null))
-    }
   }
 
   const handleToggleRest = (unitId: string) => {
-    setResponders((prev) =>
+    if (externalSetResponders) {
+      externalSetResponders((prev) =>
+        prev.map((r) => {
+          if (r.id !== unitId) return r
+          const isResting = r.status === 'RESTING'
+          return { ...r, status: isResting ? 'AVAILABLE' : 'RESTING' }
+        })
+      )
+      return
+    }
+    setLocalResponders((prev) =>
       prev.map((r) => {
         if (r.id !== unitId) return r
         const isResting = r.status === 'RESTING'
@@ -120,12 +184,15 @@ export function FleetManagementScreen({
   }
 
   const handleUpdateFatigue = (unitId: string, newFatigueScore: number | null) => {
-    setResponders((prev) =>
+    if (externalSetResponders && newFatigueScore !== null) {
+      externalSetResponders((prev) =>
+        prev.map((r) => (r.id === unitId ? { ...r, fatigueScore: newFatigueScore } : r))
+      )
+      return
+    }
+    setLocalResponders((prev) =>
       prev.map((r) => (r.id === unitId ? { ...r, fatigueScore: newFatigueScore } : r))
     )
-    if (inspectingUnit?.id === unitId) {
-      setInspectingUnit((prev) => (prev ? { ...prev, fatigueScore: newFatigueScore } : null))
-    }
   }
 
   const getStatusBadge = (status: ResponderStatus | 'N/A') => {
@@ -183,9 +250,7 @@ export function FleetManagementScreen({
   return (
     <div
       data-testid="screen-fleet-management"
-      className={`screen-fleet-management flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pb-8 overflow-y-auto salbar-scrollbar select-none font-sans transition-[padding] duration-300 ${
-        isNavbarOpen ? 'pt-20 sm:pt-22' : 'pt-4 sm:pt-6'
-      } ${className}`.trim()}
+      className={`screen-fleet-management flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pb-8 pt-20 sm:pt-22 overflow-y-auto salbar-scrollbar select-none font-sans ${className}`.trim()}
     >
       <motion.div
         variants={containerVariants}
@@ -209,118 +274,131 @@ export function FleetManagementScreen({
 
           {/* Quick Fleet Health Badges */}
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-full border bg-slate-500/10 text-[var(--text-secondary)] border-slate-300 dark:border-slate-700">
-              Terminals: N/A
+            <span
+              className={`font-mono text-xs font-bold px-3 py-1.5 rounded-full salbar-tactile-sm flex items-center gap-2 ${
+                isLight
+                  ? 'bg-white text-slate-700'
+                  : 'bg-[var(--bg-surface)] text-slate-200'
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  connectionState?.isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                }`}
+              />
+              {connectionState?.isConnected
+                ? `Gateway Live (${connectionState.port}) • ${fleetStats.total} Terminal${fleetStats.total === 1 ? '' : 's'}`
+                : `Terminals: ${fleetStats.total} (Gateway Standby)`}
             </span>
           </div>
         </motion.header>
 
-        {/* Fleet KPI Summary Strip (4 Circular Cards with N/A) */}
+        {/* Fleet KPI Summary Strip */}
         <motion.section
           variants={itemVariants}
           className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
         >
           {/* Active Units */}
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -3, transition: { duration: 0.15 } }}
-            className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
-              isLight
-                ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/40'
-            }`}
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] shrink-0">
-              <Shield size={20} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
-                Deployed Terminals
-              </span>
-              <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                N/A
-              </span>
-              <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
-                Mesh Sync: N/A
-              </span>
+          <motion.div variants={itemVariants}>
+            <div
+              className={`p-4 rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] flex items-center gap-3.5 ${
+                isLight
+                  ? 'bg-white text-slate-900'
+                  : 'bg-[var(--bg-surface)] text-slate-100'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] shrink-0">
+                <Shield size={20} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
+                  Deployed Terminals
+                </span>
+                <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
+                  {fleetStats.total}
+                </span>
+                <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
+                  Online: {fleetStats.online} / {fleetStats.total}
+                </span>
+              </div>
             </div>
           </motion.div>
 
           {/* Operational Readiness */}
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -3, transition: { duration: 0.15 } }}
-            className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
-              isLight
-                ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/40'
-            }`}
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
-              <CheckCircle2 size={20} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
-                Readiness State
-              </span>
-              <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                N/A
-              </span>
-              <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
-                Status: N/A
-              </span>
+          <motion.div variants={itemVariants}>
+            <div
+              className={`p-4 rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] flex items-center gap-3.5 ${
+                isLight
+                  ? 'bg-white text-slate-900'
+                  : 'bg-[var(--bg-surface)] text-slate-100'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
+                  Readiness State
+                </span>
+                <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
+                  {fleetStats.available} Ready
+                </span>
+                <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
+                  {fleetStats.readinessPct}% Available
+                </span>
+              </div>
             </div>
           </motion.div>
 
           {/* Average Fatigue */}
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -3, transition: { duration: 0.15 } }}
-            className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
-              isLight
-                ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/40'
-            }`}
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-500/15 text-amber-500 shrink-0">
-              <Activity size={20} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
-                Fleet Avg Fatigue
-              </span>
-              <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                N/A
-              </span>
-              <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
-                Telemetry: N/A
-              </span>
+          <motion.div variants={itemVariants}>
+            <div
+              className={`p-4 rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] flex items-center gap-3.5 ${
+                isLight
+                  ? 'bg-white text-slate-900'
+                  : 'bg-[var(--bg-surface)] text-slate-100'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-500/15 text-amber-500 shrink-0">
+                <Activity size={20} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
+                  Fleet Avg Fatigue
+                </span>
+                <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
+                  {fleetStats.avgFatigue !== null ? `${fleetStats.avgFatigue}%` : 'N/A'}
+                </span>
+                <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
+                  {connectionState?.isConnected ? 'Live Telemetry' : 'Awaiting Packet'}
+                </span>
+              </div>
             </div>
           </motion.div>
 
           {/* Relayed Reports */}
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -3, transition: { duration: 0.15 } }}
-            className={`p-4 rounded-3xl border shadow-md flex items-center gap-3.5 transition-all ${
-              isLight
-                ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/50'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/40'
-            }`}
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/15 text-blue-500 shrink-0">
-              <Cpu size={20} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
-                BLE Mesh Packets
-              </span>
-              <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
-                N/A
-              </span>
-              <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
-                Ingestion: N/A
-              </span>
+          <motion.div variants={itemVariants}>
+            <div
+              className={`p-4 rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] flex items-center gap-3.5 ${
+                isLight
+                  ? 'bg-white text-slate-900'
+                  : 'bg-[var(--bg-surface)] text-slate-100'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/15 text-blue-500 shrink-0">
+                <Cpu size={20} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
+                  BLE Mesh Packets
+                </span>
+                <span className="text-lg sm:text-xl font-mono font-black leading-tight block">
+                  {fleetStats.totalRelayed}
+                </span>
+                <span className="text-[10px] text-[var(--text-secondary)] font-bold block truncate">
+                  LoRa / BLE Relayed
+                </span>
+              </div>
             </div>
           </motion.div>
         </motion.section>
@@ -331,16 +409,16 @@ export function FleetManagementScreen({
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
         >
           {/* Status Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={() => setStatusFilter('ALL')}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 statusFilter === 'ALL'
-                  ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] shadow-md'
+                  ? 'bg-[var(--accent-primary)] text-white hover:border-[var(--tactile-border)]'
                   : isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:border-slate-400'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-[var(--accent-primary)]'
+                    ? 'bg-white text-slate-700'
+                    : 'bg-[var(--bg-surface)] text-slate-300'
               }`}
             >
               ALL ({responders.length})
@@ -348,12 +426,12 @@ export function FleetManagementScreen({
             <button
               type="button"
               onClick={() => setStatusFilter('AVAILABLE')}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 statusFilter === 'AVAILABLE'
-                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-md'
+                  ? 'bg-emerald-500 text-white hover:border-[var(--tactile-border)]'
                   : isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:border-slate-400'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-emerald-500'
+                    ? 'bg-white text-slate-700'
+                    : 'bg-[var(--bg-surface)] text-slate-300'
               }`}
             >
               AVAILABLE
@@ -361,12 +439,12 @@ export function FleetManagementScreen({
             <button
               type="button"
               onClick={() => setStatusFilter('EN_ROUTE')}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 statusFilter === 'EN_ROUTE'
-                  ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] shadow-md'
+                  ? 'bg-[var(--accent-primary)] text-white hover:border-[var(--tactile-border)]'
                   : isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:border-slate-400'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-[var(--accent-primary)]'
+                    ? 'bg-white text-slate-700'
+                    : 'bg-[var(--bg-surface)] text-slate-300'
               }`}
             >
               EN ROUTE
@@ -374,12 +452,12 @@ export function FleetManagementScreen({
             <button
               type="button"
               onClick={() => setStatusFilter('RESTING')}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                 statusFilter === 'RESTING'
-                  ? 'bg-purple-500 text-white border-purple-500 shadow-md'
+                  ? 'bg-purple-500 text-white hover:border-[var(--tactile-border)]'
                   : isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:border-slate-400'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:border-purple-500'
+                    ? 'bg-white text-slate-700'
+                    : 'bg-[var(--bg-surface)] text-slate-300'
               }`}
             >
               RESTING
@@ -397,10 +475,10 @@ export function FleetManagementScreen({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search call-sign, unit ID, role..."
-              className={`w-full pl-9 pr-4 py-1.5 rounded-full border text-xs font-sans transition-colors focus:outline-none focus:border-[var(--accent-primary)] ${
+              className={`w-full pl-9 pr-4 py-1.5 rounded-full border-2 border-[var(--tactile-border)] shadow-[2px_2px_0_var(--tactile-shadow)] text-xs font-sans transition-colors focus:outline-none focus:border-[var(--accent-primary)] ${
                 isLight
-                  ? 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 placeholder:text-slate-400'
+                  ? 'bg-white text-slate-900 placeholder:text-slate-400'
+                  : 'bg-[var(--bg-surface)] text-slate-100 placeholder:text-slate-400'
               }`}
             />
           </div>
@@ -420,14 +498,15 @@ export function FleetManagementScreen({
               <motion.div
                 key={unit.id}
                 variants={itemVariants}
-                whileHover={{ y: -4, transition: { duration: 0.18 } }}
-                data-testid={`unit-card-${unit.id.toLowerCase()}`}
-                className={`flex flex-col rounded-3xl border shadow-xl p-5 sm:p-6 transition-all duration-300 hover:shadow-2xl ${
-                  isLight
-                    ? 'bg-white border-slate-300 text-slate-900 shadow-slate-200/60 hover:border-[var(--accent-primary)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/50 hover:border-[var(--accent-primary)]'
-                }`}
               >
+                <div
+                  data-testid={`unit-card-${unit.id.toLowerCase()}`}
+                  className={`flex flex-col h-full rounded-3xl salbar-tactile-card hover:border-[var(--accent-primary)] p-5 sm:p-6 ${
+                    isLight
+                      ? 'bg-white text-slate-900'
+                      : 'bg-[var(--bg-surface)] text-slate-100'
+                  }`}
+                >
                 {/* Card Header */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div>
@@ -455,8 +534,8 @@ export function FleetManagementScreen({
 
                 {/* Fatigue Index Meter Section */}
                 <div
-                  className={`p-3.5 rounded-2xl border mb-4 space-y-2 ${
-                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/30 border-[var(--border-subtle)]'
+                  className={`p-3.5 rounded-2xl border-2 border-[var(--tactile-border)] mb-4 space-y-2 ${
+                    isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/30'
                   }`}
                 >
                   <div className="flex items-center justify-between text-xs">
@@ -481,8 +560,8 @@ export function FleetManagementScreen({
                 <div className="grid grid-cols-2 gap-2.5 mb-4">
                   {/* Battery */}
                   <div
-                    className={`p-2.5 rounded-2xl border ${
-                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
+                    className={`p-2.5 rounded-2xl border-2 border-[var(--tactile-border)] ${
+                      isLight ? 'bg-slate-50' : 'bg-[var(--bg-base)]/40'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 text-[var(--accent-primary)] mb-1">
@@ -498,8 +577,8 @@ export function FleetManagementScreen({
 
                   {/* GPS Accuracy */}
                   <div
-                    className={`p-2.5 rounded-2xl border ${
-                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
+                    className={`p-2.5 rounded-2xl border-2 border-[var(--tactile-border)] ${
+                      isLight ? 'bg-slate-50' : 'bg-[var(--bg-base)]/40'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 text-[var(--accent-primary)] mb-1">
@@ -517,8 +596,8 @@ export function FleetManagementScreen({
 
                   {/* Terminal Hardware */}
                   <div
-                    className={`p-2.5 rounded-2xl border ${
-                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
+                    className={`p-2.5 rounded-2xl border-2 border-[var(--tactile-border)] ${
+                      isLight ? 'bg-slate-50' : 'bg-[var(--bg-base)]/40'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 text-[var(--accent-primary)] mb-1">
@@ -534,8 +613,8 @@ export function FleetManagementScreen({
 
                   {/* BLE Ingestion */}
                   <div
-                    className={`p-2.5 rounded-2xl border ${
-                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
+                    className={`p-2.5 rounded-2xl border-2 border-[var(--tactile-border)] ${
+                      isLight ? 'bg-slate-50' : 'bg-[var(--bg-base)]/40'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 text-[var(--accent-primary)] mb-1">
@@ -555,13 +634,15 @@ export function FleetManagementScreen({
                 {/* Active Assignment Snippet */}
                 <div className="mb-5 flex-1">
                   <div
-                    className={`p-3 rounded-2xl border text-xs text-[var(--text-secondary)] flex items-center justify-between ${
-                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
+                    className={`p-3 rounded-2xl border-2 border-[var(--tactile-border)] text-xs text-[var(--text-secondary)] flex items-center justify-between ${
+                      isLight ? 'bg-slate-50' : 'bg-[var(--bg-base)]/40'
                     }`}
                   >
-                    <span>Assignment: N/A</span>
+                    <span>
+                      Assignment: {unit.assignedIncidentId ?? 'Standby'}
+                    </span>
                     <span className="font-mono text-[10px] text-[var(--text-secondary)] font-bold">
-                      Awaiting Mission
+                      {unit.lastSeen ?? 'Awaiting Sync'}
                     </span>
                   </div>
                 </div>
@@ -572,12 +653,12 @@ export function FleetManagementScreen({
                   <button
                     type="button"
                     onClick={() => handleToggleRest(unit.id)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                       unit.status === 'RESTING'
-                        ? 'bg-purple-500 text-white border-purple-500 hover:bg-purple-600'
+                        ? 'bg-purple-500 text-white hover:bg-purple-600 hover:border-[var(--tactile-border)]'
                         : isLight
-                          ? 'bg-slate-100 hover:bg-purple-50 hover:border-purple-300 text-slate-700 hover:text-purple-600 border-slate-300'
-                          : 'bg-[var(--bg-surface-elevated)] hover:bg-purple-900/40 hover:border-purple-500 text-slate-200 hover:text-purple-300 border-[var(--border-subtle)]'
+                          ? 'bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-600'
+                          : 'bg-[var(--bg-surface-elevated)] hover:bg-purple-900/40 text-slate-200 hover:text-purple-300'
                     }`}
                   >
                     <Coffee size={13} />
@@ -587,11 +668,11 @@ export function FleetManagementScreen({
                   {/* Inspect Telemetry */}
                   <button
                     type="button"
-                    onClick={() => setInspectingUnit(unit)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full border text-xs font-black tracking-wider uppercase transition-all cursor-pointer ${
+                    onClick={() => setInspectingUnitId(unit.id)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full salbar-tactile-btn font-heading text-xs font-black tracking-wider uppercase cursor-pointer ${
                       isLight
-                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
-                        : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-focus)] text-slate-200 border-[var(--border-subtle)]'
+                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                        : 'bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-focus)] text-slate-200'
                     }`}
                   >
                     <SlidersHorizontal size={13} />
@@ -605,11 +686,12 @@ export function FleetManagementScreen({
                       onClick={() => onSelectScreen('command-map')}
                       title="Locate unit on Command Map"
                       aria-label={`Locate ${unit.name} on map`}
-                      className="p-2 rounded-full bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)] transition-colors cursor-pointer shrink-0"
+                      className="p-2 rounded-full salbar-tactile-sm bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] cursor-pointer shrink-0"
                     >
                       <MapPin size={15} />
                     </button>
                   )}
+                </div>
                 </div>
               </motion.div>
             )
@@ -618,7 +700,11 @@ export function FleetManagementScreen({
 
         {/* Empty State if filter yields no units */}
         {filteredResponders.length === 0 && (
-          <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl border border-dashed border-[var(--border-subtle)] space-y-3">
+          <div
+            className={`flex flex-col items-center justify-center p-12 text-center rounded-3xl salbar-tactile-card space-y-3 ${
+              isLight ? 'bg-white text-slate-900' : 'bg-[var(--bg-surface)] text-slate-100'
+            }`}
+          >
             <Filter size={32} className="text-[var(--accent-primary)] opacity-60" />
             <h3 className="font-heading font-black text-base uppercase tracking-wider">
               No Field Responders Found
@@ -632,7 +718,7 @@ export function FleetManagementScreen({
                 setStatusFilter('ALL')
                 setSearchQuery('')
               }}
-              className="px-4 py-2 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-full salbar-tactile-btn font-heading bg-[var(--accent-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] cursor-pointer"
             >
               Reset Filters
             </button>
@@ -645,7 +731,7 @@ export function FleetManagementScreen({
         <UnitInspectorModal
           unit={inspectingUnit}
           assignedIncident={null}
-          onClose={() => setInspectingUnit(null)}
+          onClose={() => setInspectingUnitId(null)}
           onUpdateStatus={handleUpdateStatus}
           onUpdateFatigue={handleUpdateFatigue}
         />

@@ -82,10 +82,10 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
         exit={{ scale: 0.94, opacity: 0, y: 15 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         data-testid="audit-trail-modal"
-        className={`w-full max-w-2xl max-h-[85vh] my-auto flex flex-col rounded-3xl border shadow-2xl overflow-hidden transition-colors ${
+        className={`w-full max-w-2xl max-h-[85vh] my-auto flex flex-col rounded-3xl salbar-tactile-card overflow-hidden transition-colors ${
           isLight
-            ? 'bg-white border-slate-300 text-slate-900 shadow-slate-400/40'
-            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/80'
+            ? 'bg-white text-slate-900'
+            : 'bg-[var(--bg-surface)] text-slate-100'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -117,10 +117,10 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className={`p-2 rounded-full border transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
               isLight
-                ? 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 hover:border-slate-400'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-white hover:border-[var(--accent-primary)]'
+                ? 'bg-white text-slate-700 hover:text-[var(--accent-primary)]'
+                : 'bg-[var(--bg-surface)] text-slate-300 hover:text-[var(--accent-primary)]'
             }`}
             title="Close Audit Log"
             aria-label="Close Audit Log"
@@ -134,8 +134,8 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
           {/* Metadata Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div
-              className={`p-3 rounded-2xl border ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/30 border-[var(--border-subtle)]'
+              className={`p-3 rounded-2xl border-2 border-[var(--tactile-border)] ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/30'
               }`}
             >
               <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
@@ -147,8 +147,8 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
             </div>
 
             <div
-              className={`p-3 rounded-2xl border ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/30 border-[var(--border-subtle)]'
+              className={`p-3 rounded-2xl border-2 border-[var(--tactile-border)] ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/30'
               }`}
             >
               <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
@@ -160,8 +160,8 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
             </div>
 
             <div
-              className={`p-3 rounded-2xl border ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/30 border-[var(--border-subtle)]'
+              className={`p-3 rounded-2xl border-2 border-[var(--tactile-border)] ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/30'
               }`}
             >
               <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
@@ -173,8 +173,8 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
             </div>
 
             <div
-              className={`p-3 rounded-2xl border ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/30 border-[var(--border-subtle)]'
+              className={`p-3 rounded-2xl border-2 border-[var(--tactile-border)] ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/30'
               }`}
             >
               <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-secondary)] block">
@@ -188,8 +188,8 @@ export function AuditTrailModal({ incident, onClose }: AuditTrailModalProps) {
 
           {/* Raw Text & NLP Box */}
           <div
-            className={`p-4 rounded-2xl border space-y-2 ${
-              isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/40 border-[var(--border-subtle)]'
+            className={`p-4 rounded-2xl border-2 border-[var(--tactile-border)] space-y-2 ${
+              isLight ? 'bg-slate-50' : 'bg-[var(--bg-base)]/40'
             }`}
           >
             <span className="font-heading font-black text-xs uppercase tracking-wider text-[var(--accent-primary)] block">

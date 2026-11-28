@@ -123,10 +123,10 @@ export function UnitInspectorModal({
         exit={{ scale: 0.94, opacity: 0, y: 15 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         data-testid="unit-inspector-modal"
-        className={`w-full max-w-2xl max-h-[85vh] my-auto flex flex-col rounded-3xl border shadow-2xl overflow-hidden transition-colors ${
+        className={`w-full max-w-2xl max-h-[85vh] my-auto flex flex-col rounded-3xl salbar-tactile-card overflow-hidden transition-colors ${
           isLight
-            ? 'bg-white border-slate-300 text-slate-900 shadow-slate-400/40'
-            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-100 shadow-black/80'
+            ? 'bg-white text-slate-900'
+            : 'bg-[var(--bg-surface)] text-slate-100'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -158,10 +158,10 @@ export function UnitInspectorModal({
           <button
             type="button"
             onClick={onClose}
-            className={`p-2 rounded-full border transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-full salbar-tactile-sm cursor-pointer ${
               isLight
-                ? 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 hover:border-slate-400'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:text-white hover:border-[var(--accent-primary)]'
+                ? 'bg-white text-slate-700 hover:text-[var(--accent-primary)]'
+                : 'bg-[var(--bg-surface)] text-slate-300 hover:text-[var(--accent-primary)]'
             }`}
             title="Close Inspector"
             aria-label="Close Inspector"
@@ -186,10 +186,10 @@ export function UnitInspectorModal({
               <select
                 value={unit.status}
                 onChange={(e) => onUpdateStatus(unit.id, e.target.value as ResponderStatus | 'N/A')}
-                className={`text-xs font-bold rounded-full px-3 py-1 border transition-colors focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer ${
+                className={`text-xs font-bold rounded-full px-3 py-1 border-2 border-[var(--tactile-border)] shadow-[2px_2px_0_var(--tactile-shadow)] transition-colors focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer ${
                   isLight
-                    ? 'bg-slate-100 border-slate-300 text-slate-800'
-                    : 'bg-[var(--bg-surface-elevated)] border-[var(--border-subtle)] text-slate-200'
+                    ? 'bg-slate-100 text-slate-800'
+                    : 'bg-[var(--bg-surface-elevated)] text-slate-200'
                 }`}
               >
                 <option value="N/A">N/A (Unset)</option>
@@ -205,10 +205,10 @@ export function UnitInspectorModal({
           {/* Active Incident Banner if dispatched */}
           {assignedIncident ? (
             <div
-              className={`p-4 rounded-2xl border space-y-2 ${
+              className={`p-4 rounded-2xl border-2 border-[var(--tactile-border)] space-y-2 ${
                 isLight
-                  ? 'bg-orange-50/70 border-orange-200 text-slate-900'
-                  : 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30 text-slate-100'
+                  ? 'bg-orange-50/70 text-slate-900'
+                  : 'bg-[var(--accent-primary)]/10 text-slate-100'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -228,8 +228,8 @@ export function UnitInspectorModal({
             </div>
           ) : (
             <div
-              className={`p-3.5 rounded-2xl border text-xs text-[var(--text-secondary)] flex items-center justify-between ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-base)]/50 border-[var(--border-subtle)]'
+              className={`p-3.5 rounded-2xl border-2 border-[var(--tactile-border)] text-xs text-[var(--text-secondary)] flex items-center justify-between ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-base)]/50'
               }`}
             >
               <span>Current Staging: N/A (Awaiting Backend Sync)</span>
@@ -239,8 +239,8 @@ export function UnitInspectorModal({
 
           {/* Fatigue Management & Calibration Section */}
           <div
-            className={`p-4 rounded-2xl border space-y-3 ${
-              isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/30 border-[var(--border-subtle)]'
+            className={`p-4 rounded-2xl border-2 border-[var(--tactile-border)] space-y-3 ${
+              isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/30'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -276,10 +276,10 @@ export function UnitInspectorModal({
               <button
                 type="button"
                 onClick={handleResetFatigue}
-                className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full salbar-tactile-btn font-heading text-xs font-bold cursor-pointer ${
                   isLight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-slate-300 hover:bg-[var(--border-subtle)]'
+                    ? 'bg-white text-slate-700 hover:bg-slate-100'
+                    : 'bg-[var(--bg-surface)] text-slate-300 hover:bg-[var(--bg-surface-elevated)]'
                 }`}
               >
                 Reset to Zero
@@ -287,7 +287,7 @@ export function UnitInspectorModal({
               <button
                 type="button"
                 onClick={handleSaveFatigue}
-                className="px-4 py-1.5 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
+                className="px-4 py-1.5 rounded-full salbar-tactile-btn font-heading bg-[var(--accent-primary)] text-white text-xs font-bold hover:bg-[var(--accent-hover)] hover:border-[var(--tactile-border)] cursor-pointer"
               >
                 Save Score
               </button>
@@ -298,8 +298,8 @@ export function UnitInspectorModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Battery & Power */}
             <div
-              className={`p-3.5 rounded-2xl border space-y-2 ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/40 border-[var(--border-subtle)]'
+              className={`p-3.5 rounded-2xl border-2 border-[var(--tactile-border)] space-y-2 ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/40'
               }`}
             >
               <div className="flex items-center gap-2 text-[var(--accent-primary)]">
@@ -330,8 +330,8 @@ export function UnitInspectorModal({
 
             {/* GPS Telemetry */}
             <div
-              className={`p-3.5 rounded-2xl border space-y-2 ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/40 border-[var(--border-subtle)]'
+              className={`p-3.5 rounded-2xl border-2 border-[var(--tactile-border)] space-y-2 ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/40'
               }`}
             >
               <div className="flex items-center gap-2 text-[var(--accent-primary)]">
@@ -371,8 +371,8 @@ export function UnitInspectorModal({
 
             {/* LoRa Mesh Radio Link */}
             <div
-              className={`p-3.5 rounded-2xl border space-y-2 ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/40 border-[var(--border-subtle)]'
+              className={`p-3.5 rounded-2xl border-2 border-[var(--tactile-border)] space-y-2 ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/40'
               }`}
             >
               <div className="flex items-center gap-2 text-[var(--accent-primary)]">
@@ -399,8 +399,8 @@ export function UnitInspectorModal({
 
             {/* BLE Ingestion Metrics */}
             <div
-              className={`p-3.5 rounded-2xl border space-y-2 ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[var(--bg-surface-elevated)]/40 border-[var(--border-subtle)]'
+              className={`p-3.5 rounded-2xl border-2 border-[var(--tactile-border)] space-y-2 ${
+                isLight ? 'bg-slate-50' : 'bg-[var(--bg-surface-elevated)]/40'
               }`}
             >
               <div className="flex items-center gap-2 text-[var(--accent-primary)]">

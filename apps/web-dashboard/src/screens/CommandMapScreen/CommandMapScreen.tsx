@@ -156,8 +156,11 @@ export function CommandMapScreen({
   const [mapTileType, setMapTileType] = useState<MapTileType>('standard')
   const [isKpiOpen, setIsKpiOpen] = useState(false)
   const [isControlsOpen, setIsControlsOpen] = useState(true)
+  const [isGpsStatusOpen, setIsGpsStatusOpen] = useState(true)
   const [isQueueOpen, setIsQueueOpen] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
+
+  const acquiringResponders = responders.filter((r) => r.location.gpsFix === false)
 
   const prevPanelStateRef = useRef({ kpi: false, queue: false })
   const mapRef = useRef<L.Map | null>(null)
@@ -310,7 +313,6 @@ export function CommandMapScreen({
         <TacticalMap
           incidents={mapIncidents}
           responders={mapResponders}
-          gpsStatusResponders={responders}
           hazards={ROAD_HAZARDS}
           selectedIncidentId={selectedIncident ? selectedIncident.id : null}
           onSelectIncident={(incidentId) => {
@@ -574,6 +576,103 @@ export function CommandMapScreen({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* 2.d Bottom-Right: Temporary GPS Acquiring Status Dock (opposite MapControlsDock) */}
+        {!isFocusMode && acquiringResponders.length > 0 && (
+          <div className="pointer-events-auto absolute bottom-4 right-3 sm:right-5 z-30 h-13 sm:h-14 flex items-center">
+            <AnimatePresence mode="wait">
+              {!isGpsStatusOpen ? (
+                <motion.div
+                  key="gps-status-reveal-toggle"
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.85, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setIsGpsStatusOpen(true)}
+                    className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center salbar-tactile-btn cursor-pointer ${
+                      isLight
+                        ? 'bg-white text-slate-800 hover:text-[var(--accent-primary)]'
+                        : 'bg-[var(--bg-surface)] text-slate-200 hover:text-[var(--accent-primary)]'
+                    }`}
+                    title="Show GPS Acquisition Status"
+                    aria-label="Show GPS Status"
+                  >
+                    <ChevronLeft size={18} />
+                    <span
+                      className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--tactile-border)] ${
+                        acquiringResponders.some((r) => r.location.gpsModuleOk === false)
+                          ? 'bg-red-500'
+                          : 'bg-amber-500 animate-pulse'
+                      }`}
+                    />
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="gps-status-dock"
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: 20, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  className={`pointer-events-auto h-13 sm:h-14 flex items-center gap-2.5 rounded-full pl-4 pr-2.5 select-none salbar-tactile-card transition-colors duration-300 ${
+                    isLight
+                      ? 'bg-white text-slate-900'
+                      : 'bg-[var(--bg-surface)] text-slate-100'
+                  }`}
+                >
+                  <div className="flex flex-col justify-center gap-0.5">
+                    {acquiringResponders.map((r) => {
+                      const isModuleError = r.location.gpsModuleOk === false
+                      return (
+                        <div key={`gps-${r.id}`} className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full shrink-0 ${
+                              isModuleError ? 'bg-red-500' : 'bg-amber-500 animate-pulse'
+                            }`}
+                          />
+                          <span
+                            className={`font-mono text-[11px] font-bold whitespace-nowrap ${
+                              isModuleError
+                                ? 'text-red-500 dark:text-red-400'
+                                : isLight
+                                  ? 'text-amber-600'
+                                  : 'text-amber-400'
+                            }`}
+                          >
+                            {r.id}:{' '}
+                            {isModuleError
+                              ? 'GPS MODULE NOT RESPONDING'
+                              : `GPS ACQUIRING (${r.location.satellitesInView ?? 0} sats)`}
+                            {!(r.location.lat === 0 && r.location.lng === 0) && ' • last known'}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div className={`w-px h-5 my-auto ${isLight ? 'bg-slate-300' : 'bg-[var(--border-subtle)]'}`} />
+
+                  <button
+                    type="button"
+                    onClick={() => setIsGpsStatusOpen(false)}
+                    title="Hide GPS Status"
+                    aria-label="Hide GPS Status"
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center salbar-tactile-sm cursor-pointer ${
+                      isLight
+                        ? 'bg-slate-100 text-slate-600 hover:text-[var(--accent-primary)] hover:bg-slate-200/80'
+                        : 'bg-[var(--bg-surface-elevated)] text-slate-400 hover:text-[var(--accent-primary)] hover:bg-[var(--bg-surface)]'
+                    }`}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -192,7 +192,6 @@ function createResponderMarkerIcon(responder: FieldResponder): L.DivIcon {
 export function TacticalMap({
   incidents,
   responders,
-  gpsStatusResponders,
   hazards,
   selectedIncidentId,
   onSelectIncident,
@@ -449,30 +448,6 @@ export function TacticalMap({
           )
         })}
       </MapContainer>
-
-      {/* GPS acquisition status for terminals without a current fix */}
-      {(gpsStatusResponders ?? responders).some((r) => r.location.gpsFix === false) && (
-        <div className="absolute top-28 left-3 sm:left-5 z-[1000] flex flex-col gap-1.5 pointer-events-none">
-          {(gpsStatusResponders ?? responders)
-            .filter((r) => r.location.gpsFix === false)
-            .map((r) => (
-              <div
-                key={`gps-${r.id}`}
-                className={`px-3 py-1.5 rounded-full text-[11px] font-mono font-bold border backdrop-blur-md shadow-md ${
-                  r.location.gpsModuleOk === false
-                    ? 'bg-red-500/20 text-red-400 border-red-500/40'
-                    : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                }`}
-              >
-                {r.id}:{' '}
-                {r.location.gpsModuleOk === false
-                  ? 'GPS MODULE NOT RESPONDING'
-                  : `GPS ACQUIRING (${r.location.satellitesInView ?? 0} satellites in view)`}
-                {!(r.location.lat === 0 && r.location.lng === 0) && ' - showing last known'}
-              </div>
-            ))}
-        </div>
-      )}
     </div>
   )
 }

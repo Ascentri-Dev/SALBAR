@@ -1,7 +1,9 @@
 # Resident-Facing Mobile Application (`apps/mobile`)
 
 ## Overview
-An offline-first Android application designed for residents within barangays and Geographically Isolated and Disadvantaged Areas (GIDAs) to submit emergency incident reports during active crises.
+An offline-first Android application (React Native + Expo SDK 58 + TypeScript) designed for residents within barangays and Geographically Isolated and Disadvantaged Areas (GIDAs) to submit emergency incident reports during active crises.
+
+For the full screen architecture, color palette, offline SQLite schema, BLE GATT specification, and functional/non-functional requirements, see the [Mobile App Specification](../../docs/specs/mobile-app-plan.md).
 
 ## Core Features
 - **Quick-Tap Triage Categories**: Fast, low-friction reporting for immediate hazards (medical, fire, flood, trapped persons, landslides).

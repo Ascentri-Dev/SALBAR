@@ -467,6 +467,16 @@ async def websocket_handler(websocket, path=None):
         async for message in websocket:
             try:
                 cmd_data = json.loads(message)
+                if cmd_data.get("type") == "INCIDENT" and cmd_data.get("data"):
+                    inc_data = cmd_data["data"]
+                    logger.info(
+                        f"{Fore.GREEN}[Cloud Relay Incident]{Style.RESET_ALL} "
+                        f"ID={inc_data.get('id')} Cat={inc_data.get('category')} "
+                        f"Urgency={inc_data.get('urgency')}"
+                    )
+                    await broadcast_to_clients(message)
+                    continue
+
                 logger.info(f"{Fore.YELLOW}[Dashboard Command Received]{Style.RESET_ALL} {message}")
                 
                 # Forward command to gateway serial connection
